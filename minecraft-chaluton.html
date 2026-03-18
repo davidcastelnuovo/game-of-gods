@@ -1045,8 +1045,6 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
 
     <!-- ── CREATURES ── -->
     <div id="tab-creatures" style="display:none">
-      <div class="lSection">🐾 יצורים</div>
-      <div class="libGrid" id="creatureGrid"></div>
       <div class="lSection">🐉 יצורים מיתולוגיים</div>
       <div class="libGogGrid" id="libGogCreatureGrid"></div>
     </div>
@@ -2498,7 +2496,7 @@ const SWING_DUR  = 0.30;  // שניות לנדנוד מלא
 function attackCreature(c) {
   const wDef = WEAPON_DEFS.find(d => d.id === playerCostume.weapon);
   if (!wDef) return;
-  c.hp -= wDef.damage;
+  c.hp -= (playerCostume._gogWeaponDamage || wDef.damage);
 
   // Flash אדום קצר על כל meshes של היצור
   c.group.traverse(o => {
@@ -4073,18 +4071,177 @@ function updateCostumeHUD() {
   }
   updateFPWeapon();    // נשק על ידי המצלמה (מבט ראשון)
   updateBodyWeapon();  // נשק על גוף הדמות (מבט שלישי)
+  updatePlayerArmor(); // שריון על גוף הדמות
+  updateFPArmor();     // שריון על ידיים (מבט ראשון)
 }
 
-// Build creature grid
-CREATURE_DEFS.forEach(c => {
-  const btn = document.createElement('div');
-  btn.className='libItem';
-  btn.innerHTML=`${c.e}<span>${c.n}</span>`;
-  btn.addEventListener('click', ()=>{
-    selectLibItem('creature', c.id, c.e, c.n, btn);
-  });
-  document.getElementById('creatureGrid').appendChild(btn);
-});
+// ── Armor overlay on player body ─────────────────────────
+// Adds visual armor pieces to the playerBody group based on playerCostume.armor.
+// Also adds god-specific accessories based on selectedGod.
+function updatePlayerArmor() {
+  if (!playerBody) return;
+
+  // Remove old armor overlay
+  const oldArmor = playerBody.getObjectByName('armorOverlay');
+  if (oldArmor) playerBody.remove(oldArmor);
+
+  const armorId = playerCostume.armor;
+  if (!armorId) return;
+
+  const ag = new THREE.Group(); ag.name = 'armorOverlay';
+  const mk = (geo, col) => new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: col }));
+
+  // Armor color schemes
+  const ARMOR_COLORS = {
+    stone:   { plate:0x808080, trim:0x606060, accent:0x9E9E9E },
+    gold:    { plate:0xDAA520, trim:0xB8860B, accent:0xFFD700 },
+    diamond: { plate:0x4FC3F7, trim:0x0288D1, accent:0xB3E5FC },
+    royal:   { plate:0x6A1B9A, trim:0x4A148C, accent:0xFFD700 },
+    dark:    { plate:0x212121, trim:0x111111, accent:0xB71C1C },
+    angel:   { plate:0xF5F5F5, trim:0xE0E0E0, accent:0xFFD700 },
+  };
+  const ac = ARMOR_COLORS[armorId] || ARMOR_COLORS.stone;
+
+  // ── Chestplate (over torso) ──
+  const chest = mk(new THREE.BoxGeometry(0.48, 0.72, 0.27), ac.plate);
+  chest.position.y = 0.92;
+  ag.add(chest);
+
+  // Trim lines on chestplate
+  const trimV = mk(new THREE.BoxGeometry(0.05, 0.72, 0.28), ac.trim);
+  trimV.position.set(0, 0.92, 0); ag.add(trimV);
+  const trimH = mk(new THREE.BoxGeometry(0.48, 0.04, 0.28), ac.trim);
+  trimH.position.set(0, 0.65, 0); ag.add(trimH);
+
+  // Shoulder pads
+  const shoulderL = mk(new THREE.BoxGeometry(0.24, 0.12, 0.24), ac.plate);
+  shoulderL.position.set(0.34, 1.22, 0); ag.add(shoulderL);
+  const shoulderR = shoulderL.clone(); shoulderR.position.x = -0.34; ag.add(shoulderR);
+
+  // Accent gem/emblem on chest center
+  const gem = mk(new THREE.BoxGeometry(0.08, 0.08, 0.04), ac.accent);
+  gem.position.set(0, 1.05, 0.14); ag.add(gem);
+
+  // Belt
+  const belt = mk(new THREE.BoxGeometry(0.50, 0.06, 0.28), ac.trim);
+  belt.position.set(0, 0.58, 0); ag.add(belt);
+  const buckle = mk(new THREE.BoxGeometry(0.08, 0.08, 0.04), ac.accent);
+  buckle.position.set(0, 0.58, 0.14); ag.add(buckle);
+
+  // Leg guards (greaves)
+  const greaveL = mk(new THREE.BoxGeometry(0.21, 0.35, 0.22), ac.plate);
+  greaveL.position.set(0.115, 0.18, 0); ag.add(greaveL);
+  const greaveR = greaveL.clone(); greaveR.position.x = -0.115; ag.add(greaveR);
+
+  // Arm guards (vambraces)
+  const vamL = mk(new THREE.BoxGeometry(0.21, 0.25, 0.21), ac.plate);
+  vamL.position.set(0.315, 0.75, 0); ag.add(vamL);
+  const vamR = vamL.clone(); vamR.position.x = -0.315; ag.add(vamR);
+
+  // ── God-specific accessories ──
+  if (selectedGod) {
+    const godId = selectedGod.id;
+    if (godId === 'zeus') {
+      // Lightning crown
+      const crown = mk(new THREE.BoxGeometry(0.52, 0.06, 0.52), 0xFFD700);
+      crown.position.set(0, 1.82, 0); ag.add(crown);
+      for (let i = 0; i < 5; i++) {
+        const spike = mk(new THREE.BoxGeometry(0.04, 0.12, 0.04), 0xFFD700);
+        const a = (i / 5) * Math.PI * 2;
+        spike.position.set(Math.cos(a)*0.2, 1.92, Math.sin(a)*0.2); ag.add(spike);
+      }
+    } else if (godId === 'poseidon') {
+      // Sea crown with shells
+      const crown = mk(new THREE.BoxGeometry(0.52, 0.08, 0.52), 0x0288D1);
+      crown.position.set(0, 1.82, 0); ag.add(crown);
+      const shell1 = mk(new THREE.BoxGeometry(0.1, 0.14, 0.06), 0x80DEEA);
+      shell1.position.set(0, 1.92, 0.2); ag.add(shell1);
+      const shell2 = shell1.clone(); shell2.position.set(0.18, 1.90, 0); ag.add(shell2);
+      const shell3 = shell1.clone(); shell3.position.set(-0.18, 1.90, 0); ag.add(shell3);
+    } else if (godId === 'hades') {
+      // Dark horned helmet
+      const helm = mk(new THREE.BoxGeometry(0.54, 0.2, 0.54), 0x1A1A1A);
+      helm.position.set(0, 1.72, 0); ag.add(helm);
+      const hornL = mk(new THREE.BoxGeometry(0.06, 0.3, 0.06), 0x333333);
+      hornL.position.set(0.2, 1.95, 0); hornL.rotation.z = -0.3; ag.add(hornL);
+      const hornR = hornL.clone(); hornR.position.x = -0.2; hornR.rotation.z = 0.3; ag.add(hornR);
+    } else if (godId === 'ares') {
+      // War helmet with red crest
+      const helm = mk(new THREE.BoxGeometry(0.54, 0.18, 0.54), 0x8B0000);
+      helm.position.set(0, 1.72, 0); ag.add(helm);
+      const crest = mk(new THREE.BoxGeometry(0.06, 0.25, 0.4), 0xFF0000);
+      crest.position.set(0, 1.92, 0); ag.add(crest);
+    } else if (godId === 'athena') {
+      // Wisdom helm with owl emblem
+      const helm = mk(new THREE.BoxGeometry(0.52, 0.15, 0.52), 0x6A1B9A);
+      helm.position.set(0, 1.73, 0); ag.add(helm);
+      const owlEye1 = mk(new THREE.BoxGeometry(0.06, 0.06, 0.04), 0xFFD700);
+      owlEye1.position.set(0.08, 1.73, 0.26); ag.add(owlEye1);
+      const owlEye2 = owlEye1.clone(); owlEye2.position.x = -0.08; ag.add(owlEye2);
+    } else if (godId === 'artemis') {
+      // Hunter's hood with leaf
+      const hood = mk(new THREE.BoxGeometry(0.54, 0.12, 0.54), 0x2E7D32);
+      hood.position.set(0, 1.75, 0); ag.add(hood);
+      const leaf = mk(new THREE.BoxGeometry(0.04, 0.15, 0.08), 0x4CAF50);
+      leaf.position.set(0.2, 1.85, 0); leaf.rotation.z = -0.4; ag.add(leaf);
+    } else if (godId === 'hermes') {
+      // Winged helmet
+      const helm = mk(new THREE.BoxGeometry(0.52, 0.1, 0.52), 0xE0E0E0);
+      helm.position.set(0, 1.75, 0); ag.add(helm);
+      const wL = mk(new THREE.BoxGeometry(0.2, 0.12, 0.06), 0xFFFFFF);
+      wL.position.set(0.35, 1.8, 0); wL.rotation.z = 0.4; ag.add(wL);
+      const wR = wL.clone(); wR.position.x = -0.35; wR.rotation.z = -0.4; ag.add(wR);
+    } else if (godId === 'hephaestus') {
+      // Smith's helmet with visor
+      const helm = mk(new THREE.BoxGeometry(0.54, 0.16, 0.54), 0x4E342E);
+      helm.position.set(0, 1.73, 0); ag.add(helm);
+      const visor = mk(new THREE.BoxGeometry(0.48, 0.08, 0.06), 0x3E2723);
+      visor.position.set(0, 1.68, 0.26); ag.add(visor);
+    }
+  }
+
+  playerBody.add(ag);
+}
+
+// ── FP Armor overlay (first-person arm guard) ────────────
+function updateFPArmor() {
+  if (!fpHands) return;
+  const rArm = fpHands.getObjectByName('fpRightArm');
+  if (!rArm) return;
+
+  // Remove old armor overlay
+  const old = rArm.getObjectByName('fpArmor');
+  if (old) rArm.remove(old);
+
+  const armorId = playerCostume.armor;
+  if (!armorId) return;
+
+  const ARMOR_COLORS = {
+    stone:0x808080, gold:0xDAA520, diamond:0x4FC3F7,
+    royal:0x6A1B9A, dark:0x212121, angel:0xF5F5F5
+  };
+  const col = ARMOR_COLORS[armorId] || 0x808080;
+
+  const ag = new THREE.Group(); ag.name = 'fpArmor';
+  const mkMat = c => new THREE.MeshLambertMaterial({ color:c, depthTest:false, depthWrite:false });
+
+  // Vambrace (arm guard) on the forearm
+  const guard = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.14, 0.13), mkMat(col));
+  guard.position.y = -0.19;
+  guard.renderOrder = 999;
+  ag.add(guard);
+
+  // Gauntlet on fist
+  const gaunt = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.08, 0.13), mkMat(col));
+  gaunt.position.y = -0.30;
+  gaunt.renderOrder = 999;
+  ag.add(gaunt);
+
+  ag.traverse(o => { if (o.isMesh) { o.renderOrder = 999; o.material.depthTest = false; o.material.depthWrite = false; } });
+  rArm.add(ag);
+}
+
+// Old creature grid removed — only GOG mythological creatures remain
 
 // Library button — build GOG cards lazily on first open
 document.getElementById('libBtn').addEventListener('click', ()=>{
@@ -5792,10 +5949,19 @@ function initAuth() {
     if (!_pendingWorldData) return;
     // Apply selected weapon to playerCostume then enter game
     if (selectedGogWeapon) {
-      const match = WEAPON_DEFS.find(w => w.id === selectedGogWeapon.id)
+      // Map GOG weapon → base weapon type for rendering
+      const _gogWeaponMap = {
+        bolt:'staff', trident:'trident', axedual:'axe', huntbow:'bow',
+        aegis:'sword', hammer:'axe', caduceus:'staff', gladius:'sword'
+      };
+      const mappedId = _gogWeaponMap[selectedGogWeapon.id];
+      const match = WEAPON_DEFS.find(w => w.id === mappedId)
+                 || WEAPON_DEFS.find(w => w.id === selectedGogWeapon.id)
                  || WEAPON_DEFS.find(w => selectedGogWeapon.emoji.includes(w.e))
                  || WEAPON_DEFS[0];
       if (match) playerCostume.weapon = match.id;
+      // Store the GOG weapon damage (override base weapon damage for combat)
+      playerCostume._gogWeaponDamage = selectedGogWeapon.damage;
     }
     enterGame(_pendingWorldData, _pendingInviteCode);
   });
