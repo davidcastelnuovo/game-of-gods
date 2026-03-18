@@ -3134,6 +3134,127 @@ function placeStructure(type, bx, by, bz) {
       for(let x=i;x<size*2+1-i;x++) for(let z=i;z<size*2+1-i;z++) B(x,i,z,'sand');
     }
   }
+  else if (type.startsWith('temple_')) {
+    // ── Greek temple builder ──
+    // Temple dimensions: W=12, D=8, columns H=6, roof triangle H=4
+    const W=12, D=8, CH=6;
+    // God-specific accent block
+    const godAccents = {
+      temple_zeus:       'gold',
+      temple_hermes:     'diamond',
+      temple_apollo:     'gold',
+      temple_athena:     'brick',
+      temple_aphrodite:  'brick',
+      temple_poseidon:   'diamond',
+      temple_hephaestus: 'brick',
+      temple_ares:       'brick',
+      temple_artemis:    'leaves',
+      temple_demeter:    'leaves',
+      temple_dionysus:   'brick',
+      temple_hades:      'stone',
+    };
+    const accent = godAccents[type] || 'gold';
+
+    // ── Step platform (3 steps) ──
+    for (let s=0; s<3; s++) {
+      for (let x=-s-1; x<=W+s; x++)
+        for (let z=-s-1; z<=D+s; z++)
+          B(x, -s, z, 'stone');
+    }
+
+    // ── Floor ──
+    for (let x=0; x<W; x++)
+      for (let z=0; z<D; z++)
+        B(x, 1, z, accent);
+
+    // ── Columns (4 on each long side) ──
+    const colPositions = [0, 3, 8, 11]; // x positions
+    for (const cx of colPositions) {
+      for (let h=2; h<=CH+1; h++) {
+        B(cx, h, 0, 'stone');     // front row
+        B(cx, h, D-1, 'stone');   // back row
+      }
+      // Column capitals (wider top)
+      B(cx, CH+2, 0, 'stone'); B(cx, CH+2, D-1, 'stone');
+    }
+    // 2 columns at front entrance sides
+    for (let h=2; h<=CH+1; h++) {
+      B(0, h, 2, 'stone'); B(0, h, D-3, 'stone');
+      B(W-1, h, 2, 'stone'); B(W-1, h, D-3, 'stone');
+    }
+
+    // ── Entablature (horizontal beam on top of columns) ──
+    for (let x=0; x<W; x++) {
+      B(x, CH+2, 0, 'stone');
+      B(x, CH+2, D-1, 'stone');
+      B(x, CH+2, 1, accent);
+      B(x, CH+2, D-2, accent);
+    }
+    for (let z=0; z<D; z++) {
+      B(0, CH+2, z, 'stone');
+      B(W-1, CH+2, z, 'stone');
+    }
+
+    // ── Triangular pediment (front and back) ──
+    const midX = Math.floor(W/2);
+    for (let i=0; i<=midX; i++) {
+      const roofY = CH + 3 + i;
+      // Front pediment
+      B(midX - i, roofY, 0, accent);
+      B(midX + i, roofY, 0, accent);
+      B(midX - i, roofY, D-1, accent);
+      B(midX + i, roofY, D-1, accent);
+    }
+    // Fill pediment triangle (front and back)
+    for (let h=0; h<=midX; h++) {
+      for (let x=midX-h; x<=midX+h; x++) {
+        B(x, CH+3+midX-h, 0, 'stone');
+        B(x, CH+3+midX-h, D-1, 'stone');
+      }
+    }
+
+    // ── Roof (sloped, using stepped blocks) ──
+    for (let i=0; i<=midX; i++) {
+      for (let z=0; z<D; z++) {
+        B(midX - i, CH+3+midX-i, z, accent);
+        if (i > 0) B(midX + i, CH+3+midX-i, z, accent);
+      }
+    }
+
+    // ── Back wall ──
+    for (let x=1; x<W-1; x++)
+      for (let h=2; h<=CH+1; h++)
+        B(x, h, D-1, 'stone');
+
+    // ── Side walls (partial, with openings) ──
+    for (let z=1; z<D-1; z++)
+      for (let h=2; h<=CH+1; h++) {
+        B(0, h, z, 'stone');
+        B(W-1, h, z, 'stone');
+      }
+
+    // ── Front entrance (open doorway) ──
+    for (let x=4; x<8; x++)
+      for (let h=2; h<=CH; h++)
+        B(x, h, 0, null); // clear entrance
+
+    // ── Interior: altar at center back ──
+    const altX = Math.floor(W/2), altZ = D-3;
+    B(altX, 2, altZ, accent);
+    B(altX, 3, altZ, accent);
+    B(altX-1, 2, altZ, 'stone');
+    B(altX+1, 2, altZ, 'stone');
+    // Sacred fire/decoration on altar
+    B(altX, 4, altZ, 'gold');
+
+    // ── Interior columns (2 rows) ──
+    for (const cz of [2, D-3]) {
+      for (let h=2; h<=CH+1; h++) {
+        B(3, h, cz, 'stone');
+        B(W-4, h, cz, 'stone');
+      }
+    }
+  }
 
   playTone(440,.3,'triangle');
   showInfo(`✅ ${STRUCT_DEFS.find(s=>s.id===type)?.n || type} הונח בהצלחה!`);
@@ -3291,6 +3412,43 @@ const STRUCT_SPRITES = {
 </svg>`,
 };
 
+// ── Greek temple sprite generator per god ──
+function _templeSprite(mainColor, accentColor, roofColor, symbolEmoji) {
+  return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="36" width="40" height="4" fill="#3A7D32"/>
+<rect x="2" y="32" width="36" height="5" fill="${mainColor}"/>
+<rect x="3" y="33" width="34" height="3" fill="${accentColor}"/>
+<rect x="4" y="28" width="32" height="5" fill="${mainColor}"/>
+<rect x="6" y="12" width="3" height="17" fill="${mainColor}"/>
+<rect x="12" y="12" width="3" height="17" fill="${mainColor}"/>
+<rect x="25" y="12" width="3" height="17" fill="${mainColor}"/>
+<rect x="31" y="12" width="3" height="17" fill="${mainColor}"/>
+<rect x="18" y="20" width="4" height="9" fill="#4A3520"/>
+<path d="M18,20 Q20,17 22,20" fill="#5C4030"/>
+<rect x="3" y="9" width="34" height="4" fill="${mainColor}"/>
+<rect x="4" y="10" width="32" height="2" fill="${accentColor}"/>
+<polygon points="20,1 1,10 39,10" fill="${roofColor}"/>
+<polygon points="20,1 20,10 39,10" fill="${roofColor}" opacity="0.7"/>
+<rect x="3" y="9" width="34" height="1.5" fill="${accentColor}"/>
+<text x="20" y="8" text-anchor="middle" font-size="5" fill="${accentColor}">${symbolEmoji}</text>
+</svg>`;
+}
+
+const TEMPLE_SPRITES = {
+  temple_zeus:       _templeSprite('#E8E0D0','#FFD700','#C4963A','⚡'),
+  temple_hermes:     _templeSprite('#D8E8F0','#00B0FF','#6090B0','🪽'),
+  temple_apollo:     _templeSprite('#FFF5E0','#FF8F00','#D4A030','☀️'),
+  temple_athena:     _templeSprite('#E8D8F0','#8E24AA','#9060A0','🦉'),
+  temple_aphrodite:  _templeSprite('#FFE8F0','#E91E8C','#C06090','🌹'),
+  temple_poseidon:   _templeSprite('#D8F0F0','#0097A7','#408890','🔱'),
+  temple_hephaestus: _templeSprite('#F0E0D0','#BF360C','#A05030','🔨'),
+  temple_ares:       _templeSprite('#F0D0D0','#B71C1C','#903030','⚔️'),
+  temple_artemis:    _templeSprite('#D8F0D8','#2E7D32','#508050','🏹'),
+  temple_demeter:    _templeSprite('#E8F0D8','#558B2F','#608030','🌾'),
+  temple_dionysus:   _templeSprite('#E8D0F0','#7B1FA2','#805098','🍇'),
+  temple_hades:      _templeSprite('#D0D4D8','#37474F','#506068','💀'),
+};
+
 const STRUCT_DEFS = [
   {id:'house',    n:'בית',    e:'<div class="structSprite">'+STRUCT_SPRITES.house+'</div>',    emoji:'🏠'},
   {id:'castle',   n:'טירה',   e:'<div class="structSprite">'+STRUCT_SPRITES.castle+'</div>',   emoji:'🏰'},
@@ -3301,6 +3459,19 @@ const STRUCT_DEFS = [
   {id:'pool',     n:'בריכה',  e:'<div class="structSprite">'+STRUCT_SPRITES.pool+'</div>',     emoji:'🏊'},
   {id:'igloo',    n:'איגלו',  e:'<div class="structSprite">'+STRUCT_SPRITES.igloo+'</div>',    emoji:'🧊'},
   {id:'pyramid',  n:'פירמידה',e:'<div class="structSprite">'+STRUCT_SPRITES.pyramid+'</div>',  emoji:'🔺'},
+  // ── מקדשים יווניים ──
+  {id:'temple_zeus',      n:'מקדש זאוס',     e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_zeus+'</div>',      emoji:'⚡'},
+  {id:'temple_hermes',    n:'מקדש הרמס',     e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_hermes+'</div>',    emoji:'🪽'},
+  {id:'temple_apollo',    n:'מקדש אפולו',    e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_apollo+'</div>',    emoji:'☀️'},
+  {id:'temple_athena',    n:'מקדש אתנה',     e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_athena+'</div>',    emoji:'🦉'},
+  {id:'temple_aphrodite', n:'מקדש אפרודיטה', e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_aphrodite+'</div>', emoji:'🌹'},
+  {id:'temple_poseidon',  n:'מקדש פוסידון',  e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_poseidon+'</div>',  emoji:'🔱'},
+  {id:'temple_hephaestus',n:'מקדש הפסטוס',   e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_hephaestus+'</div>',emoji:'🔨'},
+  {id:'temple_ares',      n:'מקדש ארס',      e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_ares+'</div>',      emoji:'⚔️'},
+  {id:'temple_artemis',   n:'מקדש ארטמיס',   e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_artemis+'</div>',   emoji:'🏹'},
+  {id:'temple_demeter',   n:'מקדש דמטר',     e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_demeter+'</div>', emoji:'🌾'},
+  {id:'temple_dionysus',  n:'מקדש דיוניסוס', e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_dionysus+'</div>',  emoji:'🍇'},
+  {id:'temple_hades',     n:'מקדש האדס',     e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_hades+'</div>',     emoji:'💀'},
 ];
 
 let placingItem = null; // { type: 'structure'|'creature'|'interact', id } — element being placed via F
