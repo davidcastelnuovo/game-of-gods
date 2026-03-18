@@ -2922,25 +2922,39 @@ document.addEventListener('mousedown', e => {
 
   // ── קרב: קליק שמאלי + נשק ──
   if (e.button === 0 && playerCostume.weapon) {
-    // Bow weapons shoot arrows (ranged attack)
-    if (playerCostume.weapon === 'bow') {
-      shootArrow();
-      weaponSwingDir *= -1;
-      weaponSwingT = 0;
+    // קודם כל — יצור בצלב הכוונת
+    if (lastHitCreature) {
+      attackCreature(lastHitCreature);
       return;
     }
-    // קודם כל — יצור בצלב הכוונת
-    if (lastHitCreature) { attackCreature(lastHitCreature); return; }
-    // אחרת — מכה קרבית: כל יצור בטווח 3 בלוקים, תוקפים את הקרוב ביותר
-    let closest = null, minD2 = 3.5 * 3.5;
-    creatures.forEach(c => {
-      const dx = c.group.position.x - player.pos.x;
-      const dy = c.group.position.y - (player.pos.y + EYE * 0.5);
-      const dz = c.group.position.z - player.pos.z;
-      const d2 = dx*dx + dy*dy + dz*dz;
-      if (d2 < minD2) { minD2 = d2; closest = c; }
-    });
-    if (closest) { attackCreature(closest); return; }
+    // Bow weapons shoot arrows only when aiming at creatures nearby
+    if (playerCostume.weapon === 'bow') {
+      let hasTarget = false;
+      creatures.forEach(c => {
+        const dx = c.group.position.x - player.pos.x;
+        const dy = c.group.position.y - (player.pos.y + EYE * 0.5);
+        const dz = c.group.position.z - player.pos.z;
+        if (dx*dx + dy*dy + dz*dz < 12 * 12) hasTarget = true;
+      });
+      if (hasTarget) {
+        shootArrow();
+        weaponSwingDir *= -1;
+        weaponSwingT = 0;
+        return;
+      }
+      // No creatures nearby — fall through to block breaking
+    } else {
+      // מכה קרבית: כל יצור בטווח 3 בלוקים, תוקפים את הקרוב ביותר
+      let closest = null, minD2 = 3.5 * 3.5;
+      creatures.forEach(c => {
+        const dx = c.group.position.x - player.pos.x;
+        const dy = c.group.position.y - (player.pos.y + EYE * 0.5);
+        const dz = c.group.position.z - player.pos.z;
+        const d2 = dx*dx + dy*dy + dz*dz;
+        if (d2 < minD2) { minD2 = d2; closest = c; }
+      });
+      if (closest) { attackCreature(closest); return; }
+    }
   }
 
   if (!lastHit) return;
