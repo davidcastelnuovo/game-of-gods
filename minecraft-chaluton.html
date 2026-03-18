@@ -2386,6 +2386,7 @@ function updatePlayer(dt) {
 
   // ── קדם אנימציית נדנוד נשק ───────────────────────────────
   if (weaponSwingT >= 0) { weaponSwingT += dt; if (weaponSwingT >= SWING_DUR) weaponSwingT = -1; }
+  if (bowShootT >= 0) { bowShootT += dt; if (bowShootT >= BOW_SHOOT_DUR) bowShootT = -1; }
 
   // ── 3rd-person body animations ────────────────────────────
   // Arms, legs and torso swing while walking; right arm swings during mining.
@@ -2456,8 +2457,47 @@ function updatePlayer(dt) {
         rArm.rotation.z = -0.28 + swingZ;  // -0.28 = הטיית בסיס + אלכסון
         rArm.position.y = -0.32 + Math.sin(t * bobFreq) * bobAmp;
         rArm.position.x =  0.46 + Math.sin(t * bobFreq * 2) * bobAmp * 0.4;
+
+        // ── Bow shoot animation overlay ──
+        if (bowShootT >= 0) {
+          const bProg = bowShootT / BOW_SHOOT_DUR;
+          if (bProg < 0.3) {
+            // Pull-back phase: arm pulls back, slight tilt
+            const pull = bProg / 0.3;
+            rArm.rotation.x -= pull * 0.4;  // pull arm back
+            rArm.position.z = -pull * 0.08; // move hand back
+          } else if (bProg < 0.5) {
+            // Release phase: snap forward
+            const release = (bProg - 0.3) / 0.2;
+            rArm.rotation.x += release * 0.8; // snap forward
+            rArm.position.z = -0.08 + release * 0.12; // push forward
+          } else {
+            // Recovery: return to normal
+            const recov = (bProg - 0.5) / 0.5;
+            rArm.rotation.x += (1 - recov) * 0.3;
+            rArm.position.z = 0.04 * (1 - recov);
+          }
+        }
       }
-      // יד שמאל מוסתרת — אין צורך לאנימציה
+      // ── Left arm: bow hold animation ──
+      if (lArm && bowShootT >= 0) {
+        const bProg = bowShootT / BOW_SHOOT_DUR;
+        lArm.visible = true;
+        if (bProg < 0.3) {
+          // Steady hold
+          lArm.rotation.x = -0.3;
+          lArm.rotation.z = 0.4;
+        } else if (bProg < 0.5) {
+          // Recoil from release
+          const r = (bProg - 0.3) / 0.2;
+          lArm.rotation.x = -0.3 + r * 0.2;
+          lArm.rotation.z = 0.4 - r * 0.15;
+        } else {
+          const r = (bProg - 0.5) / 0.5;
+          lArm.rotation.x = -0.1 * (1 - r);
+          lArm.rotation.z = 0.25 * (1 - r);
+        }
+      }
 
       // fpBody pitch logic is now handled earlier in updatePlayer (see above)
     }
@@ -2716,6 +2756,10 @@ let weaponSwingT = -1;    // -1 = בשקט; ≥0 = נדנוד בעיצומו
 let weaponSwingDir = 1;   // +1 = אלכסון ימין→שמאל | -1 = שמאל→ימין (מתחלף בכל מכה)
 const SWING_DUR  = 0.30;  // שניות לנדנוד מלא
 
+// ── Bow shoot animation state ────────────────────────────
+let bowShootT = -1;       // -1 = idle; ≥0 = animation in progress
+const BOW_SHOOT_DUR = 0.45; // total animation duration
+
 // ── מערכת קרב ───────────────────────────────────────────
 
 // ── Arrow projectile system ──────────────────────────────
@@ -2725,25 +2769,39 @@ function shootArrow() {
   const dir = new THREE.Vector3();
   camera.getWorldDirection(dir);
 
+  // ── Visible arrow projectile (bigger, with trail) ──
   const arrowGroup = new THREE.Group();
   const mk = (geo, col) => new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: col }));
-  // Arrow shaft
-  const shaft = mk(new THREE.BoxGeometry(0.04, 0.04, 0.6), 0xD2691E);
+  // Arrow shaft (thicker for visibility)
+  const shaft = mk(new THREE.BoxGeometry(0.06, 0.06, 0.8), 0xD2691E);
   arrowGroup.add(shaft);
-  // Arrow head
-  const head = mk(new THREE.BoxGeometry(0.08, 0.08, 0.14), 0x9E9E9E);
-  head.position.z = 0.35; arrowGroup.add(head);
-  // Fletching
-  const flt1 = mk(new THREE.BoxGeometry(0.12, 0.02, 0.08), 0xFF5252);
-  flt1.position.z = -0.28; arrowGroup.add(flt1);
-  const flt2 = mk(new THREE.BoxGeometry(0.02, 0.12, 0.08), 0xFF5252);
-  flt2.position.z = -0.28; arrowGroup.add(flt2);
+  // Arrow head (larger, pointed)
+  const head = mk(new THREE.BoxGeometry(0.12, 0.12, 0.2), 0x9E9E9E);
+  head.position.z = 0.48; arrowGroup.add(head);
+  // Arrow tip
+  const tip = mk(new THREE.BoxGeometry(0.06, 0.06, 0.1), 0x808080);
+  tip.position.z = 0.6; arrowGroup.add(tip);
+  // Fletching (bigger, more visible)
+  const flt1 = mk(new THREE.BoxGeometry(0.16, 0.03, 0.12), 0xFF5252);
+  flt1.position.z = -0.35; arrowGroup.add(flt1);
+  const flt2 = mk(new THREE.BoxGeometry(0.03, 0.16, 0.12), 0xFF5252);
+  flt2.position.z = -0.35; arrowGroup.add(flt2);
+  // Glow trail effect
+  const glow = mk(new THREE.BoxGeometry(0.04, 0.04, 0.5), 0xFFD700);
+  glow.material.transparent = true; glow.material.opacity = 0.4;
+  glow.position.z = -0.1; arrowGroup.add(glow);
 
-  // Position at player eye level
-  arrowGroup.position.set(player.pos.x, player.pos.y + 1.6, player.pos.z);
+  // Position at player eye level, slightly to the right
+  const right = new THREE.Vector3();
+  right.crossVectors(dir, new THREE.Vector3(0, 1, 0)).normalize();
+  arrowGroup.position.set(
+    player.pos.x + right.x * 0.3,
+    player.pos.y + 1.5,
+    player.pos.z + right.z * 0.3
+  );
   arrowGroup.lookAt(
     player.pos.x + dir.x * 10,
-    player.pos.y + 1.6 + dir.y * 10,
+    player.pos.y + 1.5 + dir.y * 10,
     player.pos.z + dir.z * 10
   );
   scene.add(arrowGroup);
@@ -2754,10 +2812,16 @@ function shootArrow() {
     vel: dir.clone().multiplyScalar(40),
     life: 3.0,
     damage: damage,
-    hit: false
+    hit: false,
+    trail: glow
   });
 
+  // ── Trigger bow shooting animation ──
+  bowShootT = 0;
+
+  // Sound: twang + whoosh
   playTone(800, 0.08, 'sine');
+  setTimeout(() => playTone(400, 0.06, 'triangle'), 50);
 }
 
 function updateArrows(dt) {
@@ -2778,15 +2842,35 @@ function updateArrows(dt) {
     // Update rotation to match velocity
     const lookTarget = a.mesh.position.clone().add(a.vel.clone().normalize());
     a.mesh.lookAt(lookTarget);
+    // Fade trail glow
+    if (a.trail) {
+      a.trail.material.opacity = Math.max(0, a.life * 0.15);
+    }
 
-    // Check collision with creatures
+    // Check collision with creatures (larger hitbox for scaled GM monsters)
     for (const c of creatures) {
+      const scale = c._gmScale || 1;
+      const hitR = 1.2 * scale; // bigger hitbox for bigger monsters
       const dx = c.group.position.x - a.mesh.position.x;
-      const dy = (c.group.position.y + 0.8) - a.mesh.position.y;
+      const dy = (c.group.position.y + 0.8 * scale) - a.mesh.position.y;
       const dz = c.group.position.z - a.mesh.position.z;
-      if (dx*dx + dy*dy + dz*dz < 1.2) {
+      if (dx*dx + dy*dy + dz*dz < hitR * hitR) {
         a.hit = true;
         attackCreatureDirectDamage(c, a.damage);
+        // Impact particles
+        for (let j = 0; j < 4; j++) {
+          const p = new THREE.Mesh(
+            new THREE.BoxGeometry(0.1, 0.1, 0.1),
+            new THREE.MeshLambertMaterial({ color: 0xFFD700, transparent: true })
+          );
+          p.position.copy(a.mesh.position);
+          scene.add(p);
+          deathParticles.push({
+            mesh: p,
+            vel: new THREE.Vector3((Math.random()-0.5)*4, 2+Math.random()*3, (Math.random()-0.5)*4),
+            life: 0.5
+          });
+        }
         break;
       }
     }
@@ -5809,8 +5893,8 @@ function createFPHands(god) {
   group.add(rArm, lArm);
 
   // Ensure the whole group renders over world geometry
-  group.renderOrder = 999;
-  group.traverse(o => { if (o.isMesh) o.renderOrder = 999; });
+  group.renderOrder = 9999;
+  group.traverse(o => { if (o.isMesh) { o.renderOrder = 9999; o.material.depthTest = false; o.material.depthWrite = false; } });
 
   camera.add(group);
   fpHands = group;
@@ -5983,7 +6067,7 @@ function updateFPWeapon() {
   }
 
   wg.traverse(o => {
-    if (o.isMesh) { o.renderOrder = 999; o.material.depthTest = false; o.material.depthWrite = false; }
+    if (o.isMesh) { o.renderOrder = 9999; o.material.depthTest = false; o.material.depthWrite = false; }
   });
   rArm.add(wg);
 }
@@ -6413,8 +6497,8 @@ function genGameWorld(sz) {
   const lakeR      = 10;
   const mtCenter   = { x: mid + 22, z: mid - 18 };
   const mtR        = 14;
-  const forestCenter = { x: mid - 18, z: mid - 15 };
-  const forestR    = 14;
+  const forestCenter = { x: mid - 22, z: mid - 20 };
+  const forestR    = 12;
   const wheatCenter = { x: mid + 10, z: mid + 20 };
   const wheatR     = 10;
   const desertCenter = { x: mid - 22, z: mid + 30 };
@@ -6512,15 +6596,20 @@ function genGameWorld(sz) {
         for (let wl = top + 1; wl <= SEA; wl++) setBlock(x, wl, z, 'water');
       }
 
-      // ── Trees in forest ──
-      if (dForest < forestR - 2 && Math.random() < 0.1 && top > 5) {
+      // ── Trees in forest (only if far enough from village so leaves don't overhang) ──
+      if (dForest < forestR - 2 && dVillage > villageR + 6 && Math.random() < 0.1 && top > 5) {
         const th = 4 + Math.floor(Math.random() * 3);
         for (let ty = top+1; ty <= top+th; ty++) setBlock(x, ty, z, 'wood');
         for (let dx=-2; dx<=2; dx++)
-          for (let dz=-2; dz<=2; dz++)
+          for (let dz=-2; dz<=2; dz++) {
+            // Don't place leaves over village area
+            const lx = x+dx, lz = z+dz;
+            const dLV = dist(lx, lz, mid, mid);
+            if (dLV < villageR + 3) continue;
             for (let dy=top+Math.ceil(th*0.5); dy<=top+th+2; dy++)
-              if (dx*dx+dz*dz <= 5 && !hasBlock(x+dx, dy, z+dz))
-                setBlock(x+dx, dy, z+dz, 'leaves');
+              if (dx*dx+dz*dz <= 5 && !hasBlock(lx, dy, lz))
+                setBlock(lx, dy, lz, 'leaves');
+          }
       }
 
       // ── Wheat crops ──
@@ -6530,16 +6619,37 @@ function genGameWorld(sz) {
       }
 
       // ── Scattered trees on plains ──
-      if (dVillage > villageR + 5 && dForest > forestR && dLake > lakeR &&
+      if (dVillage > villageR + 7 && dForest > forestR && dLake > lakeR &&
           dMt > mtR && dDesert > desertR && dWheat > wheatR && dRiverActual > 4 &&
           Math.random() < 0.015 && top > 5) {
         const th = 3 + Math.floor(Math.random() * 2);
         for (let ty = top+1; ty <= top+th; ty++) setBlock(x, ty, z, 'wood');
         for (let dx=-2; dx<=2; dx++)
-          for (let dz=-2; dz<=2; dz++)
+          for (let dz=-2; dz<=2; dz++) {
+            const lx = x+dx, lz = z+dz;
+            const dLV = dist(lx, lz, mid, mid);
+            if (dLV < villageR + 3) continue;
             for (let dy=top+Math.ceil(th*0.5); dy<=top+th+1; dy++)
-              if (dx*dx+dz*dz <= 4 && !hasBlock(x+dx, dy, z+dz))
-                setBlock(x+dx, dy, z+dz, 'leaves');
+              if (dx*dx+dz*dz <= 4 && !hasBlock(lx, dy, lz))
+                setBlock(lx, dy, lz, 'leaves');
+          }
+      }
+    }
+  }
+
+  // ── Clear any stray leaves/wood above village airspace ──
+  for (let x = mid - villageR - 3; x <= mid + villageR + 3; x++) {
+    for (let z = mid - villageR - 3; z <= mid + villageR + 3; z++) {
+      const dV = dist(x, z, mid, mid);
+      if (dV < villageR + 3) {
+        // Remove leaves above village height (keep buildings below y=15)
+        for (let y = 15; y <= 25; y++) {
+          const k = wk(x, y, z);
+          const block = world.get(k);
+          if (block === 'leaves' || block === 'wood') {
+            setBlock(x, y, z, null);
+          }
+        }
       }
     }
   }
@@ -7032,6 +7142,10 @@ function spawnGMMonster(type, x, z) {
   if (!def) return;
   const c = spawnCreature(type, new THREE.Vector3(x, 10, z), true);
   if (c) {
+    // Scale monsters 5x larger in game mode — imposing and terrifying
+    const monsterScale = 5.0;
+    c.group.scale.set(monsterScale, monsterScale, monsterScale);
+    c._gmScale = monsterScale;
     c._isGMMonster = true;
     c._gmTarget = null;
     c._gmAttackTimer = 0;
