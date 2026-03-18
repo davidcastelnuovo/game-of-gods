@@ -429,9 +429,31 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
 }
 .gpSelect:focus { border-color: #ffd700; }
 
-/* ── In-game HUD buttons ── */
+/* ── Menu Dropdown ── */
+#menuDropdown {
+  position: fixed; left: 14px; top: 12px; z-index: 20;
+}
+#menuToggleBtn {
+  background: linear-gradient(to bottom, #ffe066, #c9950a);
+  border: none; border-radius: 3px;
+  color: #1a0d00; font-size: 1.1rem;
+  font-family: 'Press Start 2P', monospace;
+  padding: 8px 14px; cursor: pointer; transition: all .12s;
+  box-shadow: 0 4px 0 #7a5a00, 0 5px 10px rgba(0,0,0,0.5);
+  display: none;
+}
+#menuToggleBtn:hover {
+  background: linear-gradient(to bottom,#ffed80,#e0aa18);
+  transform: translateY(-2px); box-shadow: 0 6px 0 #7a5a00;
+}
+#menuDropdownContent {
+  display: none; flex-direction: column; gap: 6px;
+  margin-top: 8px; min-width: 160px;
+}
+#menuDropdown.open #menuDropdownContent { display: flex; }
+
+/* ── In-game HUD buttons (inside dropdown) ── */
 #saveBtn, #inviteBtn, #exitGameBtn {
-  position: fixed; left: 14px; z-index: 10;
   background: linear-gradient(to bottom, #ffe066, #c9950a);
   border: none; border-radius: 3px;
   color: #1a0d00; font-size: clamp(0.38rem, 0.75vw, 0.52rem);
@@ -440,16 +462,12 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
   box-shadow: 0 4px 0 #7a5a00, 0 5px 10px rgba(0,0,0,0.5);
   display: none; text-transform: uppercase; letter-spacing: 1px;
 }
-#saveBtn    { top: 12px; }
-#inviteBtn  { top: 50px; }
-#exitGameBtn{ top: 88px; }
 #saveBtn:hover, #inviteBtn:hover, #exitGameBtn:hover {
   background: linear-gradient(to bottom,#ffed80,#e0aa18);
   transform: translateY(-2px); box-shadow: 0 6px 0 #7a5a00;
 }
 
 #onlinePlayers {
-  position:fixed; left:14px; top:134px; z-index:10;
   background:rgba(15,10,6,0.90);
   box-shadow:0 0 0 2px #1a1200,0 0 0 4px #b8860b,0 0 0 6px #1a1200;
   border-radius:3px; color:#c8b89a; font-size:.7rem; font-weight:700;
@@ -459,13 +477,56 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
 
 /* ── God Badge (in-game) ── */
 #godBadge {
-  position:fixed; left:14px; top:252px; z-index:10;
   background:rgba(15,10,6,0.90);
   box-shadow:0 0 0 2px #1a1200,0 0 0 4px #b8860b,0 0 0 6px #1a1200;
   border-radius:3px;
   font-family:'Press Start 2P',monospace;
   font-size:clamp(0.38rem,0.75vw,0.52rem);
   padding:8px 12px; display:none; line-height:1.7; color:#ffd700;
+}
+
+/* ── Stats HUD Bar ── */
+#statsBar {
+  position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+  z-index: 10; display: none;
+  background: rgba(10,8,4,0.88);
+  box-shadow: 0 0 0 2px #1a1200, 0 0 0 4px #b8860b, 0 0 0 6px #1a1200;
+  border-radius: 4px; padding: 6px 16px;
+  gap: 18px; align-items: center; direction: rtl;
+  font-family: 'Press Start 2P', monospace;
+}
+.statItem {
+  display: flex; align-items: center; gap: 5px;
+}
+.statIcon { font-size: 0.9rem; }
+.statLabel {
+  color: #c8b89a; font-size: 0.45rem; text-transform: uppercase;
+}
+.statVal {
+  color: #ffd700; font-size: 0.55rem; min-width: 28px; text-align: center;
+  font-weight: bold;
+}
+.statBarBg {
+  width: 70px; height: 10px; background: #2a1a0a;
+  border: 2px solid #5a3a10; border-radius: 2px; overflow: hidden;
+}
+.statBarFill {
+  height: 100%; background: linear-gradient(to right, #ff2222, #ff4444);
+  transition: width 0.3s;
+}
+
+/* ── Lib Panel Close Button ── */
+#libCloseBtn {
+  position: absolute; top: 6px; left: 8px; z-index: 20;
+  background: rgba(180,30,30,0.85); border: 2px solid #ff4444;
+  border-radius: 3px; color: #fff; font-size: 1rem;
+  width: 28px; height: 28px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: Arial, sans-serif; transition: all .15s;
+  line-height: 1;
+}
+#libCloseBtn:hover {
+  background: #ff2222; transform: scale(1.1);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -985,11 +1046,42 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
 
 <!-- ── COSTUME SELECT SCREEN ─────────────────────────────── -->
 <!-- ── IN-GAME HUD EXTRAS ──────────────────────────────── -->
-<button id="saveBtn">💾 שמור</button>
-<button id="inviteBtn">🔗 הזמן חבר</button>
-<button id="exitGameBtn">🏠 יציאה</button>
-<div id="onlinePlayers"></div>
-<div id="godBadge"></div>
+
+<!-- Dropdown menu for left-side buttons -->
+<div id="menuDropdown">
+  <button id="menuToggleBtn">☰</button>
+  <div id="menuDropdownContent">
+    <button id="saveBtn">💾 שמור</button>
+    <button id="inviteBtn">🔗 הזמן חבר</button>
+    <button id="exitGameBtn">🏠 יציאה</button>
+    <div id="onlinePlayers"></div>
+    <div id="godBadge"></div>
+  </div>
+</div>
+
+<!-- ── HUD Stats Bar ── -->
+<div id="statsBar">
+  <div class="statItem" id="statHP">
+    <span class="statIcon">❤️</span>
+    <div class="statBarBg"><div class="statBarFill" id="hpBar" style="width:100%"></div></div>
+    <span class="statVal" id="hpVal">100</span>
+  </div>
+  <div class="statItem" id="statBelievers">
+    <span class="statIcon">🙏</span>
+    <span class="statLabel">מאמינים</span>
+    <span class="statVal" id="believersVal">0</span>
+  </div>
+  <div class="statItem" id="statGold">
+    <span class="statIcon">🪙</span>
+    <span class="statLabel">זהב</span>
+    <span class="statVal" id="goldVal">0</span>
+  </div>
+  <div class="statItem" id="statDivinity">
+    <span class="statIcon">⚡</span>
+    <span class="statLabel">אלוהות</span>
+    <span class="statVal" id="divinityVal">0</span>
+  </div>
+</div>
 <div id="underwaterOverlay">
   <div class="uw-tint"></div>
   <div class="uw-rays"></div>
@@ -1022,6 +1114,7 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
 <button id="libBtn" title="ספריית מבנים ויצורים">📚</button>
 
 <div id="libPanel">
+  <button id="libCloseBtn" title="סגור ספריה">✕</button>
   <div id="libTabs">
     <button class="lTab sel" data-tab="structs">🏗️<br>מבנים</button>
     <button class="lTab" data-tab="interact">🚪<br>דלתות</button>
@@ -2493,6 +2586,111 @@ const SWING_DUR  = 0.30;  // שניות לנדנוד מלא
 
 // ── מערכת קרב ───────────────────────────────────────────
 
+// ── Arrow projectile system ──────────────────────────────
+const activeArrows = [];
+
+function shootArrow() {
+  const dir = new THREE.Vector3();
+  camera.getWorldDirection(dir);
+
+  const arrowGroup = new THREE.Group();
+  const mk = (geo, col) => new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: col }));
+  // Arrow shaft
+  const shaft = mk(new THREE.BoxGeometry(0.04, 0.04, 0.6), 0xD2691E);
+  arrowGroup.add(shaft);
+  // Arrow head
+  const head = mk(new THREE.BoxGeometry(0.08, 0.08, 0.14), 0x9E9E9E);
+  head.position.z = 0.35; arrowGroup.add(head);
+  // Fletching
+  const flt1 = mk(new THREE.BoxGeometry(0.12, 0.02, 0.08), 0xFF5252);
+  flt1.position.z = -0.28; arrowGroup.add(flt1);
+  const flt2 = mk(new THREE.BoxGeometry(0.02, 0.12, 0.08), 0xFF5252);
+  flt2.position.z = -0.28; arrowGroup.add(flt2);
+
+  // Position at player eye level
+  arrowGroup.position.set(player.pos.x, player.pos.y + 1.6, player.pos.z);
+  arrowGroup.lookAt(
+    player.pos.x + dir.x * 10,
+    player.pos.y + 1.6 + dir.y * 10,
+    player.pos.z + dir.z * 10
+  );
+  scene.add(arrowGroup);
+
+  const damage = playerCostume._gogWeaponDamage || 2;
+  activeArrows.push({
+    mesh: arrowGroup,
+    vel: dir.clone().multiplyScalar(40),
+    life: 3.0,
+    damage: damage,
+    hit: false
+  });
+
+  playTone(800, 0.08, 'sine');
+}
+
+function updateArrows(dt) {
+  for (let i = activeArrows.length - 1; i >= 0; i--) {
+    const a = activeArrows[i];
+    a.life -= dt;
+    if (a.life <= 0 || a.hit) {
+      scene.remove(a.mesh);
+      activeArrows.splice(i, 1);
+      continue;
+    }
+    // Move arrow
+    a.mesh.position.x += a.vel.x * dt;
+    a.mesh.position.y += a.vel.y * dt;
+    a.mesh.position.z += a.vel.z * dt;
+    // Gravity
+    a.vel.y -= 9.8 * dt;
+    // Update rotation to match velocity
+    const lookTarget = a.mesh.position.clone().add(a.vel.clone().normalize());
+    a.mesh.lookAt(lookTarget);
+
+    // Check collision with creatures
+    for (const c of creatures) {
+      const dx = c.group.position.x - a.mesh.position.x;
+      const dy = (c.group.position.y + 0.8) - a.mesh.position.y;
+      const dz = c.group.position.z - a.mesh.position.z;
+      if (dx*dx + dy*dy + dz*dz < 1.2) {
+        a.hit = true;
+        attackCreatureDirectDamage(c, a.damage);
+        break;
+      }
+    }
+    // Check collision with ground/blocks
+    const bx = Math.floor(a.mesh.position.x);
+    const by = Math.floor(a.mesh.position.y);
+    const bz = Math.floor(a.mesh.position.z);
+    if (by < 0 || (bx >= 0 && bz >= 0 && bx < worldSZ && bz < worldSZ && getBlock(bx, by, bz))) {
+      a.hit = true;
+    }
+  }
+}
+
+function attackCreatureDirectDamage(c, damage) {
+  c.hp -= damage;
+  c.group.traverse(o => {
+    if (o.isMesh && o.material && o.material.color) {
+      if (o._origHex == null) o._origHex = o.material.color.getHex();
+      o.material.color.setHex(0xFF3333);
+    }
+  });
+  setTimeout(() => {
+    c.group.traverse(o => {
+      if (o.isMesh && o.material && o.material.color && o._origHex != null) {
+        o.material.color.setHex(o._origHex);
+        o._origHex = null;
+      }
+    });
+  }, 130);
+  playTone(180, 0.12, 'sawtooth');
+  showInfo(`🏹 ${c.def.e} HP: ${Math.max(0, c.hp)} / ${c.def.hp}`, '#FF6B6B', 1200);
+  weaponSwingDir *= -1;
+  weaponSwingT = 0;
+  if (c.hp <= 0) killCreature(c);
+}
+
 function attackCreature(c) {
   const wDef = WEAPON_DEFS.find(d => d.id === playerCostume.weapon);
   if (!wDef) return;
@@ -2562,7 +2760,15 @@ function killCreature(c) {
 
   scene.remove(c.group);
   playTone(90, 0.35, 'sawtooth');
-  showInfo(`${c.def.e} ${c.def.n} הובס! 💀`, '#FF4444', 2500);
+
+  // Reward: gold coins + believers + divinity
+  const goldReward = 5 + Math.floor(Math.random() * 10);
+  const believersReward = 1 + Math.floor(Math.random() * 3);
+  const divinityReward = 2 + Math.floor(Math.random() * 5);
+  addGold(goldReward);
+  addBelievers(believersReward);
+  addDivinity(divinityReward);
+  showInfo(`${c.def.e} ${c.def.n} הובס! 💀 +${goldReward}🪙 +${believersReward}🙏 +${divinityReward}⚡`, '#FF4444', 2500);
 }
 
 function updateDeathParticles(dt) {
@@ -2584,6 +2790,13 @@ document.addEventListener('mousedown', e => {
 
   // ── קרב: קליק שמאלי + נשק ──
   if (e.button === 0 && playerCostume.weapon) {
+    // Bow weapons shoot arrows (ranged attack)
+    if (playerCostume.weapon === 'bow') {
+      shootArrow();
+      weaponSwingDir *= -1;
+      weaponSwingT = 0;
+      return;
+    }
     // קודם כל — יצור בצלב הכוונת
     if (lastHitCreature) { attackCreature(lastHitCreature); return; }
     // אחרת — מכה קרבית: כל יצור בטווח 3 בלוקים, תוקפים את הקרוב ביותר
@@ -4071,175 +4284,17 @@ function updateCostumeHUD() {
   }
   updateFPWeapon();    // נשק על ידי המצלמה (מבט ראשון)
   updateBodyWeapon();  // נשק על גוף הדמות (מבט שלישי)
-  updatePlayerArmor(); // שריון על גוף הדמות
-  updateFPArmor();     // שריון על ידיים (מבט ראשון)
-}
-
-// ── Armor overlay on player body ─────────────────────────
-// Adds visual armor pieces to the playerBody group based on playerCostume.armor.
-// Also adds god-specific accessories based on selectedGod.
-function updatePlayerArmor() {
-  if (!playerBody) return;
-
-  // Remove old armor overlay
-  const oldArmor = playerBody.getObjectByName('armorOverlay');
-  if (oldArmor) playerBody.remove(oldArmor);
-
-  const armorId = playerCostume.armor;
-  if (!armorId) return;
-
-  const ag = new THREE.Group(); ag.name = 'armorOverlay';
-  const mk = (geo, col) => new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: col }));
-
-  // Armor color schemes
-  const ARMOR_COLORS = {
-    stone:   { plate:0x808080, trim:0x606060, accent:0x9E9E9E },
-    gold:    { plate:0xDAA520, trim:0xB8860B, accent:0xFFD700 },
-    diamond: { plate:0x4FC3F7, trim:0x0288D1, accent:0xB3E5FC },
-    royal:   { plate:0x6A1B9A, trim:0x4A148C, accent:0xFFD700 },
-    dark:    { plate:0x212121, trim:0x111111, accent:0xB71C1C },
-    angel:   { plate:0xF5F5F5, trim:0xE0E0E0, accent:0xFFD700 },
-  };
-  const ac = ARMOR_COLORS[armorId] || ARMOR_COLORS.stone;
-
-  // ── Chestplate (over torso) ──
-  const chest = mk(new THREE.BoxGeometry(0.48, 0.72, 0.27), ac.plate);
-  chest.position.y = 0.92;
-  ag.add(chest);
-
-  // Trim lines on chestplate
-  const trimV = mk(new THREE.BoxGeometry(0.05, 0.72, 0.28), ac.trim);
-  trimV.position.set(0, 0.92, 0); ag.add(trimV);
-  const trimH = mk(new THREE.BoxGeometry(0.48, 0.04, 0.28), ac.trim);
-  trimH.position.set(0, 0.65, 0); ag.add(trimH);
-
-  // Shoulder pads
-  const shoulderL = mk(new THREE.BoxGeometry(0.24, 0.12, 0.24), ac.plate);
-  shoulderL.position.set(0.34, 1.22, 0); ag.add(shoulderL);
-  const shoulderR = shoulderL.clone(); shoulderR.position.x = -0.34; ag.add(shoulderR);
-
-  // Accent gem/emblem on chest center
-  const gem = mk(new THREE.BoxGeometry(0.08, 0.08, 0.04), ac.accent);
-  gem.position.set(0, 1.05, 0.14); ag.add(gem);
-
-  // Belt
-  const belt = mk(new THREE.BoxGeometry(0.50, 0.06, 0.28), ac.trim);
-  belt.position.set(0, 0.58, 0); ag.add(belt);
-  const buckle = mk(new THREE.BoxGeometry(0.08, 0.08, 0.04), ac.accent);
-  buckle.position.set(0, 0.58, 0.14); ag.add(buckle);
-
-  // Leg guards (greaves)
-  const greaveL = mk(new THREE.BoxGeometry(0.21, 0.35, 0.22), ac.plate);
-  greaveL.position.set(0.115, 0.18, 0); ag.add(greaveL);
-  const greaveR = greaveL.clone(); greaveR.position.x = -0.115; ag.add(greaveR);
-
-  // Arm guards (vambraces)
-  const vamL = mk(new THREE.BoxGeometry(0.21, 0.25, 0.21), ac.plate);
-  vamL.position.set(0.315, 0.75, 0); ag.add(vamL);
-  const vamR = vamL.clone(); vamR.position.x = -0.315; ag.add(vamR);
-
-  // ── God-specific accessories ──
+  // Rebuild body to reflect armor/costume visually
   if (selectedGod) {
-    const godId = selectedGod.id;
-    if (godId === 'zeus') {
-      // Lightning crown
-      const crown = mk(new THREE.BoxGeometry(0.52, 0.06, 0.52), 0xFFD700);
-      crown.position.set(0, 1.82, 0); ag.add(crown);
-      for (let i = 0; i < 5; i++) {
-        const spike = mk(new THREE.BoxGeometry(0.04, 0.12, 0.04), 0xFFD700);
-        const a = (i / 5) * Math.PI * 2;
-        spike.position.set(Math.cos(a)*0.2, 1.92, Math.sin(a)*0.2); ag.add(spike);
-      }
-    } else if (godId === 'poseidon') {
-      // Sea crown with shells
-      const crown = mk(new THREE.BoxGeometry(0.52, 0.08, 0.52), 0x0288D1);
-      crown.position.set(0, 1.82, 0); ag.add(crown);
-      const shell1 = mk(new THREE.BoxGeometry(0.1, 0.14, 0.06), 0x80DEEA);
-      shell1.position.set(0, 1.92, 0.2); ag.add(shell1);
-      const shell2 = shell1.clone(); shell2.position.set(0.18, 1.90, 0); ag.add(shell2);
-      const shell3 = shell1.clone(); shell3.position.set(-0.18, 1.90, 0); ag.add(shell3);
-    } else if (godId === 'hades') {
-      // Dark horned helmet
-      const helm = mk(new THREE.BoxGeometry(0.54, 0.2, 0.54), 0x1A1A1A);
-      helm.position.set(0, 1.72, 0); ag.add(helm);
-      const hornL = mk(new THREE.BoxGeometry(0.06, 0.3, 0.06), 0x333333);
-      hornL.position.set(0.2, 1.95, 0); hornL.rotation.z = -0.3; ag.add(hornL);
-      const hornR = hornL.clone(); hornR.position.x = -0.2; hornR.rotation.z = 0.3; ag.add(hornR);
-    } else if (godId === 'ares') {
-      // War helmet with red crest
-      const helm = mk(new THREE.BoxGeometry(0.54, 0.18, 0.54), 0x8B0000);
-      helm.position.set(0, 1.72, 0); ag.add(helm);
-      const crest = mk(new THREE.BoxGeometry(0.06, 0.25, 0.4), 0xFF0000);
-      crest.position.set(0, 1.92, 0); ag.add(crest);
-    } else if (godId === 'athena') {
-      // Wisdom helm with owl emblem
-      const helm = mk(new THREE.BoxGeometry(0.52, 0.15, 0.52), 0x6A1B9A);
-      helm.position.set(0, 1.73, 0); ag.add(helm);
-      const owlEye1 = mk(new THREE.BoxGeometry(0.06, 0.06, 0.04), 0xFFD700);
-      owlEye1.position.set(0.08, 1.73, 0.26); ag.add(owlEye1);
-      const owlEye2 = owlEye1.clone(); owlEye2.position.x = -0.08; ag.add(owlEye2);
-    } else if (godId === 'artemis') {
-      // Hunter's hood with leaf
-      const hood = mk(new THREE.BoxGeometry(0.54, 0.12, 0.54), 0x2E7D32);
-      hood.position.set(0, 1.75, 0); ag.add(hood);
-      const leaf = mk(new THREE.BoxGeometry(0.04, 0.15, 0.08), 0x4CAF50);
-      leaf.position.set(0.2, 1.85, 0); leaf.rotation.z = -0.4; ag.add(leaf);
-    } else if (godId === 'hermes') {
-      // Winged helmet
-      const helm = mk(new THREE.BoxGeometry(0.52, 0.1, 0.52), 0xE0E0E0);
-      helm.position.set(0, 1.75, 0); ag.add(helm);
-      const wL = mk(new THREE.BoxGeometry(0.2, 0.12, 0.06), 0xFFFFFF);
-      wL.position.set(0.35, 1.8, 0); wL.rotation.z = 0.4; ag.add(wL);
-      const wR = wL.clone(); wR.position.x = -0.35; wR.rotation.z = -0.4; ag.add(wR);
-    } else if (godId === 'hephaestus') {
-      // Smith's helmet with visor
-      const helm = mk(new THREE.BoxGeometry(0.54, 0.16, 0.54), 0x4E342E);
-      helm.position.set(0, 1.73, 0); ag.add(helm);
-      const visor = mk(new THREE.BoxGeometry(0.48, 0.08, 0.06), 0x3E2723);
-      visor.position.set(0, 1.68, 0.26); ag.add(visor);
-    }
+    const wasVisible = playerBody ? playerBody.visible : false;
+    createGodBody(selectedGod);
+    createFPHands(selectedGod);
+    if (playerBody) playerBody.visible = wasVisible;
+    updateBodyWeapon();
   }
-
-  playerBody.add(ag);
 }
 
-// ── FP Armor overlay (first-person arm guard) ────────────
-function updateFPArmor() {
-  if (!fpHands) return;
-  const rArm = fpHands.getObjectByName('fpRightArm');
-  if (!rArm) return;
-
-  // Remove old armor overlay
-  const old = rArm.getObjectByName('fpArmor');
-  if (old) rArm.remove(old);
-
-  const armorId = playerCostume.armor;
-  if (!armorId) return;
-
-  const ARMOR_COLORS = {
-    stone:0x808080, gold:0xDAA520, diamond:0x4FC3F7,
-    royal:0x6A1B9A, dark:0x212121, angel:0xF5F5F5
-  };
-  const col = ARMOR_COLORS[armorId] || 0x808080;
-
-  const ag = new THREE.Group(); ag.name = 'fpArmor';
-  const mkMat = c => new THREE.MeshLambertMaterial({ color:c, depthTest:false, depthWrite:false });
-
-  // Vambrace (arm guard) on the forearm
-  const guard = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.14, 0.13), mkMat(col));
-  guard.position.y = -0.19;
-  guard.renderOrder = 999;
-  ag.add(guard);
-
-  // Gauntlet on fist
-  const gaunt = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.08, 0.13), mkMat(col));
-  gaunt.position.y = -0.30;
-  gaunt.renderOrder = 999;
-  ag.add(gaunt);
-
-  ag.traverse(o => { if (o.isMesh) { o.renderOrder = 999; o.material.depthTest = false; o.material.depthWrite = false; } });
-  rArm.add(ag);
-}
+// Old overlay functions removed — armor is now built directly into createGodBody()
 
 // Old creature grid removed — only GOG mythological creatures remain
 
@@ -4253,6 +4308,52 @@ document.getElementById('libBtn').addEventListener('click', ()=>{
     buildLibGogCreatures();
   }
 });
+
+// Close button inside lib panel
+document.getElementById('libCloseBtn').addEventListener('click', ()=>{
+  document.getElementById('libPanel').classList.remove('open');
+});
+
+// Menu dropdown toggle
+document.getElementById('menuToggleBtn').addEventListener('click', ()=>{
+  document.getElementById('menuDropdown').classList.toggle('open');
+});
+
+// Game stats system
+let playerHP = 100, playerMaxHP = 100;
+let playerBelievers = 0;
+let playerGold = 0;
+let playerDivinity = 0;
+
+function updateStatsHUD() {
+  const hpPct = Math.max(0, Math.min(100, (playerHP / playerMaxHP) * 100));
+  const hpBar = document.getElementById('hpBar');
+  const hpVal = document.getElementById('hpVal');
+  if (hpBar) hpBar.style.width = hpPct + '%';
+  if (hpVal) hpVal.textContent = Math.round(playerHP);
+  // Color HP bar based on health
+  if (hpBar) {
+    if (hpPct > 60) hpBar.style.background = 'linear-gradient(to right, #22cc22, #44ff44)';
+    else if (hpPct > 30) hpBar.style.background = 'linear-gradient(to right, #ccaa00, #ffdd22)';
+    else hpBar.style.background = 'linear-gradient(to right, #cc2222, #ff4444)';
+  }
+  const bv = document.getElementById('believersVal');
+  if (bv) bv.textContent = playerBelievers;
+  const gv = document.getElementById('goldVal');
+  if (gv) gv.textContent = playerGold;
+  const dv = document.getElementById('divinityVal');
+  if (dv) dv.textContent = playerDivinity;
+}
+
+function addGold(n) { playerGold += n; updateStatsHUD(); }
+function addBelievers(n) { playerBelievers += n; updateStatsHUD(); }
+function addDivinity(n) { playerDivinity += n; updateStatsHUD(); }
+function damagePlayer(n) {
+  playerHP = Math.max(0, playerHP - n);
+  updateStatsHUD();
+  if (playerHP <= 0) showInfo('💀 נפלת! מתחיל מחדש...', '#ff2222', 3000);
+}
+function healPlayer(n) { playerHP = Math.min(playerMaxHP, playerHP + n); updateStatsHUD(); }
 
 // Tabs — also lazy-build on tab switch
 document.querySelectorAll('.lTab').forEach(tab => {
@@ -4674,6 +4775,7 @@ function animate(t) {
     updateGhostEdges(player.pos.x, player.pos.z);
     updateCreatures(dt);
     updateDeathParticles(dt);
+    updateArrows(dt);
     updateWaterFlow();
     updateRemotePlayers();
     // Dionysus rainbow effect
@@ -4815,96 +4917,140 @@ function createGodBody(god) {
   const hairDark   = _hexDarken(style.hair, 0.72);
   const boot       = '#2C1A0E';
 
+  // ── Armor colour scheme (baked into body materials) ──
+  const _ARMOR_COLORS = {
+    stone:   { plate:'#808080', trim:'#606060', accent:'#9E9E9E' },
+    gold:    { plate:'#DAA520', trim:'#B8860B', accent:'#FFD700' },
+    diamond: { plate:'#4FC3F7', trim:'#0288D1', accent:'#B3E5FC' },
+    royal:   { plate:'#6A1B9A', trim:'#4A148C', accent:'#FFD700' },
+    dark:    { plate:'#212121', trim:'#111111', accent:'#B71C1C' },
+    angel:   { plate:'#F5F5F5', trim:'#E0E0E0', accent:'#FFD700' },
+  };
+  const armorId = playerCostume.armor;
+  const ac = armorId ? (_ARMOR_COLORS[armorId] || _ARMOR_COLORS.stone) : null;
+  // If we have armor, use it for torso/arms/legs instead of cloth/pants
+  const torsoColor    = ac ? ac.plate : cloth;
+  const torsoDark     = ac ? ac.trim  : clothDark;
+  const legColor      = ac ? _hexDarken(ac.plate, 0.85) : style.pants;
+  const legColorDark  = ac ? _hexDarken(ac.trim, 0.85)  : pantsDark;
+  const armColor      = ac ? ac.plate : cloth;
+  const armColorDark  = ac ? ac.trim  : clothDark;
+  const accentColor   = ac ? ac.accent : _hexDarken(cloth, 0.5);
+
   const group = new THREE.Group();
+  const mk = (geo, col) => new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: col }));
 
   // ── HEAD ──────────────────────────────────────────────────
-  // Front face (+z local = player's face direction after rotation.y=π+yaw)
-  // Material order for BoxGeometry: [+x, -x, +y, -y, +z, -z]
   const faceMat = _pixMat8(ctx => {
-    // Skin base
     ctx.fillStyle = style.skin; ctx.fillRect(0, 0, 8, 8);
-    // Hair fringe across top
     ctx.fillStyle = style.hair;
     ctx.fillRect(0, 0, 8, 1);
     ctx.fillRect(0, 1, 2, 1); ctx.fillRect(6, 1, 2, 1);
-    // Eyes (dark iris + tiny white highlight)
     ctx.fillStyle = '#1A0A00'; ctx.fillRect(1, 3, 2, 2); ctx.fillRect(5, 3, 2, 2);
     ctx.fillStyle = '#FFFFFF'; ctx.fillRect(2, 3, 1, 1); ctx.fillRect(6, 3, 1, 1);
-    // Nose
     ctx.fillStyle = skinDark; ctx.fillRect(3, 5, 2, 1);
-    // Mouth
     ctx.fillStyle = '#A04030'; ctx.fillRect(2, 6, 4, 1);
     ctx.fillStyle = '#1A0A00'; ctx.fillRect(2, 6, 1, 1); ctx.fillRect(5, 6, 1, 1);
   });
-
   const hairSideMat = _pixMat8(ctx => {
     ctx.fillStyle = style.hair; ctx.fillRect(0, 0, 8, 8);
     ctx.fillStyle = hairDark;
     for (let x = 0; x < 8; x += 2) ctx.fillRect(x, 0, 1, 3);
-    ctx.fillStyle = style.skin; ctx.fillRect(0, 3, 8, 5); // ear / neck side visible
-    ctx.fillStyle = hairDark;   ctx.fillRect(0, 3, 8, 1); // shadow line
+    ctx.fillStyle = style.skin; ctx.fillRect(0, 3, 8, 5);
+    ctx.fillStyle = hairDark;   ctx.fillRect(0, 3, 8, 1);
   });
-
   const hairTopMat = _pixMat8(ctx => {
     ctx.fillStyle = style.hair; ctx.fillRect(0, 0, 8, 8);
     ctx.fillStyle = hairDark;
     for (let y = 0; y < 8; y += 2) ctx.fillRect(0, y, 8, 1);
   });
-
   const hairBackMat = _pixMat8(ctx => {
     ctx.fillStyle = style.hair; ctx.fillRect(0, 0, 8, 8);
     ctx.fillStyle = hairDark;
     for (let x = 0; x < 8; x++) ctx.fillRect(x, x % 3, 1, 1);
   });
-
   const head = new THREE.Mesh(
     new THREE.BoxGeometry(0.5, 0.5, 0.5),
     [hairSideMat, hairSideMat, hairTopMat,
-     new THREE.MeshLambertMaterial({ color: style.skin }), // neck-bottom
+     new THREE.MeshLambertMaterial({ color: style.skin }),
      faceMat, hairBackMat]
   );
   head.position.y = 1.55;
   group.add(head);
-  group.userData.headMesh = head; // reference so we can hide it in first-person
+  group.userData.headMesh = head;
 
-  // ── TORSO ─────────────────────────────────────────────────
+  // ── TORSO (uses armor color if equipped) ────────────────
   const shirtFront = _pixMat8(ctx => {
-    ctx.fillStyle = cloth; ctx.fillRect(0, 0, 8, 8);
-    // Collar
-    ctx.fillStyle = clothDark; ctx.fillRect(2, 0, 4, 1);
-    // Button row
-    ctx.fillStyle = _hexDarken(cloth, 0.5);
-    for (let y = 2; y < 7; y += 2) ctx.fillRect(3, y, 2, 1);
+    ctx.fillStyle = torsoColor; ctx.fillRect(0, 0, 8, 8);
+    ctx.fillStyle = torsoDark; ctx.fillRect(2, 0, 4, 1);
+    // Armor pattern: horizontal plates
+    if (ac) {
+      ctx.fillStyle = torsoDark;
+      for (let y = 1; y < 8; y += 2) ctx.fillRect(0, y, 8, 1);
+      // Center emblem
+      ctx.fillStyle = accentColor; ctx.fillRect(3, 2, 2, 2);
+    } else {
+      ctx.fillStyle = accentColor;
+      for (let y = 2; y < 7; y += 2) ctx.fillRect(3, y, 2, 1);
+    }
   });
   const shirtSide = _pixMat8(ctx => {
-    ctx.fillStyle = clothDark; ctx.fillRect(0, 0, 8, 8);
-    ctx.fillStyle = _hexDarken(cloth, 0.55);
+    ctx.fillStyle = torsoDark; ctx.fillRect(0, 0, 8, 8);
+    ctx.fillStyle = _hexDarken(torsoColor, 0.55);
     for (let y = 0; y < 8; y += 3) ctx.fillRect(0, y, 8, 1);
   });
   const torso = new THREE.Mesh(
     new THREE.BoxGeometry(0.44, 0.70, 0.24),
     [shirtSide, shirtSide,
-     new THREE.MeshLambertMaterial({ color: clothDark }),
-     new THREE.MeshLambertMaterial({ color: clothDark }),
+     new THREE.MeshLambertMaterial({ color: torsoDark }),
+     new THREE.MeshLambertMaterial({ color: torsoDark }),
      shirtFront, shirtSide]
   );
   torso.position.y = 0.92;
   group.add(torso);
 
-  // ── ARMS ──────────────────────────────────────────────────
+  // ── Shoulder pads (only with armor) ─────────────────────
+  if (ac) {
+    const shoulderL = mk(new THREE.BoxGeometry(0.28, 0.14, 0.28), ac.plate);
+    shoulderL.position.set(0.34, 1.25, 0); group.add(shoulderL);
+    const shoulderR = mk(new THREE.BoxGeometry(0.28, 0.14, 0.28), ac.plate);
+    shoulderR.position.set(-0.34, 1.25, 0); group.add(shoulderR);
+    // Shoulder spikes/accents
+    const spikeL = mk(new THREE.BoxGeometry(0.10, 0.10, 0.10), ac.accent);
+    spikeL.position.set(0.34, 1.35, 0); group.add(spikeL);
+    const spikeR = mk(new THREE.BoxGeometry(0.10, 0.10, 0.10), ac.accent);
+    spikeR.position.set(-0.34, 1.35, 0); group.add(spikeR);
+    // Belt
+    const belt = mk(new THREE.BoxGeometry(0.50, 0.08, 0.30), ac.trim);
+    belt.position.set(0, 0.58, 0); group.add(belt);
+    const buckle = mk(new THREE.BoxGeometry(0.10, 0.10, 0.06), ac.accent);
+    buckle.position.set(0, 0.58, 0.15); group.add(buckle);
+  }
+
+  // ── ARMS (armor colored if equipped) ────────────────────
   const sleeveMat = _pixMat8(ctx => {
-    ctx.fillStyle = cloth; ctx.fillRect(0, 0, 8, 3);   // sleeve
-    ctx.fillStyle = style.skin; ctx.fillRect(0, 3, 8, 5); // forearm skin
-    ctx.fillStyle = skinDark;
-    for (let x = 0; x < 8; x += 2) ctx.fillRect(x, 4, 1, 1); // arm detail
+    ctx.fillStyle = armColor; ctx.fillRect(0, 0, 8, 4);
+    if (ac) {
+      ctx.fillStyle = armColorDark;
+      for (let y = 0; y < 4; y += 2) ctx.fillRect(0, y, 8, 1);
+      ctx.fillStyle = armColor; ctx.fillRect(0, 4, 8, 4);
+    } else {
+      ctx.fillStyle = style.skin; ctx.fillRect(0, 3, 8, 5);
+      ctx.fillStyle = skinDark;
+      for (let x = 0; x < 8; x += 2) ctx.fillRect(x, 4, 1, 1);
+    }
   });
   const armSideMat = _pixMat8(ctx => {
-    ctx.fillStyle = clothDark; ctx.fillRect(0, 0, 8, 3);
-    ctx.fillStyle = skinDark;  ctx.fillRect(0, 3, 8, 5);
+    ctx.fillStyle = armColorDark; ctx.fillRect(0, 0, 8, 4);
+    if (ac) {
+      ctx.fillStyle = armColor; ctx.fillRect(0, 4, 8, 4);
+    } else {
+      ctx.fillStyle = skinDark; ctx.fillRect(0, 3, 8, 5);
+    }
   });
   const armMats = [armSideMat, armSideMat,
-    new THREE.MeshLambertMaterial({ color: cloth }),
-    new THREE.MeshLambertMaterial({ color: style.skin }),
+    new THREE.MeshLambertMaterial({ color: armColor }),
+    new THREE.MeshLambertMaterial({ color: ac ? armColor : style.skin }),
     sleeveMat, armSideMat];
 
   const rArm = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.60, 0.19), armMats);
@@ -4915,20 +5061,30 @@ function createGodBody(god) {
   lArm.position.set(-0.315, 0.92, 0);
   group.add(lArm);
 
-  // ── LEGS ──────────────────────────────────────────────────
+  // ── LEGS (armor colored if equipped) ────────────────────
   const legFront = _pixMat8(ctx => {
-    ctx.fillStyle = style.pants; ctx.fillRect(0, 0, 8, 6);
-    ctx.fillStyle = pantsDark;
+    ctx.fillStyle = legColor; ctx.fillRect(0, 0, 8, 6);
+    ctx.fillStyle = legColorDark;
     for (let y = 0; y < 6; y += 3) ctx.fillRect(0, y, 8, 1);
-    ctx.fillStyle = boot; ctx.fillRect(0, 6, 8, 2); // boot
+    if (ac) {
+      // Armored boots
+      ctx.fillStyle = _hexDarken(ac.trim, 0.7); ctx.fillRect(0, 6, 8, 2);
+    } else {
+      ctx.fillStyle = boot; ctx.fillRect(0, 6, 8, 2);
+    }
   });
   const legBack = _pixMat8(ctx => {
-    ctx.fillStyle = pantsDark; ctx.fillRect(0, 0, 8, 6);
-    ctx.fillStyle = _hexDarken(boot, 0.7); ctx.fillRect(0, 6, 8, 2);
+    ctx.fillStyle = legColorDark; ctx.fillRect(0, 0, 8, 6);
+    if (ac) {
+      ctx.fillStyle = _hexDarken(ac.trim, 0.5); ctx.fillRect(0, 6, 8, 2);
+    } else {
+      ctx.fillStyle = _hexDarken(boot, 0.7); ctx.fillRect(0, 6, 8, 2);
+    }
   });
+  const bootColor = ac ? _hexDarken(ac.trim, 0.7) : boot;
   const legMats = [legBack, legBack,
-    new THREE.MeshLambertMaterial({ color: style.pants }),
-    new THREE.MeshLambertMaterial({ color: boot }),
+    new THREE.MeshLambertMaterial({ color: legColor }),
+    new THREE.MeshLambertMaterial({ color: bootColor }),
     legFront, legBack];
 
   const rLeg = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.66, 0.20), legMats);
@@ -4938,6 +5094,159 @@ function createGodBody(god) {
   const lLeg = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.66, 0.20), legMats);
   lLeg.position.set(-0.115, 0.33, 0);
   group.add(lLeg);
+
+  // ── GOD-SPECIFIC HELMET / ACCESSORIES ───────────────────
+  const godId = god.id;
+  if (godId === 'zeus') {
+    // Golden crown with lightning spikes
+    const crown = mk(new THREE.BoxGeometry(0.56, 0.08, 0.56), 0xFFD700);
+    crown.position.set(0, 1.84, 0); group.add(crown);
+    for (let i = 0; i < 5; i++) {
+      const spike = mk(new THREE.BoxGeometry(0.06, 0.18, 0.06), 0xFFD700);
+      const a = (i / 5) * Math.PI * 2;
+      spike.position.set(Math.cos(a)*0.22, 2.0, Math.sin(a)*0.22); group.add(spike);
+    }
+    const gemTop = mk(new THREE.BoxGeometry(0.08, 0.08, 0.08), 0xFFFF00);
+    gemTop.position.set(0, 2.1, 0); group.add(gemTop);
+  } else if (godId === 'poseidon') {
+    // Sea crown with coral spikes
+    const crown = mk(new THREE.BoxGeometry(0.56, 0.10, 0.56), 0x0277BD);
+    crown.position.set(0, 1.84, 0); group.add(crown);
+    const s1 = mk(new THREE.BoxGeometry(0.08, 0.20, 0.08), 0x00BCD4);
+    s1.position.set(0, 1.98, 0.22); group.add(s1);
+    const s2 = mk(new THREE.BoxGeometry(0.08, 0.16, 0.08), 0x00ACC1);
+    s2.position.set(0.20, 1.96, 0.10); group.add(s2);
+    const s3 = mk(new THREE.BoxGeometry(0.08, 0.16, 0.08), 0x00ACC1);
+    s3.position.set(-0.20, 1.96, 0.10); group.add(s3);
+    const pearl = mk(new THREE.BoxGeometry(0.06, 0.06, 0.06), 0xE0F7FA);
+    pearl.position.set(0, 2.1, 0.22); group.add(pearl);
+  } else if (godId === 'hades') {
+    // Dark horned helmet covering the head
+    const helm = mk(new THREE.BoxGeometry(0.56, 0.30, 0.56), 0x1A1A1A);
+    helm.position.set(0, 1.72, 0); group.add(helm);
+    const visor = mk(new THREE.BoxGeometry(0.52, 0.06, 0.06), 0x0D0D0D);
+    visor.position.set(0, 1.60, 0.28); group.add(visor);
+    // Large horns
+    const hornL = mk(new THREE.BoxGeometry(0.08, 0.35, 0.08), 0x333333);
+    hornL.position.set(0.24, 2.05, 0); hornL.rotation.z = -0.35; group.add(hornL);
+    const hornR = mk(new THREE.BoxGeometry(0.08, 0.35, 0.08), 0x333333);
+    hornR.position.set(-0.24, 2.05, 0); hornR.rotation.z = 0.35; group.add(hornR);
+    // Horn tips
+    const tipL = mk(new THREE.BoxGeometry(0.05, 0.14, 0.05), 0x555555);
+    tipL.position.set(0.34, 2.30, 0); tipL.rotation.z = -0.5; group.add(tipL);
+    const tipR = mk(new THREE.BoxGeometry(0.05, 0.14, 0.05), 0x555555);
+    tipR.position.set(-0.34, 2.30, 0); tipR.rotation.z = 0.5; group.add(tipR);
+    // Red eye slits
+    const eyeL = mk(new THREE.BoxGeometry(0.06, 0.03, 0.04), 0xFF0000);
+    eyeL.position.set(0.10, 1.62, 0.29); group.add(eyeL);
+    const eyeR = mk(new THREE.BoxGeometry(0.06, 0.03, 0.04), 0xFF0000);
+    eyeR.position.set(-0.10, 1.62, 0.29); group.add(eyeR);
+  } else if (godId === 'ares') {
+    // Spartan war helmet with large crest
+    const helm = mk(new THREE.BoxGeometry(0.56, 0.26, 0.56), 0x8B0000);
+    helm.position.set(0, 1.74, 0); group.add(helm);
+    const crest = mk(new THREE.BoxGeometry(0.08, 0.35, 0.50), 0xFF0000);
+    crest.position.set(0, 2.04, 0); group.add(crest);
+    // Face guard
+    const guardL = mk(new THREE.BoxGeometry(0.06, 0.20, 0.06), 0x6B0000);
+    guardL.position.set(0.22, 1.55, 0.22); group.add(guardL);
+    const guardR = mk(new THREE.BoxGeometry(0.06, 0.20, 0.06), 0x6B0000);
+    guardR.position.set(-0.22, 1.55, 0.22); group.add(guardR);
+  } else if (godId === 'athena') {
+    // Wisdom helm with owl crest
+    const helm = mk(new THREE.BoxGeometry(0.56, 0.22, 0.56), 0x4A148C);
+    helm.position.set(0, 1.76, 0); group.add(helm);
+    const crest = mk(new THREE.BoxGeometry(0.06, 0.20, 0.30), 0x7B1FA2);
+    crest.position.set(0, 1.97, 0); group.add(crest);
+    // Owl eye emblems on front
+    const owlL = mk(new THREE.BoxGeometry(0.08, 0.08, 0.06), 0xFFD700);
+    owlL.position.set(0.12, 1.76, 0.28); group.add(owlL);
+    const owlR = mk(new THREE.BoxGeometry(0.08, 0.08, 0.06), 0xFFD700);
+    owlR.position.set(-0.12, 1.76, 0.28); group.add(owlR);
+    const owlBeak = mk(new THREE.BoxGeometry(0.04, 0.06, 0.06), 0xFFA000);
+    owlBeak.position.set(0, 1.72, 0.30); group.add(owlBeak);
+  } else if (godId === 'artemis') {
+    // Hunter's hood with ears/leaf
+    const hood = mk(new THREE.BoxGeometry(0.56, 0.16, 0.56), 0x2E7D32);
+    hood.position.set(0, 1.78, 0); group.add(hood);
+    const backHood = mk(new THREE.BoxGeometry(0.40, 0.30, 0.14), 0x1B5E20);
+    backHood.position.set(0, 1.60, -0.30); group.add(backHood);
+    const leaf1 = mk(new THREE.BoxGeometry(0.05, 0.18, 0.10), 0x4CAF50);
+    leaf1.position.set(0.22, 1.94, 0); leaf1.rotation.z = -0.4; group.add(leaf1);
+    const leaf2 = mk(new THREE.BoxGeometry(0.05, 0.14, 0.08), 0x66BB6A);
+    leaf2.position.set(-0.18, 1.90, 0.10); leaf2.rotation.z = 0.3; group.add(leaf2);
+  } else if (godId === 'hermes') {
+    // Winged helmet
+    const helm = mk(new THREE.BoxGeometry(0.54, 0.14, 0.54), 0xE0E0E0);
+    helm.position.set(0, 1.78, 0); group.add(helm);
+    // Wings (larger, more visible)
+    const wL1 = mk(new THREE.BoxGeometry(0.24, 0.16, 0.08), 0xFFFFFF);
+    wL1.position.set(0.38, 1.84, 0); wL1.rotation.z = 0.4; group.add(wL1);
+    const wL2 = mk(new THREE.BoxGeometry(0.16, 0.10, 0.06), 0xEEEEEE);
+    wL2.position.set(0.52, 1.94, 0); wL2.rotation.z = 0.6; group.add(wL2);
+    const wR1 = mk(new THREE.BoxGeometry(0.24, 0.16, 0.08), 0xFFFFFF);
+    wR1.position.set(-0.38, 1.84, 0); wR1.rotation.z = -0.4; group.add(wR1);
+    const wR2 = mk(new THREE.BoxGeometry(0.16, 0.10, 0.06), 0xEEEEEE);
+    wR2.position.set(-0.52, 1.94, 0); wR2.rotation.z = -0.6; group.add(wR2);
+  } else if (godId === 'hephaestus') {
+    // Smith's helmet with visor and fire glow
+    const helm = mk(new THREE.BoxGeometry(0.56, 0.22, 0.56), 0x4E342E);
+    helm.position.set(0, 1.76, 0); group.add(helm);
+    const visor = mk(new THREE.BoxGeometry(0.50, 0.10, 0.08), 0x3E2723);
+    visor.position.set(0, 1.62, 0.28); group.add(visor);
+    const glow = mk(new THREE.BoxGeometry(0.40, 0.04, 0.04), 0xFF6F00);
+    glow.position.set(0, 1.64, 0.30); group.add(glow);
+  } else if (godId === 'aphrodite') {
+    // Flower crown
+    const crown = mk(new THREE.BoxGeometry(0.54, 0.06, 0.54), 0xFFD700);
+    crown.position.set(0, 1.82, 0); group.add(crown);
+    const colors = [0xFF69B4, 0xFF1493, 0xFFB6C1, 0xFF69B4, 0xFF1493];
+    for (let i = 0; i < 5; i++) {
+      const flower = mk(new THREE.BoxGeometry(0.08, 0.10, 0.08), colors[i]);
+      const a = (i / 5) * Math.PI * 2;
+      flower.position.set(Math.cos(a)*0.24, 1.90, Math.sin(a)*0.24); group.add(flower);
+    }
+  } else if (godId === 'dionysus') {
+    // Grape vine crown
+    const vine = mk(new THREE.BoxGeometry(0.54, 0.06, 0.54), 0x2E7D32);
+    vine.position.set(0, 1.82, 0); group.add(vine);
+    const grapes = [[-0.18,0], [0,0.20], [0.18,0], [-0.10,-0.18], [0.10,-0.18]];
+    grapes.forEach(([x,z]) => {
+      const g = mk(new THREE.BoxGeometry(0.07, 0.07, 0.07), 0x6A1B9A);
+      g.position.set(x, 1.88, z); group.add(g);
+    });
+  } else if (godId === 'demeter') {
+    // Wheat crown
+    const crown = mk(new THREE.BoxGeometry(0.54, 0.06, 0.54), 0x8D6E63);
+    crown.position.set(0, 1.82, 0); group.add(crown);
+    for (let i = 0; i < 4; i++) {
+      const wheat = mk(new THREE.BoxGeometry(0.04, 0.22, 0.04), 0xFFD54F);
+      const a = (i / 4) * Math.PI * 2;
+      wheat.position.set(Math.cos(a)*0.22, 1.98, Math.sin(a)*0.22);
+      wheat.rotation.z = Math.cos(a) * 0.3;
+      group.add(wheat);
+    }
+  } else if (godId === 'hera') {
+    // Royal tiara
+    const tiara = mk(new THREE.BoxGeometry(0.54, 0.08, 0.54), 0xFFD700);
+    tiara.position.set(0, 1.84, 0); group.add(tiara);
+    const topGem = mk(new THREE.BoxGeometry(0.10, 0.14, 0.10), 0xE040FB);
+    topGem.position.set(0, 1.96, 0.18); group.add(topGem);
+    const sideL = mk(new THREE.BoxGeometry(0.06, 0.10, 0.06), 0xCE93D8);
+    sideL.position.set(0.20, 1.92, 0.10); group.add(sideL);
+    const sideR = mk(new THREE.BoxGeometry(0.06, 0.10, 0.06), 0xCE93D8);
+    sideR.position.set(-0.20, 1.92, 0.10); group.add(sideR);
+  } else if (godId === 'hecate') {
+    // Mystic hood with moon emblem
+    const hood = mk(new THREE.BoxGeometry(0.56, 0.20, 0.56), 0x1A0033);
+    hood.position.set(0, 1.76, 0); group.add(hood);
+    const moon = mk(new THREE.BoxGeometry(0.10, 0.10, 0.06), 0xCFD8DC);
+    moon.position.set(0, 1.88, 0.28); group.add(moon);
+    const star1 = mk(new THREE.BoxGeometry(0.05, 0.05, 0.04), 0xFFFF00);
+    star1.position.set(0.16, 1.90, 0.26); group.add(star1);
+    const star2 = mk(new THREE.BoxGeometry(0.05, 0.05, 0.04), 0xFFFF00);
+    star2.position.set(-0.16, 1.90, 0.26); group.add(star2);
+  }
 
   // ── NAME LABEL ────────────────────────────────────────────
   const lblCanvas = document.createElement('canvas');
@@ -4956,16 +5265,16 @@ function createGodBody(god) {
   label.scale.set(1.9, 0.36, 1);
   label.position.y = 2.2;
   group.add(label);
-  group.userData.labelSprite = label; // reference so we can hide it in first-person
+  group.userData.labelSprite = label;
 
-  // Animation targets — stored so updatePlayer() can swing them each frame
+  // Animation targets
   group.userData.rArm  = rArm;
   group.userData.lArm  = lArm;
   group.userData.rLeg  = rLeg;
   group.userData.lLeg  = lLeg;
   group.userData.torso = torso;
 
-  group.visible = false; // hidden until a mode sets it visible
+  group.visible = false;
   scene.add(group);
   playerBody = group;
 }
@@ -4978,11 +5287,18 @@ function createFPHands(god) {
   const style = GOD_STYLES[god.id] || { skin:'#F5CBA7', pants:'#1A237E' };
   const cloth = god.color || '#4488ff';
 
+  // If armor is equipped, use armor color for sleeve/gauntlet
+  const _FP_ARMOR = {
+    stone:'#808080', gold:'#DAA520', diamond:'#4FC3F7',
+    royal:'#6A1B9A', dark:'#212121', angel:'#F5F5F5'
+  };
+  const armorCol = playerCostume.armor ? (_FP_ARMOR[playerCostume.armor] || null) : null;
+
   // Materials rendered on top of everything (depthTest off)
   const mkMat = color => new THREE.MeshLambertMaterial({ color, depthTest: false, depthWrite: false });
-  const skinMat   = mkMat(style.skin);
-  const sleeveMat = mkMat(cloth);
-  const darkSkin  = mkMat(_hexDarken(style.skin, 0.80));
+  const skinMat   = armorCol ? mkMat(armorCol) : mkMat(style.skin);
+  const sleeveMat = armorCol ? mkMat(_hexDarken(armorCol, 0.8)) : mkMat(cloth);
+  const darkSkin  = armorCol ? mkMat(_hexDarken(armorCol, 0.6)) : mkMat(_hexDarken(style.skin, 0.80));
 
   const group = new THREE.Group();
 
@@ -5631,7 +5947,14 @@ async function enterGame(worldData, inviteCode) {
   }
   document.getElementById('exitGameBtn').style.display = 'block';
   document.getElementById('onlinePlayers').style.display = 'block';
+  document.getElementById('menuToggleBtn').style.display = 'block';
+  document.getElementById('statsBar').style.display = 'flex';
   updateOnlinePlayersHUD();
+
+  // Reset game stats
+  playerHP = 100; playerMaxHP = 100;
+  playerBelievers = 0; playerGold = 0; playerDivinity = 0;
+  updateStatsHUD();
 
   // Update HUD title (with costume emojis if equipped)
   document.getElementById('hud').textContent = `⚡ ${worldData.name}`;
