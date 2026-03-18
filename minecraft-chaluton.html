@@ -2431,12 +2431,12 @@ function updatePlayer(dt) {
 
       // ── אנימציית רגלי FP + נראות לפי pitch ──────────────────────────────
       if (fpBody) {
-        // pitch: 0 = קדימה, Math.PI/2 = ישר למטה
+        // pitch: negative = looking down, positive = looking up
         // רגלים נראות רק כשמביטים למטה — fade in החל מ-20° עד 90°
         const PITCH_START = Math.PI * 0.11;   // ~20° — מתחיל להיראות
         const PITCH_FULL  = Math.PI * 0.50;   // ~90° — גלוי לחלוטין
         const pitchClamped = Math.max(0, Math.min(1,
-          (player.pitch - PITCH_START) / (PITCH_FULL - PITCH_START)
+          (-player.pitch - PITCH_START) / (PITCH_FULL - PITCH_START)
         ));
         // smooth curve
         const pitchFactor = pitchClamped * pitchClamped;
@@ -7059,6 +7059,7 @@ function applyGodPassive() {
   createFPHands(selectedGod);  // build / replace first-person hand view
   createFPBody(selectedGod);   // build / replace first-person body overlay (legs)
   updateBodyWeapon();           // re-attach weapon to newly built body
+  updateFPWeapon();             // re-attach weapon to FP hands
 
   // ── Auto-apply god's matching costume armor ──
   const _godCostumeMap = {
