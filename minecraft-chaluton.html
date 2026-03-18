@@ -532,9 +532,80 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   MODE SELECT SCREEN
+═══════════════════════════════════════════════════════════════ */
+.modeCards {
+  display: flex; gap: 28px; justify-content: center; align-items: stretch;
+  padding: 30px 20px; flex: 1; max-height: 420px;
+}
+.modeCard {
+  width: 280px; padding: 28px 22px; border-radius: 8px; cursor: pointer;
+  background: rgba(20,16,10,.92);
+  box-shadow: 0 0 0 3px #1a1200, 0 0 0 5px #7a5800, 0 0 20px rgba(0,0,0,.6);
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  transition: all .25s; position: relative; overflow: hidden;
+}
+.modeCard::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(to bottom, rgba(255,215,0,.08), transparent);
+  opacity: 0; transition: opacity .25s;
+}
+.modeCard:hover { transform: translateY(-6px) scale(1.03);
+  box-shadow: 0 0 0 3px #1a1200, 0 0 0 5px #ffd700, 0 0 30px rgba(255,215,0,.3);
+}
+.modeCard:hover::before { opacity: 1; }
+.modeIcon { font-size: 3.5rem; margin-bottom: 14px; filter: drop-shadow(0 4px 8px rgba(0,0,0,.6)); }
+.modeTitle {
+  font-family: 'Press Start 2P', monospace; font-size: .95rem;
+  color: #ffd700; margin-bottom: 12px; text-shadow: 2px 2px 0 #000;
+}
+.modeDesc {
+  font-family: 'Nunito', sans-serif; font-size: .82rem; color: #c8b89a;
+  line-height: 1.7; direction: rtl;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GAME MODE HUD
+═══════════════════════════════════════════════════════════════ */
+#gameModeHUD {
+  position: fixed; top: 50px; left: 50%; transform: translateX(-50%);
+  z-index: 12; display: flex; gap: 14px; align-items: center;
+  background: rgba(10,8,4,.85); border: 2px solid #b8860b; border-radius: 6px;
+  padding: 6px 16px; font-family: 'Press Start 2P', monospace;
+  box-shadow: 0 4px 16px rgba(0,0,0,.5);
+}
+#gmStageBar {
+  display: flex; align-items: center; gap: 6px;
+  color: #ffd700; font-size: .6rem;
+  border-right: 1px solid #5a4a20; padding-right: 12px;
+}
+#gmPowerBar, #gmBelieversBar {
+  display: flex; align-items: center; gap: 5px;
+}
+.gmBarLabel { color: #c8a840; font-size: .45rem; white-space: nowrap; }
+.gmBarTrack {
+  width: 80px; height: 10px; background: rgba(0,0,0,.6);
+  border: 1px solid #7a5800; border-radius: 3px; overflow: hidden;
+}
+.gmBarFill {
+  height: 100%; background: linear-gradient(to right, #ff6600, #ffd700);
+  transition: width .3s; border-radius: 2px;
+}
+.gmBarVal { color: #fff; font-size: .5rem; min-width: 24px; text-align: center; }
+#gmWaveInfo {
+  display: flex; align-items: center; gap: 6px;
+  color: #ff6666; font-size: .5rem;
+  border-left: 1px solid #5a4a20; padding-left: 12px;
+}
+#gmVillagerCount {
+  color: #88cc66; font-size: .5rem;
+  border-left: 1px solid #5a4a20; padding-left: 12px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
    GAMES OF GODS — Pixel-Art God/Weapon Select Screens
 ═══════════════════════════════════════════════════════════════ */
-#godSelectScreen, #weaponSelectScreen {
+#godSelectScreen, #weaponSelectScreen, #modeSelectScreen {
   position: fixed; inset: 0; z-index: 40;
   display: none; flex-direction: column; align-items: center;
   justify-content: flex-start;
@@ -1046,7 +1117,64 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
   <div class="gogLiveSmall"><div class="gogLiveSmallDot"></div>LIVE</div>
 </div>
 
-<!-- ── COSTUME SELECT SCREEN ─────────────────────────────── -->
+<!-- ── MODE SELECT SCREEN ───────────────────────────────── -->
+<div id="modeSelectScreen" style="display:none">
+  <div class="gogHudBars">
+    <div class="gogBar"><div class="gogBarIcon" style="color:#ff3333">❤</div><div class="gogBarTrack"><div class="gogBarFill hp" style="width:100%"></div></div></div>
+    <div class="gogBar"><div class="gogBarIcon" style="color:#33aaff">◆</div><div class="gogBarTrack"><div class="gogBarFill mp" style="width:80%"></div></div></div>
+  </div>
+  <div class="gogHudRight">
+    <div class="gogLive"><div class="gogLiveDot"></div>LIVE</div>
+  </div>
+  <div class="gogTorch gogTorchL"></div>
+  <div class="gogTorch gogTorchR"></div>
+  <div class="gogHeader">
+    <div class="gogBigTitle">GAMES OF GODS</div>
+    <div class="gogSubTitle">בחר מוד משחק</div>
+  </div>
+  <div class="modeCards">
+    <div class="modeCard" id="modeCanvas">
+      <div class="modeIcon">🎨</div>
+      <div class="modeTitle">מוד קאנבה</div>
+      <div class="modeDesc">בנייה חופשית, יצירה ללא גבולות.<br>בנה עולמות, הנח מבנים, ספון יצורים.<br>המקבילה לקריאייטיב במיינקראפט.</div>
+    </div>
+    <div class="modeCard" id="modeGame">
+      <div class="modeIcon">⚔️</div>
+      <div class="modeTitle">מוד המשחק</div>
+      <div class="modeDesc">תחרות האלים! הצל כפרים ממפלצות,<br>צבור מאמינים וכוח אלוהי.<br>הישרד או הפוך לבן תמותה!</div>
+    </div>
+  </div>
+  <div class="gogFooter">
+    <div class="gogBtnRow">
+      <button id="modeBackBtn" class="gogBtn gogBtnBack">← חזרה</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── GAME MODE HUD ───────────────────────────────────── -->
+<div id="gameModeHUD" style="display:none">
+  <div id="gmStageBar">
+    <span id="gmStageIcon">⚔️</span>
+    <span id="gmStageText">שלב 1 — הגן על הכפר</span>
+  </div>
+  <div id="gmPowerBar">
+    <div class="gmBarLabel">⚡ כוח אלוהי</div>
+    <div class="gmBarTrack"><div class="gmBarFill" id="gmPowerFill" style="width:100%"></div></div>
+    <span class="gmBarVal" id="gmPowerVal">100</span>
+  </div>
+  <div id="gmBelieversBar">
+    <div class="gmBarLabel">🙏 מאמינים</div>
+    <span class="gmBarVal" id="gmBelieversVal">0</span>
+  </div>
+  <div id="gmWaveInfo">
+    <span id="gmWaveText">גל 1/5</span>
+    <span id="gmEnemyCount">👹 0</span>
+  </div>
+  <div id="gmVillagerCount">
+    <span>🏘️ כפריים: </span><span id="gmVillagerVal">0</span>
+  </div>
+</div>
+
 <!-- ── IN-GAME HUD EXTRAS ──────────────────────────────── -->
 
 <!-- Dropdown menu for left-side buttons -->
@@ -4932,6 +5060,7 @@ function animate(t) {
     updateArrows(dt);
     updateWaterFlow();
     updateRemotePlayers();
+    if (currentGameMode === 'game') updateGameMode(dt);
     // Dionysus rainbow effect
     if (selectedGod?.id === 'dionysus' && dionysusActive) {
       renderer.domElement.style.filter = `hue-rotate(${(t/50)%360}deg) saturate(1.8)`;
@@ -5945,12 +6074,18 @@ function loadWorldBlocks(blocks) {
 function _clearWorld() {
   world.forEach(mesh => scene.remove(mesh));
   world.clear();
-  animBlocks.clear(); // keep in sync with world Map
+  animBlocks.clear();
   creatures.forEach(c => scene.remove(c.group));
   creatures.length = 0;
   interactWorld.forEach(m => scene.remove(m));
   interactWorld.clear();
   animInteract.clear();
+  // Clear game mode entities
+  if (typeof villagers !== 'undefined') {
+    villagers.forEach(v => scene.remove(v.group));
+    villagers.length = 0;
+  }
+  if (typeof gmMonsters !== 'undefined') gmMonsters.length = 0;
 }
 
 function _spawnCreatureBlocks(creatureSpawns) {
@@ -6055,6 +6190,745 @@ function startAutoSave() {
   autoSaveTimer = setInterval(() => saveWorldNow(true), 15000); // every 15 s (silent)
 }
 
+// ═══════════════════════════════════════════════════════════════
+// ── GAME MODE SYSTEM ──────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+let currentGameMode = 'canvas'; // 'canvas' or 'game'
+let gmState = null; // game mode state
+
+function showModeSelect() {
+  ['weaponSelectScreen','godSelectScreen'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  document.getElementById('modeSelectScreen').style.display = 'flex';
+}
+
+// ── Game World Generator ─────────────────────────────────────
+function genGameWorld(sz) {
+  _clearWorld();
+  worldSZ = sz;
+  const mid = Math.floor(sz / 2);
+  const SEA = 5;
+
+  // Helper: distance from point
+  function dist(x, z, cx, cz) { return Math.sqrt((x-cx)**2 + (z-cz)**2); }
+
+  // ── Define landscape zones (relative to center) ──
+  // Village at center, surrounded by varied terrain
+  const villageR   = 12;   // village radius
+  const riverX     = mid + 18; // river runs north-south at this X
+  const lakeCenter = { x: mid - 20, z: mid + 15 };
+  const lakeR      = 10;
+  const mtCenter   = { x: mid + 22, z: mid - 18 };
+  const mtR        = 14;
+  const forestCenter = { x: mid - 18, z: mid - 15 };
+  const forestR    = 14;
+  const wheatCenter = { x: mid + 10, z: mid + 20 };
+  const wheatR     = 10;
+  const desertCenter = { x: mid - 22, z: mid + 30 };
+  const desertR    = 12;
+
+  for (let x = 0; x < sz; x++) {
+    for (let z = 0; z < sz; z++) {
+      const dVillage = dist(x, z, mid, mid);
+      const dLake    = dist(x, z, lakeCenter.x, lakeCenter.z);
+      const dMt      = dist(x, z, mtCenter.x, mtCenter.z);
+      const dForest  = dist(x, z, forestCenter.x, forestCenter.z);
+      const dWheat   = dist(x, z, wheatCenter.x, wheatCenter.z);
+      const dDesert  = dist(x, z, desertCenter.x, desertCenter.z);
+      const dRiver   = Math.abs(x - riverX);
+      // River meander
+      const riverMeander = Math.sin(z * 0.15) * 3 + Math.sin(z * 0.07) * 2;
+      const dRiverActual = Math.abs(x - (riverX + riverMeander));
+
+      let top = 7; // base height
+      let surface = 'grass';
+      let sub = 'dirt';
+      let isWater = false;
+      let isRiver = false;
+
+      // ── Mountains (snowy peaks) ──
+      if (dMt < mtR) {
+        const falloff = 1 - dMt / mtR;
+        const peak = falloff * falloff * 18 + 7;
+        const noise = Math.sin(x*0.3)*Math.cos(z*0.25)*2 + Math.sin(x*0.7+z*0.5)*1;
+        top = Math.round(peak + noise);
+        if (top > 18) { surface = 'snow'; sub = 'stone'; }
+        else if (top > 12) { surface = 'stone'; sub = 'stone'; }
+        else { surface = 'grass'; sub = 'dirt'; }
+      }
+      // ── Lake ──
+      else if (dLake < lakeR) {
+        const edge = lakeR - dLake;
+        if (edge > 2) {
+          top = 4; isWater = true;
+        } else {
+          top = 5 + Math.round(edge);
+          surface = 'sand'; sub = 'sand';
+        }
+      }
+      // ── River channel ──
+      else if (dRiverActual < 3) {
+        if (dRiverActual < 2) {
+          top = 4; isRiver = true;
+        } else {
+          top = 6; surface = 'sand'; sub = 'sand';
+        }
+      }
+      // ── Desert ──
+      else if (dDesert < desertR) {
+        const noise = Math.sin(x*0.2)*Math.cos(z*0.18)*1.5;
+        top = Math.round(7 + noise);
+        surface = 'sand'; sub = 'sand';
+      }
+      // ── Forest ──
+      else if (dForest < forestR) {
+        const noise = Math.sin(x*0.15)*Math.cos(z*0.12)*2;
+        top = Math.round(8 + noise);
+        surface = 'grass'; sub = 'dirt';
+      }
+      // ── Wheat fields ──
+      else if (dWheat < wheatR) {
+        top = 7;
+        surface = 'grass'; sub = 'dirt';
+      }
+      // ── Village area (flat) ──
+      else if (dVillage < villageR + 5) {
+        top = 7;
+        if (dVillage < villageR) {
+          // Village paths (cross pattern)
+          const relX = x - mid, relZ = z - mid;
+          if ((Math.abs(relX) < 2 || Math.abs(relZ) < 2) && dVillage > 3) {
+            surface = 'stone'; sub = 'dirt';
+          }
+        }
+      }
+      // ── General rolling terrain ──
+      else {
+        const noise = Math.sin(x*0.06)*Math.cos(z*0.055)*3 + Math.sin(x*0.12+1)*Math.cos(z*0.11)*1.5;
+        top = Math.round(7 + noise);
+      }
+
+      // Place blocks
+      setBlock(x, top, z, surface);
+      setBlock(x, top-1, z, sub);
+      setBlock(x, top-2, z, sub);
+      for (let y = top - 3; y >= 0; y--) setBlock(x, y, z, 'stone');
+
+      // Water fill for lake and river
+      if (isWater || isRiver) {
+        for (let wl = top + 1; wl <= SEA; wl++) setBlock(x, wl, z, 'water');
+      }
+
+      // ── Trees in forest ──
+      if (dForest < forestR - 2 && Math.random() < 0.1 && top > 5) {
+        const th = 4 + Math.floor(Math.random() * 3);
+        for (let ty = top+1; ty <= top+th; ty++) setBlock(x, ty, z, 'wood');
+        for (let dx=-2; dx<=2; dx++)
+          for (let dz=-2; dz<=2; dz++)
+            for (let dy=top+Math.ceil(th*0.5); dy<=top+th+2; dy++)
+              if (dx*dx+dz*dz <= 5 && !hasBlock(x+dx, dy, z+dz))
+                setBlock(x+dx, dy, z+dz, 'leaves');
+      }
+
+      // ── Wheat crops ──
+      if (dWheat < wheatR - 2 && top === 7 && Math.random() < 0.7) {
+        // Use gold blocks as wheat (yellow)
+        if ((x + z) % 2 === 0) setBlock(x, top+1, z, 'gold');
+      }
+
+      // ── Scattered trees on plains ──
+      if (dVillage > villageR + 5 && dForest > forestR && dLake > lakeR &&
+          dMt > mtR && dDesert > desertR && dWheat > wheatR && dRiverActual > 4 &&
+          Math.random() < 0.015 && top > 5) {
+        const th = 3 + Math.floor(Math.random() * 2);
+        for (let ty = top+1; ty <= top+th; ty++) setBlock(x, ty, z, 'wood');
+        for (let dx=-2; dx<=2; dx++)
+          for (let dz=-2; dz<=2; dz++)
+            for (let dy=top+Math.ceil(th*0.5); dy<=top+th+1; dy++)
+              if (dx*dx+dz*dz <= 4 && !hasBlock(x+dx, dy, z+dz))
+                setBlock(x+dx, dy, z+dz, 'leaves');
+      }
+    }
+  }
+
+  // ── Build village structures ──
+  buildGameVillage(mid, 7, mid);
+}
+
+// ── Village builder ──────────────────────────────────────────
+function buildGameVillage(cx, baseY, cz) {
+  const by = baseY;
+
+  // ── Village well at center ──
+  for (let dx = -1; dx <= 1; dx++)
+    for (let dz = -1; dz <= 1; dz++) {
+      setBlock(cx+dx, by+1, cz+dz, 'stone');
+      if (dx === 0 && dz === 0) {
+        setBlock(cx, by+1, cz, 'water');
+      } else {
+        setBlock(cx+dx, by+2, cz+dz, 'stone');
+      }
+    }
+  // Well posts
+  setBlock(cx-1, by+3, cz-1, 'wood'); setBlock(cx+1, by+3, cz-1, 'wood');
+  setBlock(cx-1, by+3, cz+1, 'wood'); setBlock(cx+1, by+3, cz+1, 'wood');
+  for (let dx = -1; dx <= 1; dx++)
+    for (let dz = -1; dz <= 1; dz++)
+      setBlock(cx+dx, by+4, cz+dz, 'wood');
+
+  // ── Houses around the center ──
+  const housePositions = [
+    { x: cx-7, z: cz-7 }, { x: cx+5, z: cz-7 },
+    { x: cx-7, z: cz+5 }, { x: cx+5, z: cz+5 },
+    { x: cx-8, z: cz-1 }, { x: cx+6, z: cz-1 },
+    { x: cx-2, z: cz-9 }, { x: cx-2, z: cz+7 },
+  ];
+  housePositions.forEach(h => buildVillageHouse(h.x, by, h.z));
+
+  // ── Market stalls ──
+  for (let i = 0; i < 3; i++) {
+    const sx = cx + 3, sz = cz - 4 + i * 4;
+    // Table
+    setBlock(sx, by+1, sz, 'wood');
+    setBlock(sx+1, by+1, sz, 'wood');
+    // Awning
+    for (let dx = 0; dx <= 1; dx++)
+      for (let dz = -1; dz <= 1; dz++)
+        setBlock(sx+dx, by+3, sz+dz, 'brick');
+    // Posts
+    setBlock(sx, by+2, sz-1, 'wood'); setBlock(sx+1, by+2, sz+1, 'wood');
+  }
+
+  // ── Torches / lanterns around village ──
+  const torchSpots = [
+    {x:cx-3,z:cz-3},{x:cx+3,z:cz-3},{x:cx-3,z:cz+3},{x:cx+3,z:cz+3},
+    {x:cx,z:cz-6},{x:cx,z:cz+6},{x:cx-6,z:cz},{x:cx+6,z:cz},
+  ];
+  torchSpots.forEach(t => {
+    setBlock(t.x, by+1, t.z, 'wood');
+    setBlock(t.x, by+2, t.z, 'gold');
+  });
+}
+
+function buildVillageHouse(hx, by, hz) {
+  const W = 5, D = 5, H = 4;
+  // Floor
+  for (let dx = 0; dx < W; dx++)
+    for (let dz = 0; dz < D; dz++)
+      setBlock(hx+dx, by, hz+dz, 'wood');
+  // Walls
+  for (let y = 1; y <= H; y++) {
+    for (let dx = 0; dx < W; dx++) {
+      setBlock(hx+dx, by+y, hz, 'brick');
+      setBlock(hx+dx, by+y, hz+D-1, 'brick');
+    }
+    for (let dz = 0; dz < D; dz++) {
+      setBlock(hx, by+y, hz+dz, 'brick');
+      setBlock(hx+W-1, by+y, hz+dz, 'brick');
+    }
+  }
+  // Door (remove wall blocks)
+  setBlock(hx+2, by+1, hz, null);
+  setBlock(hx+2, by+2, hz, null);
+  // Windows
+  setBlock(hx+1, by+2, hz, 'glass');
+  setBlock(hx+3, by+2, hz, 'glass');
+  setBlock(hx, by+2, hz+2, 'glass');
+  setBlock(hx+W-1, by+2, hz+2, 'glass');
+  // Roof (pyramid)
+  for (let r = 0; r <= 2; r++) {
+    for (let dx = r; dx < W-r; dx++)
+      for (let dz = r; dz < D-r; dz++)
+        setBlock(hx+dx, by+H+1+r, hz+dz, 'wood');
+  }
+}
+
+// ── Villager system ──────────────────────────────────────────
+const villagers = [];
+const VILLAGER_COLORS = [0xDEB887, 0xD2691E, 0xF4A460, 0xFFDEAD, 0xCD853F, 0xA0522D];
+
+function spawnVillager(x, y, z) {
+  const group = new THREE.Group();
+  const skinColor = VILLAGER_COLORS[Math.floor(Math.random() * VILLAGER_COLORS.length)];
+  const clothColors = [0x8B4513, 0x228B22, 0x4169E1, 0x8B0000, 0x2F4F4F, 0x9932CC];
+  const clothColor = clothColors[Math.floor(Math.random() * clothColors.length)];
+
+  // Body
+  const bodyMat = new THREE.MeshLambertMaterial({ color: clothColor });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.35), bodyMat);
+  body.position.y = 0.65;
+  group.add(body);
+
+  // Head
+  const headMat = new THREE.MeshLambertMaterial({ color: skinColor });
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.35), headMat);
+  head.position.y = 1.2;
+  group.add(head);
+
+  // Eyes
+  const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+  const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.02), eyeMat);
+  eyeL.position.set(-0.08, 1.25, 0.18);
+  group.add(eyeL);
+  const eyeR = eyeL.clone();
+  eyeR.position.x = 0.08;
+  group.add(eyeR);
+
+  // Legs
+  const legMat = new THREE.MeshLambertMaterial({ color: 0x3C280D });
+  const legL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.6, 0.2), legMat);
+  legL.position.set(-0.12, 0.15, 0);
+  group.add(legL);
+  const legR = legL.clone();
+  legR.position.x = 0.12;
+  group.add(legR);
+
+  group.position.set(x + 0.5, y, z + 0.5);
+  scene.add(group);
+
+  const v = {
+    group, x: x+0.5, z: z+0.5, baseY: y,
+    vx: 0, vz: 0,
+    state: 'idle', stateTimer: 2 + Math.random() * 3,
+    alive: true, hp: 3,
+    legL, legR, body: body,
+    homeX: x+0.5, homeZ: z+0.5,
+  };
+  villagers.push(v);
+  return v;
+}
+
+function updateVillagers(dt) {
+  villagers.forEach(v => {
+    if (!v.alive) return;
+    v.stateTimer -= dt;
+    if (v.stateTimer <= 0) {
+      // State machine
+      const r = Math.random();
+      if (r < 0.5) {
+        v.state = 'wander';
+        v.stateTimer = 2 + Math.random() * 4;
+        const angle = Math.random() * Math.PI * 2;
+        v.vx = Math.cos(angle) * 1.2;
+        v.vz = Math.sin(angle) * 1.2;
+      } else if (r < 0.8) {
+        v.state = 'idle';
+        v.stateTimer = 2 + Math.random() * 3;
+        v.vx = 0; v.vz = 0;
+      } else {
+        // Walk back toward home
+        v.state = 'wander';
+        v.stateTimer = 1 + Math.random() * 2;
+        const dx = v.homeX - v.group.position.x;
+        const dz = v.homeZ - v.group.position.z;
+        const d = Math.sqrt(dx*dx + dz*dz) || 1;
+        v.vx = (dx / d) * 1.5;
+        v.vz = (dz / d) * 1.5;
+      }
+    }
+
+    if (v.state === 'wander') {
+      let nx = v.group.position.x + v.vx * dt;
+      let nz = v.group.position.z + v.vz * dt;
+      // Keep within village area
+      const mid = worldSZ / 2;
+      if (Math.abs(nx - mid) > 14) v.vx *= -1;
+      if (Math.abs(nz - mid) > 14) v.vz *= -1;
+      nx = Math.max(2, Math.min(worldSZ - 2, nx));
+      nz = Math.max(2, Math.min(worldSZ - 2, nz));
+      v.group.position.x = nx;
+      v.group.position.z = nz;
+      // Face direction
+      if (Math.abs(v.vx) > 0.1 || Math.abs(v.vz) > 0.1) {
+        v.group.rotation.y = Math.atan2(v.vx, v.vz);
+      }
+      // Leg animation
+      const swing = Math.sin(performance.now() * 0.006) * 0.5;
+      v.legL.rotation.x = swing;
+      v.legR.rotation.x = -swing;
+    } else {
+      v.legL.rotation.x = 0;
+      v.legR.rotation.x = 0;
+    }
+
+    // Find ground height
+    for (let y = 20; y >= 0; y--) {
+      if (hasBlock(Math.floor(v.group.position.x), y, Math.floor(v.group.position.z))) {
+        v.group.position.y = y + 1;
+        break;
+      }
+    }
+  });
+}
+
+function killVillager(v) {
+  v.alive = false;
+  scene.remove(v.group);
+  // Particles
+  for (let i = 0; i < 6; i++) {
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(0.15, 0.15, 0.15),
+      new THREE.MeshLambertMaterial({ color: 0xff4444, transparent: true })
+    );
+    mesh.position.copy(v.group.position);
+    mesh.position.y += 0.5;
+    scene.add(mesh);
+    deathParticles.push({
+      mesh,
+      vel: new THREE.Vector3((Math.random()-0.5)*4, 3+Math.random()*3, (Math.random()-0.5)*4),
+      life: 1.0
+    });
+  }
+}
+
+// ── Monster system for game mode ─────────────────────────────
+const gmMonsters = [];
+
+function spawnGMMonster(type, x, z) {
+  // Use existing creature system but track separately
+  const def = CREATURE_DEFS.find(d => d.id === type);
+  if (!def) return;
+  const c = spawnCreature(type, new THREE.Vector3(x, 10, z), true);
+  if (c) {
+    c._isGMMonster = true;
+    c._gmTarget = null;
+    c._gmAttackTimer = 0;
+    gmMonsters.push(c);
+  }
+  return c;
+}
+
+// ── Game mode state & logic ──────────────────────────────────
+const GM_STAGES = [
+  {
+    name: 'הגן על הכפר',
+    waves: [
+      { enemies: [{type:'chimera', count:3}], delay: 5 },
+      { enemies: [{type:'cerberus', count:4}], delay: 30 },
+      { enemies: [{type:'minotaur', count:3}, {type:'chimera', count:2}], delay: 60 },
+      { enemies: [{type:'cyclops', count:2}, {type:'cerberus', count:3}], delay: 90 },
+      { enemies: [{type:'dragon', count:2}, {type:'minotaur', count:3}], delay: 120 },
+    ],
+    reward: { believers: 20, power: 30 }
+  },
+  {
+    name: 'מתקפת הטיטאנים',
+    waves: [
+      { enemies: [{type:'cyclops', count:4}], delay: 5 },
+      { enemies: [{type:'cyclops2', count:3}, {type:'hydra', count:2}], delay: 40 },
+      { enemies: [{type:'dragon', count:3}, {type:'chimera', count:3}], delay: 80 },
+      { enemies: [{type:'cyclops2', count:3}, {type:'dragon', count:2}, {type:'minotaur', count:3}], delay: 120 },
+    ],
+    reward: { believers: 40, power: 50 }
+  },
+  {
+    name: 'חורבן האולימפוס',
+    waves: [
+      { enemies: [{type:'dragon', count:4}, {type:'hydra', count:3}], delay: 5 },
+      { enemies: [{type:'cyclops2', count:4}, {type:'chimera', count:4}], delay: 50 },
+      { enemies: [{type:'dragon', count:5}, {type:'cyclops2', count:3}, {type:'minotaur', count:4}], delay: 100 },
+    ],
+    reward: { believers: 60, power: 80 }
+  }
+];
+
+function initGameModeState() {
+  return {
+    power: 100,
+    maxPower: 100,
+    believers: 0,
+    stage: 0,
+    wave: 0,
+    waveTimer: 0,
+    waveActive: false,
+    waveSpawned: false,
+    stageComplete: false,
+    gameOver: false,
+    gameWon: false,
+    monsterAttackInterval: 2.5,
+    totalKills: 0,
+  };
+}
+
+function updateGameModeHUD() {
+  if (!gmState) return;
+  const pf = document.getElementById('gmPowerFill');
+  const pv = document.getElementById('gmPowerVal');
+  const bv = document.getElementById('gmBelieversVal');
+  const st = document.getElementById('gmStageText');
+  const wt = document.getElementById('gmWaveText');
+  const ec = document.getElementById('gmEnemyCount');
+  const vc = document.getElementById('gmVillagerVal');
+
+  if (pf) pf.style.width = Math.max(0, (gmState.power / gmState.maxPower) * 100) + '%';
+  if (pv) pv.textContent = Math.round(gmState.power);
+  if (bv) bv.textContent = gmState.believers;
+  if (st) {
+    const stage = GM_STAGES[gmState.stage];
+    st.textContent = stage ? `שלב ${gmState.stage+1} — ${stage.name}` : 'ניצחון!';
+  }
+  if (wt) {
+    const stage = GM_STAGES[gmState.stage];
+    const totalWaves = stage ? stage.waves.length : 0;
+    wt.textContent = `גל ${Math.min(gmState.wave+1, totalWaves)}/${totalWaves}`;
+  }
+  if (ec) ec.textContent = '👹 ' + gmMonsters.filter(m => m.hp > 0).length;
+  if (vc) vc.textContent = villagers.filter(v => v.alive).length;
+
+  // Power bar color
+  if (pf) {
+    const pct = gmState.power / gmState.maxPower;
+    if (pct > 0.5) pf.style.background = 'linear-gradient(to right, #ff8800, #ffd700)';
+    else if (pct > 0.25) pf.style.background = 'linear-gradient(to right, #ff6600, #ff9900)';
+    else pf.style.background = 'linear-gradient(to right, #cc2222, #ff4444)';
+  }
+}
+
+function updateGameMode(dt) {
+  if (!gmState || gmState.gameOver || gmState.gameWon) return;
+
+  const stage = GM_STAGES[gmState.stage];
+  if (!stage) { // All stages complete
+    gmState.gameWon = true;
+    showInfo('🏆 ניצחון! הוכחת שאתה אל אמיתי! 🏆', '#ffd700', 10000);
+    return;
+  }
+
+  updateVillagers(dt);
+
+  // ── Wave timer ──
+  gmState.waveTimer += dt;
+  const currentWave = stage.waves[gmState.wave];
+  if (currentWave && !gmState.waveSpawned && gmState.waveTimer >= currentWave.delay) {
+    // Spawn wave
+    gmState.waveSpawned = true;
+    gmState.waveActive = true;
+    const mid = worldSZ / 2;
+    showInfo(`⚠️ גל ${gmState.wave+1} מתקרב!`, '#ff4444', 3000);
+    playTone(200, 0.5, 'sawtooth');
+
+    currentWave.enemies.forEach(eg => {
+      for (let i = 0; i < eg.count; i++) {
+        // Spawn from edges
+        const side = Math.floor(Math.random() * 4);
+        let sx, sz;
+        if (side === 0) { sx = 2 + Math.random()*5; sz = Math.random() * worldSZ; }
+        else if (side === 1) { sx = worldSZ - 7 + Math.random()*5; sz = Math.random() * worldSZ; }
+        else if (side === 2) { sx = Math.random() * worldSZ; sz = 2 + Math.random()*5; }
+        else { sx = Math.random() * worldSZ; sz = worldSZ - 7 + Math.random()*5; }
+        spawnGMMonster(eg.type, sx, sz);
+      }
+    });
+  }
+
+  // ── Monster AI: move toward village & attack ──
+  const mid = worldSZ / 2;
+  gmMonsters.forEach(m => {
+    if (m.hp <= 0) return;
+    // Override creature wander AI — march toward village
+    const dx = mid - m.group.position.x;
+    const dz = mid - m.group.position.z;
+    const d = Math.sqrt(dx*dx + dz*dz);
+    if (d > 3) {
+      const speed = 2.5;
+      m.vx = (dx / d) * speed;
+      m.vz = (dz / d) * speed;
+      m.state = 'wander';
+      m.stateTimer = 1;
+    }
+
+    // Attack villagers & player when close
+    m._gmAttackTimer = (m._gmAttackTimer || 0) + dt;
+    if (d < 5 && m._gmAttackTimer >= gmState.monsterAttackInterval) {
+      m._gmAttackTimer = 0;
+
+      // Try to attack nearest villager
+      let closestV = null, closestVD = Infinity;
+      villagers.forEach(v => {
+        if (!v.alive) return;
+        const vd = Math.sqrt(
+          (v.group.position.x - m.group.position.x)**2 +
+          (v.group.position.z - m.group.position.z)**2
+        );
+        if (vd < closestVD) { closestVD = vd; closestV = v; }
+      });
+
+      if (closestV && closestVD < 3) {
+        closestV.hp--;
+        if (closestV.hp <= 0) {
+          killVillager(closestV);
+          showInfo('💀 כפרי נהרג!', '#ff2222', 2000);
+          gmState.power -= 5;
+        }
+      }
+
+      // Attack player if nearby
+      const playerDist = Math.sqrt(
+        (player.pos.x - m.group.position.x)**2 +
+        (player.pos.z - m.group.position.z)**2
+      );
+      if (playerDist < 4) {
+        const dmg = 5 + Math.floor(Math.random() * 5);
+        damagePlayer(dmg);
+        gmState.power -= 2;
+      }
+    }
+  });
+
+  // ── Clean up dead monsters ──
+  for (let i = gmMonsters.length - 1; i >= 0; i--) {
+    if (gmMonsters[i].hp <= 0) {
+      gmState.totalKills++;
+      gmState.believers += 2;
+      gmState.power = Math.min(gmState.maxPower, gmState.power + 3);
+      gmMonsters.splice(i, 1);
+    }
+  }
+
+  // ── Check wave completion ──
+  if (gmState.waveSpawned && gmMonsters.filter(m => m.hp > 0).length === 0) {
+    gmState.waveSpawned = false;
+    gmState.waveActive = false;
+    gmState.wave++;
+
+    if (gmState.wave >= stage.waves.length) {
+      // Stage complete!
+      gmState.believers += stage.reward.believers;
+      gmState.power = Math.min(gmState.maxPower, gmState.power + stage.reward.power);
+      gmState.stage++;
+      gmState.wave = 0;
+      gmState.waveTimer = 0;
+      if (gmState.stage < GM_STAGES.length) {
+        showInfo(`🎉 שלב ${gmState.stage} הושלם! מתכונן לשלב הבא...`, '#ffd700', 5000);
+        playTone(523, 0.4, 'sine');
+        setTimeout(() => playTone(659, 0.4, 'sine'), 200);
+        setTimeout(() => playTone(784, 0.5, 'sine'), 400);
+      }
+    } else {
+      showInfo(`✅ גל ${gmState.wave} הוכנע! הגל הבא מתקרב...`, '#44ff44', 3000);
+    }
+  }
+
+  // ── Power drain (slowly if village taking damage) ──
+  if (villagers.filter(v => v.alive).length === 0 && gmState.waveActive) {
+    gmState.power -= dt * 5; // Rapid drain if all villagers dead
+  }
+
+  // ── Game over check ──
+  if (gmState.power <= 0 || playerHP <= 0) {
+    gmState.gameOver = true;
+    gmState.power = 0;
+    showInfo('💀 האל שלך נפל... הפכת לבן תמותה. המשחק נגמר!', '#ff0000', 15000);
+    playTone(100, 1, 'sawtooth');
+  }
+
+  updateGameModeHUD();
+}
+
+// ── Enter Game Mode ──────────────────────────────────────────
+async function enterGameMode() {
+  // Create a virtual world data for game mode
+  const gmWorldSZ = 64;
+  const fakeWorldData = {
+    id: 'game_mode_' + Date.now(),
+    name: '⚔️ מוד המשחק — ' + (selectedGod?.name || 'אל'),
+    size: gmWorldSZ,
+    ownerId: currentUser?.id || 'local',
+    inviteCode: '',
+    blocks: [] // will generate
+  };
+  currentWorld = fakeWorldData;
+  isOwner = false;
+  worldSZ = gmWorldSZ;
+
+  // Hide all screens
+  ['loginScreen','worldSelectScreen','createWorldScreen',
+   'godSelectScreen','weaponSelectScreen','modeSelectScreen'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+
+  // Show loading
+  document.getElementById('overlay').style.display = 'flex';
+  document.getElementById('overlayMsg').textContent = 'יוצר עולם משחק...';
+  const loadBar = document.getElementById('loadBar');
+  const loadBarFill = document.getElementById('loadBarFill');
+  loadBar.style.display = 'block';
+  loadBarFill.style.width = '10%';
+
+  await new Promise(r => setTimeout(r, 100));
+
+  // Generate the world
+  _clearWorld();
+  loadBarFill.style.width = '30%';
+  await new Promise(r => setTimeout(r, 50));
+
+  genGameWorld(gmWorldSZ);
+  loadBarFill.style.width = '70%';
+  await new Promise(r => setTimeout(r, 50));
+
+  // Spawn player at village center
+  const mid = Math.floor(gmWorldSZ / 2);
+  player.pos.set(mid + 0.5, 10, mid + 0.5);
+
+  // Camera
+  camera.position.set(player.pos.x, player.pos.y + EYE, player.pos.z);
+  camera.rotation.order = 'YXZ';
+  camera.rotation.y = player.yaw;
+  camera.rotation.x = player.pitch;
+
+  // Sky
+  if (skyDome) { scene.remove(skyDome); skyDome = null; }
+  if (sunSphere) { scene.remove(sunSphere); sunSphere = null; }
+  if (moonSphere) { scene.remove(moonSphere); moonSphere = null; }
+  gameClouds.forEach(c => scene.remove(c));
+  gameClouds.length = 0;
+  setupSky();
+
+  applyGodPassive();
+  loadBarFill.style.width = '85%';
+
+  // Spawn villagers
+  villagers.forEach(v => scene.remove(v.group));
+  villagers.length = 0;
+  for (let i = 0; i < 12; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const r = 3 + Math.random() * 8;
+    const vx = Math.floor(mid + Math.cos(angle) * r);
+    const vz = Math.floor(mid + Math.sin(angle) * r);
+    spawnVillager(vx, 8, vz);
+  }
+
+  loadBarFill.style.width = '100%';
+
+  // Init game state
+  gmState = initGameModeState();
+  gmMonsters.length = 0;
+
+  // Show game mode HUD, hide canvas-specific buttons
+  document.getElementById('gameModeHUD').style.display = 'flex';
+  document.getElementById('statsBar').style.display = 'flex';
+  document.getElementById('exitGameBtn').style.display = 'block';
+  document.getElementById('menuToggleBtn').style.display = 'block';
+  document.getElementById('saveBtn').style.display = 'none';
+  document.getElementById('inviteBtn').style.display = 'none';
+
+  playerHP = 100; playerMaxHP = 100;
+  playerBelievers = 0; playerGold = 0; playerDivinity = 0;
+  updateStatsHUD();
+  updateGameModeHUD();
+
+  document.getElementById('hud').textContent = `⚔️ ${fakeWorldData.name}`;
+  updateCostumeHUD();
+
+  // Show overlay to start
+  loadBar.style.display = 'none';
+  document.getElementById('overlayMsg').textContent = 'לחץ בכל מקום כדי להתחיל לשחק';
+  document.getElementById('overlay').style.display = 'flex';
+
+  showInfo('⚔️ מוד המשחק! הגן על הכפר ממפלצות. הרוג אויבים כדי לצבור מאמינים וכוח!', '#ffd700', 8000);
+}
+
 // ── Enter game ─────────────────────────────────────────
 async function enterGame(worldData, inviteCode) {
   currentWorld = worldData;
@@ -6063,7 +6937,7 @@ async function enterGame(worldData, inviteCode) {
 
   // Hide all selection screens
   ['loginScreen','worldSelectScreen','createWorldScreen',
-   'godSelectScreen','weaponSelectScreen'].forEach(id => {
+   'godSelectScreen','weaponSelectScreen','modeSelectScreen'].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = 'none';
   });
 
@@ -6103,6 +6977,7 @@ async function enterGame(worldData, inviteCode) {
   document.getElementById('onlinePlayers').style.display = 'block';
   document.getElementById('menuToggleBtn').style.display = 'block';
   document.getElementById('statsBar').style.display = 'flex';
+  document.getElementById('gameModeHUD').style.display = 'none';
   updateOnlinePlayersHUD();
 
   // Reset game stats
@@ -6140,7 +7015,7 @@ function showGodSelect(worldData, inviteCode) {
   const cb = document.getElementById('godConfirmBtn');
   cb.disabled = true; cb.textContent = 'המשך ⚡';
   // Hide other screens
-  ['loginScreen','worldSelectScreen','createWorldScreen','weaponSelectScreen'].forEach(id => {
+  ['loginScreen','worldSelectScreen','createWorldScreen','weaponSelectScreen','modeSelectScreen'].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = 'none';
   });
   // Build grid if needed then show
@@ -6233,9 +7108,12 @@ async function exitGame() {
   creatures.forEach(c => scene.remove(c.group)); creatures.length = 0;
   remotePlayers.forEach(rp => scene.remove(rp.group)); remotePlayers.clear();
   // Hide in-game HUD
-  ['saveBtn','inviteBtn','exitGameBtn','onlinePlayers','godBadge'].forEach(id => {
+  ['saveBtn','inviteBtn','exitGameBtn','onlinePlayers','godBadge','gameModeHUD'].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = 'none';
   });
+  // Clean up game mode
+  villagers.forEach(v => scene.remove(v.group)); villagers.length = 0;
+  gmMonsters.length = 0; gmState = null; currentGameMode = 'canvas';
   // Reset selection state
   selectedGogCostume = null; selectedGogCreature = null;
   // Clean up sky
@@ -6424,9 +7302,8 @@ function initAuth() {
   // ── Weapon select screen buttons ──
   document.getElementById('weaponConfirmBtn').addEventListener('click', () => {
     if (!_pendingWorldData) return;
-    // Apply selected weapon to playerCostume then enter game
+    // Apply selected weapon to playerCostume
     if (selectedGogWeapon) {
-      // Map GOG weapon → base weapon type for rendering
       const _gogWeaponMap = {
         bolt:'staff', trident:'trident', axedual:'axe', huntbow:'bow',
         aegis:'sword', hammer:'axe', caduceus:'staff', gladius:'sword'
@@ -6437,14 +7314,29 @@ function initAuth() {
                  || WEAPON_DEFS.find(w => selectedGogWeapon.emoji.includes(w.e))
                  || WEAPON_DEFS[0];
       if (match) playerCostume.weapon = match.id;
-      // Store the GOG weapon damage (override base weapon damage for combat)
       playerCostume._gogWeaponDamage = selectedGogWeapon.damage;
     }
-    enterGame(_pendingWorldData, _pendingInviteCode);
+    showModeSelect();
   });
   document.getElementById('weaponBackBtn').addEventListener('click', () => {
     document.getElementById('weaponSelectScreen').style.display = 'none';
     showGodSelect(_pendingWorldData, _pendingInviteCode);
+  });
+
+  // ── Mode select screen buttons ──
+  document.getElementById('modeBackBtn').addEventListener('click', () => {
+    document.getElementById('modeSelectScreen').style.display = 'none';
+    showWeaponSelect();
+  });
+  document.getElementById('modeCanvas').addEventListener('click', () => {
+    currentGameMode = 'canvas';
+    document.getElementById('modeSelectScreen').style.display = 'none';
+    enterGame(_pendingWorldData, _pendingInviteCode);
+  });
+  document.getElementById('modeGame').addEventListener('click', () => {
+    currentGameMode = 'game';
+    document.getElementById('modeSelectScreen').style.display = 'none';
+    enterGameMode();
   });
 
   // ── Exit game button ──
