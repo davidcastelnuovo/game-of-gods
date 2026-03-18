@@ -6103,6 +6103,10 @@ function _clearWorld() {
     villagers.length = 0;
   }
   if (typeof gmMonsters !== 'undefined') gmMonsters.length = 0;
+  if (typeof acidProjectiles !== 'undefined') {
+    acidProjectiles.forEach(a => { scene.remove(a.mesh); scene.remove(a.trail); });
+    acidProjectiles.length = 0;
+  }
 }
 
 function _spawnCreatureBlocks(creatureSpawns) {
@@ -6371,6 +6375,7 @@ function genGameWorld(sz) {
 
   // ── Build village structures ──
   buildGameVillage(mid, 7, mid);
+  _initVillageData(mid, mid);
 }
 
 // ── Village builder ──────────────────────────────────────────
@@ -6464,6 +6469,69 @@ function buildVillageHouse(hx, by, hz) {
 // ── Villager system ──────────────────────────────────────────
 const villagers = [];
 const VILLAGER_COLORS = [0xDEB887, 0xD2691E, 0xF4A460, 0xFFDEAD, 0xCD853F, 0xA0522D];
+let _villageData = null; // stores house/market/well positions for AI
+
+function _initVillageData(cx, cz) {
+  const by = 7;
+  _villageData = {
+    cx, cz, baseY: by,
+    houses: [
+      { x: cx-7, z: cz-7 }, { x: cx+5, z: cz-7 },
+      { x: cx-7, z: cz+5 }, { x: cx+5, z: cz+5 },
+      { x: cx-8, z: cz-1 }, { x: cx+6, z: cz-1 },
+      { x: cx-2, z: cz-9 }, { x: cx-2, z: cz+7 },
+    ].map(h => ({
+      // door is at hx+2, by+1, hz (front wall)
+      doorX: h.x + 2.5, doorZ: h.z - 0.5,
+      insideX: h.x + 2.5, insideZ: h.z + 2.5,
+      ...h
+    })),
+    market: [
+      { x: cx + 3.5, z: cz - 4.5 },
+      { x: cx + 3.5, z: cz - 0.5 },
+      { x: cx + 3.5, z: cz + 3.5 },
+    ],
+    well: { x: cx + 0.5, z: cz + 0.5 },
+    // walkable paths (cross pattern + around houses)
+    isWalkable: (wx, wz) => {
+      const dx = wx - cx, dz = wz - cz;
+      // village radius
+      if (Math.abs(dx) > 13 || Math.abs(dz) > 13) return false;
+      return true;
+    }
+  };
+}
+
+// ── Ground height that stays on village base level (y=7) ──
+function _villagerGroundY(wx, wz) {
+  const bx = Math.floor(wx), bz = Math.floor(wz);
+  const baseY = _villageData ? _villageData.baseY : 7;
+  // Only walk on ground level (baseY) or one above (doorstep)
+  // Never climb higher than baseY+1 to avoid rooftops
+  for (let y = baseY + 1; y >= baseY; y--) {
+    if (hasBlock(bx, y, bz)) return y + 1;
+  }
+  // fallback: just use base terrain
+  for (let y = baseY; y >= 0; y--) {
+    if (hasBlock(bx, y, bz)) return y + 1;
+  }
+  return baseY + 1;
+}
+
+// ── Check if position is blocked (wall/solid above ground) ──
+function _villagerBlocked(wx, wz) {
+  const bx = Math.floor(wx), bz = Math.floor(wz);
+  const baseY = _villageData ? _villageData.baseY : 7;
+  // Check if there's a solid block at walking height (head/body level)
+  if (hasBlock(bx, baseY + 1, bz) || hasBlock(bx, baseY + 2, bz)) {
+    // Allow doors (check if it's an interactive door block)
+    const k1 = wk(bx, baseY + 1, bz), k2 = wk(bx, baseY + 2, bz);
+    const ib1 = interactWorld.get(k1), ib2 = interactWorld.get(k2);
+    if (ib1 || ib2) return false; // doors are passable
+    return true;
+  }
+  return false;
+}
 
 function spawnVillager(x, y, z) {
   const group = new THREE.Group();
@@ -6473,6 +6541,7 @@ function spawnVillager(x, y, z) {
 
   // Body
   const bodyMat = new THREE.MeshLambertMaterial({ color: clothColor });
+  bodyMat._origColor = clothColor;
   const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.35), bodyMat);
   body.position.y = 0.65;
   group.add(body);
@@ -6492,6 +6561,15 @@ function spawnVillager(x, y, z) {
   eyeR.position.x = 0.08;
   group.add(eyeR);
 
+  // Arms
+  const armMat = new THREE.MeshLambertMaterial({ color: clothColor });
+  const armL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.5, 0.18), armMat);
+  armL.position.set(-0.35, 0.6, 0);
+  group.add(armL);
+  const armR = armL.clone();
+  armR.position.x = 0.35;
+  group.add(armR);
+
   // Legs
   const legMat = new THREE.MeshLambertMaterial({ color: 0x3C280D });
   const legL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.6, 0.2), legMat);
@@ -6501,81 +6579,256 @@ function spawnVillager(x, y, z) {
   legR.position.x = 0.12;
   group.add(legR);
 
+  // Exclamation mark for when in danger (hidden by default)
+  const excl = new THREE.Mesh(
+    new THREE.BoxGeometry(0.08, 0.2, 0.08),
+    new THREE.MeshBasicMaterial({ color: 0xff0000 })
+  );
+  excl.position.set(0, 1.6, 0);
+  excl.visible = false;
+  excl.name = 'exclMark';
+  group.add(excl);
+
   group.position.set(x + 0.5, y, z + 0.5);
   scene.add(group);
 
+  // Assign random home house
+  const houseIdx = Math.floor(Math.random() * 8);
+  const roles = ['farmer', 'trader', 'guard', 'worker'];
+  const role = roles[Math.floor(Math.random() * roles.length)];
+
   const v = {
-    group, x: x+0.5, z: z+0.5, baseY: y,
+    group, baseY: y,
     vx: 0, vz: 0,
     state: 'idle', stateTimer: 2 + Math.random() * 3,
-    alive: true, hp: 3,
-    legL, legR, body: body,
-    homeX: x+0.5, homeZ: z+0.5,
+    alive: true, hp: 5,
+    legL, legR, armL, armR, body,
+    homeHouse: houseIdx, role,
+    targetX: null, targetZ: null, // current navigation target
+    speed: 1.0 + Math.random() * 0.5,
+    fleeTimer: 0, // time remaining in flee state
+    fleeFromX: 0, fleeFromZ: 0,
+    savedByGod: false, // set when god kills monster threatening them
+    gratitudeTimer: 0,
   };
   villagers.push(v);
   return v;
 }
 
+function _pickVillagerTarget(v) {
+  if (!_villageData) return;
+  const vd = _villageData;
+  const r = Math.random();
+
+  if (v.role === 'trader') {
+    // Traders go between market stalls
+    if (r < 0.5) {
+      const stall = vd.market[Math.floor(Math.random() * vd.market.length)];
+      v.targetX = stall.x; v.targetZ = stall.z;
+    } else if (r < 0.8) {
+      // Go to well
+      v.targetX = vd.well.x + (Math.random()-0.5)*2;
+      v.targetZ = vd.well.z + (Math.random()-0.5)*2;
+    } else {
+      // Go home
+      const home = vd.houses[v.homeHouse % vd.houses.length];
+      v.targetX = home.doorX; v.targetZ = home.doorZ;
+    }
+  } else if (v.role === 'farmer') {
+    // Farmers wander near fields or go home
+    if (r < 0.4) {
+      // Walk near wheat fields area
+      v.targetX = vd.cx + 10 + (Math.random()-0.5)*8;
+      v.targetZ = vd.cz + 20 + (Math.random()-0.5)*8;
+    } else if (r < 0.7) {
+      // Go to well
+      v.targetX = vd.well.x + (Math.random()-0.5)*3;
+      v.targetZ = vd.well.z + (Math.random()-0.5)*3;
+    } else {
+      const home = vd.houses[v.homeHouse % vd.houses.length];
+      v.targetX = home.doorX; v.targetZ = home.doorZ;
+    }
+  } else if (v.role === 'guard') {
+    // Guards patrol the village perimeter
+    const angle = Math.random() * Math.PI * 2;
+    const patrolR = 8 + Math.random() * 4;
+    v.targetX = vd.cx + Math.cos(angle) * patrolR;
+    v.targetZ = vd.cz + Math.sin(angle) * patrolR;
+  } else {
+    // Workers visit houses, well, market
+    if (r < 0.3) {
+      const home = vd.houses[Math.floor(Math.random() * vd.houses.length)];
+      v.targetX = home.doorX; v.targetZ = home.doorZ;
+    } else if (r < 0.6) {
+      v.targetX = vd.well.x + (Math.random()-0.5)*3;
+      v.targetZ = vd.well.z + (Math.random()-0.5)*3;
+    } else {
+      const stall = vd.market[Math.floor(Math.random() * vd.market.length)];
+      v.targetX = stall.x + (Math.random()-0.5)*2;
+      v.targetZ = stall.z + (Math.random()-0.5)*2;
+    }
+  }
+}
+
+function _nearestMonsterDist(vx, vz) {
+  let minD = Infinity;
+  let mx = 0, mz = 0;
+  gmMonsters.forEach(m => {
+    if (m.hp <= 0) return;
+    const dx = m.group.position.x - vx;
+    const dz = m.group.position.z - vz;
+    const d = Math.sqrt(dx*dx + dz*dz);
+    if (d < minD) { minD = d; mx = m.group.position.x; mz = m.group.position.z; }
+  });
+  return { dist: minD, mx, mz };
+}
+
 function updateVillagers(dt) {
   villagers.forEach(v => {
     if (!v.alive) return;
-    v.stateTimer -= dt;
-    if (v.stateTimer <= 0) {
-      // State machine
-      const r = Math.random();
-      if (r < 0.5) {
-        v.state = 'wander';
-        v.stateTimer = 2 + Math.random() * 4;
-        const angle = Math.random() * Math.PI * 2;
-        v.vx = Math.cos(angle) * 1.2;
-        v.vz = Math.sin(angle) * 1.2;
-      } else if (r < 0.8) {
-        v.state = 'idle';
-        v.stateTimer = 2 + Math.random() * 3;
-        v.vx = 0; v.vz = 0;
+
+    const px = v.group.position.x, pz = v.group.position.z;
+
+    // ── Check for nearby monsters → flee ──
+    if (gmMonsters.length > 0) {
+      const { dist: monsterDist, mx, mz } = _nearestMonsterDist(px, pz);
+      if (monsterDist < 10) {
+        // Panic! Flee away from monster
+        v.state = 'flee';
+        v.fleeTimer = 1.5 + Math.random();
+        v.fleeFromX = mx; v.fleeFromZ = mz;
+        // Show exclamation
+        const excl = v.group.getObjectByName('exclMark');
+        if (excl) excl.visible = true;
+
+        // Flee direction: away from monster
+        const fdx = px - mx, fdz = pz - mz;
+        const fd = Math.sqrt(fdx*fdx + fdz*fdz) || 1;
+        v.vx = (fdx / fd) * v.speed * 2.5;
+        v.vz = (fdz / fd) * v.speed * 2.5;
+
+        // If very close, try to hide inside nearest house
+        if (monsterDist < 5 && _villageData) {
+          let nearestHouse = null, nearDist = Infinity;
+          _villageData.houses.forEach(h => {
+            const hd = Math.sqrt((h.insideX - px)**2 + (h.insideZ - pz)**2);
+            if (hd < nearDist) { nearDist = hd; nearestHouse = h; }
+          });
+          if (nearestHouse) {
+            v.targetX = nearestHouse.doorX;
+            v.targetZ = nearestHouse.doorZ;
+          }
+        }
       } else {
-        // Walk back toward home
-        v.state = 'wander';
-        v.stateTimer = 1 + Math.random() * 2;
-        const dx = v.homeX - v.group.position.x;
-        const dz = v.homeZ - v.group.position.z;
-        const d = Math.sqrt(dx*dx + dz*dz) || 1;
-        v.vx = (dx / d) * 1.5;
-        v.vz = (dz / d) * 1.5;
+        // No danger nearby
+        const excl = v.group.getObjectByName('exclMark');
+        if (excl) excl.visible = false;
+        if (v.state === 'flee') {
+          v.fleeTimer -= dt;
+          if (v.fleeTimer <= 0) {
+            v.state = 'idle';
+            v.stateTimer = 1;
+          }
+        }
       }
     }
 
-    if (v.state === 'wander') {
-      let nx = v.group.position.x + v.vx * dt;
-      let nz = v.group.position.z + v.vz * dt;
-      // Keep within village area
+    // ── Gratitude animation (bob after being saved) ──
+    if (v.gratitudeTimer > 0) {
+      v.gratitudeTimer -= dt;
+      v.group.position.y += Math.sin(performance.now() * 0.01) * 0.01;
+    }
+
+    // ── Normal state machine (when not fleeing) ──
+    if (v.state !== 'flee') {
+      v.stateTimer -= dt;
+      if (v.stateTimer <= 0) {
+        const r = Math.random();
+        if (r < 0.4) {
+          v.state = 'walk_to';
+          v.stateTimer = 4 + Math.random() * 6;
+          _pickVillagerTarget(v);
+        } else if (r < 0.7) {
+          v.state = 'idle';
+          v.stateTimer = 3 + Math.random() * 5;
+          v.vx = 0; v.vz = 0;
+        } else {
+          // Go home
+          v.state = 'walk_to';
+          v.stateTimer = 3 + Math.random() * 3;
+          if (_villageData) {
+            const home = _villageData.houses[v.homeHouse % _villageData.houses.length];
+            v.targetX = home.doorX; v.targetZ = home.doorZ;
+          }
+        }
+      }
+    }
+
+    // ── Movement ──
+    const isMoving = v.state === 'walk_to' || v.state === 'flee';
+    if (isMoving) {
+      let moveSpeed = v.state === 'flee' ? v.speed * 2.5 : v.speed;
+
+      if (v.state === 'walk_to' && v.targetX !== null) {
+        const dx = v.targetX - px, dz = v.targetZ - pz;
+        const d = Math.sqrt(dx*dx + dz*dz);
+        if (d < 0.5) {
+          // Arrived at target
+          v.state = 'idle';
+          v.stateTimer = 2 + Math.random() * 4;
+          v.vx = 0; v.vz = 0;
+          v.targetX = null; v.targetZ = null;
+        } else {
+          v.vx = (dx / d) * moveSpeed;
+          v.vz = (dz / d) * moveSpeed;
+        }
+      }
+
+      let nx = px + v.vx * dt;
+      let nz = pz + v.vz * dt;
+
+      // Collision check — avoid walls
+      if (_villagerBlocked(nx, nz)) {
+        // Try to slide along walls
+        if (!_villagerBlocked(nx, pz)) { nz = pz; }
+        else if (!_villagerBlocked(px, nz)) { nx = px; }
+        else { nx = px; nz = pz; v.vx *= -0.5; v.vz *= -0.5; }
+      }
+
+      // Keep within village bounds
       const mid = worldSZ / 2;
-      if (Math.abs(nx - mid) > 14) v.vx *= -1;
-      if (Math.abs(nz - mid) > 14) v.vz *= -1;
-      nx = Math.max(2, Math.min(worldSZ - 2, nx));
-      nz = Math.max(2, Math.min(worldSZ - 2, nz));
+      nx = Math.max(mid - 18, Math.min(mid + 18, nx));
+      nz = Math.max(mid - 18, Math.min(mid + 18, nz));
+
       v.group.position.x = nx;
       v.group.position.z = nz;
+
       // Face direction
       if (Math.abs(v.vx) > 0.1 || Math.abs(v.vz) > 0.1) {
-        v.group.rotation.y = Math.atan2(v.vx, v.vz);
+        const targetYaw = Math.atan2(v.vx, v.vz);
+        // Smooth rotation
+        let diff = targetYaw - v.group.rotation.y;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        v.group.rotation.y += diff * Math.min(1, dt * 8);
       }
-      // Leg animation
-      const swing = Math.sin(performance.now() * 0.006) * 0.5;
-      v.legL.rotation.x = swing;
-      v.legR.rotation.x = -swing;
+
+      // Leg + arm animation
+      const t = performance.now() * 0.007;
+      const amp = v.state === 'flee' ? 0.7 : 0.5;
+      v.legL.rotation.x = Math.sin(t) * amp;
+      v.legR.rotation.x = -Math.sin(t) * amp;
+      v.armL.rotation.x = -Math.sin(t) * amp * 0.6;
+      v.armR.rotation.x = Math.sin(t) * amp * 0.6;
     } else {
       v.legL.rotation.x = 0;
       v.legR.rotation.x = 0;
+      v.armL.rotation.x = 0;
+      v.armR.rotation.x = 0;
     }
 
-    // Find ground height
-    for (let y = 20; y >= 0; y--) {
-      if (hasBlock(Math.floor(v.group.position.x), y, Math.floor(v.group.position.z))) {
-        v.group.position.y = y + 1;
-        break;
-      }
-    }
+    // ── Stay on ground level only (never climb roofs) ──
+    v.group.position.y = _villagerGroundY(v.group.position.x, v.group.position.z);
   });
 }
 
@@ -6601,9 +6854,9 @@ function killVillager(v) {
 
 // ── Monster system for game mode ─────────────────────────────
 const gmMonsters = [];
+const acidProjectiles = []; // hydra acid spit
 
 function spawnGMMonster(type, x, z) {
-  // Use existing creature system but track separately
   const def = CREATURE_DEFS.find(d => d.id === type);
   if (!def) return;
   const c = spawnCreature(type, new THREE.Vector3(x, 10, z), true);
@@ -6611,6 +6864,9 @@ function spawnGMMonster(type, x, z) {
     c._isGMMonster = true;
     c._gmTarget = null;
     c._gmAttackTimer = 0;
+    c._gmSpitTimer = 0; // for hydra acid
+    c._gmTargetVillager = null;
+    c._gmChaseTimer = 0;
     gmMonsters.push(c);
   }
   return c;
@@ -6739,53 +6995,64 @@ function updateGameMode(dt) {
     });
   }
 
-  // ── Monster AI: move toward village & attack ──
+  // ── Monster AI: move toward village, chase villagers, attack ──
   const mid = worldSZ / 2;
   gmMonsters.forEach(m => {
     if (m.hp <= 0) return;
-    // Override creature wander AI — march toward village
-    const dx = mid - m.group.position.x;
-    const dz = mid - m.group.position.z;
+    const mx = m.group.position.x, mz = m.group.position.z;
+
+    // Find nearest alive villager
+    let closestV = null, closestVD = Infinity;
+    villagers.forEach(v => {
+      if (!v.alive) return;
+      const vd = Math.sqrt((v.group.position.x - mx)**2 + (v.group.position.z - mz)**2);
+      if (vd < closestVD) { closestVD = vd; closestV = v; }
+    });
+
+    // Decide target: chase nearest villager if close, otherwise march to village center
+    let targetX = mid, targetZ = mid;
+    if (closestV && closestVD < 15) {
+      // Chase the villager!
+      targetX = closestV.group.position.x;
+      targetZ = closestV.group.position.z;
+      m._gmTargetVillager = closestV;
+    } else {
+      m._gmTargetVillager = null;
+    }
+
+    const dx = targetX - mx, dz = targetZ - mz;
     const d = Math.sqrt(dx*dx + dz*dz);
-    if (d > 3) {
-      const speed = 2.5;
+    if (d > 1.5) {
+      const speed = closestV && closestVD < 15 ? 3.0 : 2.0; // faster when chasing
       m.vx = (dx / d) * speed;
       m.vz = (dz / d) * speed;
       m.state = 'wander';
       m.stateTimer = 1;
     }
 
-    // Attack villagers & player when close
-    m._gmAttackTimer = (m._gmAttackTimer || 0) + dt;
-    if (d < 5 && m._gmAttackTimer >= gmState.monsterAttackInterval) {
-      m._gmAttackTimer = 0;
-
-      // Try to attack nearest villager
-      let closestV = null, closestVD = Infinity;
-      villagers.forEach(v => {
-        if (!v.alive) return;
-        const vd = Math.sqrt(
-          (v.group.position.x - m.group.position.x)**2 +
-          (v.group.position.z - m.group.position.z)**2
-        );
-        if (vd < closestVD) { closestVD = vd; closestV = v; }
-      });
-
-      if (closestV && closestVD < 3) {
-        closestV.hp--;
-        if (closestV.hp <= 0) {
-          killVillager(closestV);
-          showInfo('💀 כפרי נהרג!', '#ff2222', 2000);
-          gmState.power -= 5;
-        }
+    // ── Hydra acid spit ──
+    if (m.def && m.def.id === 'hydra') {
+      m._gmSpitTimer = (m._gmSpitTimer || 0) + dt;
+      if (m._gmSpitTimer >= 3.0 && closestV && closestVD < 18) {
+        m._gmSpitTimer = 0;
+        _spawnAcidSpit(mx, m.group.position.y + 2, mz,
+                       closestV.group.position.x, closestV.group.position.y + 0.5,
+                       closestV.group.position.z);
       }
+    }
 
+    // ── Melee attacks ──
+    m._gmAttackTimer = (m._gmAttackTimer || 0) + dt;
+    if (m._gmAttackTimer >= gmState.monsterAttackInterval) {
+      // Attack villager in melee range
+      if (closestV && closestVD < 2.5) {
+        m._gmAttackTimer = 0;
+        _monsterHitVillager(closestV, m);
+      }
       // Attack player if nearby
-      const playerDist = Math.sqrt(
-        (player.pos.x - m.group.position.x)**2 +
-        (player.pos.z - m.group.position.z)**2
-      );
-      if (playerDist < 4) {
+      const playerDist = Math.sqrt((player.pos.x - mx)**2 + (player.pos.z - mz)**2);
+      if (playerDist < 3.5) {
+        m._gmAttackTimer = 0;
         const dmg = 5 + Math.floor(Math.random() * 5);
         damagePlayer(dmg);
         gmState.power -= 2;
@@ -6793,12 +7060,26 @@ function updateGameMode(dt) {
     }
   });
 
-  // ── Clean up dead monsters ──
+  // ── Update acid projectiles ──
+  _updateAcidProjectiles(dt);
+
+  // ── Clean up dead monsters + believer rewards ──
   for (let i = gmMonsters.length - 1; i >= 0; i--) {
-    if (gmMonsters[i].hp <= 0) {
+    const m = gmMonsters[i];
+    if (m.hp <= 0) {
       gmState.totalKills++;
-      gmState.believers += 2;
+      // Reward: more believers if monster was threatening villagers
+      const nearVillager = m._gmTargetVillager && m._gmTargetVillager.alive;
+      const baseReward = nearVillager ? 5 : 2;
+      gmState.believers += baseReward;
       gmState.power = Math.min(gmState.maxPower, gmState.power + 3);
+      // Mark nearby villagers as "saved"
+      if (nearVillager) {
+        const tv = m._gmTargetVillager;
+        tv.savedByGod = true;
+        tv.gratitudeTimer = 2.0;
+        showInfo(`🙏 כפרי ניצל! +${baseReward} מאמינים`, '#44ff44', 2000);
+      }
       gmMonsters.splice(i, 1);
     }
   }
@@ -6809,8 +7090,15 @@ function updateGameMode(dt) {
     gmState.waveActive = false;
     gmState.wave++;
 
+    // Bonus believers for surviving villagers
+    const aliveV = villagers.filter(v => v.alive).length;
+    if (aliveV > 0) {
+      const bonus = aliveV * 2;
+      gmState.believers += bonus;
+      showInfo(`🏘️ +${bonus} מאמינים מ-${aliveV} כפריים שנשארו בחיים!`, '#88cc66', 3000);
+    }
+
     if (gmState.wave >= stage.waves.length) {
-      // Stage complete!
       gmState.believers += stage.reward.believers;
       gmState.power = Math.min(gmState.maxPower, gmState.power + stage.reward.power);
       gmState.stage++;
@@ -6827,9 +7115,9 @@ function updateGameMode(dt) {
     }
   }
 
-  // ── Power drain (slowly if village taking damage) ──
+  // ── Power drain ──
   if (villagers.filter(v => v.alive).length === 0 && gmState.waveActive) {
-    gmState.power -= dt * 5; // Rapid drain if all villagers dead
+    gmState.power -= dt * 5;
   }
 
   // ── Game over check ──
@@ -6841,6 +7129,131 @@ function updateGameMode(dt) {
   }
 
   updateGameModeHUD();
+}
+
+// ── Monster hits villager ──
+function _monsterHitVillager(v, monster) {
+  if (!v.alive) return;
+  v.hp--;
+  // Flash villager red
+  v.body.material.color.setHex(0xff0000);
+  setTimeout(() => { if (v.alive) v.body.material.color.setHex(v.body.material._origColor || 0x888888); }, 200);
+  if (!v.body.material._origColor) v.body.material._origColor = v.body.material.color.getHex();
+
+  if (v.hp <= 0) {
+    killVillager(v);
+    showInfo('💀 כפרי נהרג על ידי ' + (monster.def?.n || 'מפלצת') + '!', '#ff2222', 2500);
+    gmState.power -= 5;
+  } else {
+    playTone(300, 0.1, 'sawtooth');
+  }
+}
+
+// ── Hydra acid spit projectile ──
+function _spawnAcidSpit(fx, fy, fz, tx, ty, tz) {
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(0.3, 0.3, 0.3),
+    new THREE.MeshLambertMaterial({ color: 0x00ff00, transparent: true, opacity: 0.8 })
+  );
+  mesh.position.set(fx, fy, fz);
+  scene.add(mesh);
+
+  // Trail particles
+  const trail = new THREE.Mesh(
+    new THREE.BoxGeometry(0.15, 0.15, 0.15),
+    new THREE.MeshBasicMaterial({ color: 0x88ff00, transparent: true, opacity: 0.5 })
+  );
+  trail.position.copy(mesh.position);
+  scene.add(trail);
+
+  const dx = tx - fx, dy = ty - fy, dz = tz - fz;
+  const d = Math.sqrt(dx*dx + dy*dy + dz*dz) || 1;
+  const speed = 12;
+
+  acidProjectiles.push({
+    mesh, trail,
+    vx: (dx/d) * speed, vy: (dy/d) * speed + 3, vz: (dz/d) * speed,
+    life: 3.0, damage: 2
+  });
+
+  playTone(150, 0.15, 'sawtooth');
+}
+
+function _updateAcidProjectiles(dt) {
+  for (let i = acidProjectiles.length - 1; i >= 0; i--) {
+    const a = acidProjectiles[i];
+    a.life -= dt;
+    a.mesh.position.x += a.vx * dt;
+    a.mesh.position.y += a.vy * dt;
+    a.mesh.position.z += a.vz * dt;
+    a.vy -= 8 * dt; // gravity
+
+    // Update trail
+    a.trail.position.lerp(a.mesh.position, 0.3);
+    a.trail.material.opacity = Math.max(0, a.life * 0.3);
+
+    // Rotation for visual effect
+    a.mesh.rotation.x += dt * 5;
+    a.mesh.rotation.z += dt * 3;
+
+    if (a.life <= 0) {
+      scene.remove(a.mesh); scene.remove(a.trail);
+      acidProjectiles.splice(i, 1);
+      continue;
+    }
+
+    // Check hit on ground (splat)
+    const gx = Math.floor(a.mesh.position.x), gz = Math.floor(a.mesh.position.z);
+    const gy = Math.floor(a.mesh.position.y);
+    if (gy >= 0 && hasBlock(gx, gy, gz)) {
+      // Acid splash damage to nearby villagers
+      villagers.forEach(v => {
+        if (!v.alive) return;
+        const vd = Math.sqrt(
+          (v.group.position.x - a.mesh.position.x)**2 +
+          (v.group.position.z - a.mesh.position.z)**2
+        );
+        if (vd < 2.5) {
+          v.hp -= a.damage;
+          v.body.material.color.setHex(0x00ff00); // flash green (acid)
+          setTimeout(() => { if (v.alive) v.body.material.color.setHex(v.body.material._origColor || 0x888888); }, 300);
+          if (v.hp <= 0) {
+            killVillager(v);
+            showInfo('☠️ כפרי נפגע מחומצת הידרה!', '#00ff00', 2500);
+            gmState.power -= 5;
+          }
+        }
+      });
+
+      // Hit player?
+      const pd = Math.sqrt(
+        (player.pos.x - a.mesh.position.x)**2 +
+        (player.pos.z - a.mesh.position.z)**2
+      );
+      if (pd < 2.0) {
+        damagePlayer(8);
+        showInfo('🤢 נפגעת מחומצה!', '#00ff00', 1500);
+      }
+
+      // Spawn green splat particles
+      for (let j = 0; j < 4; j++) {
+        const p = new THREE.Mesh(
+          new THREE.BoxGeometry(0.1, 0.1, 0.1),
+          new THREE.MeshLambertMaterial({ color: 0x00ff00, transparent: true })
+        );
+        p.position.copy(a.mesh.position);
+        scene.add(p);
+        deathParticles.push({
+          mesh: p,
+          vel: new THREE.Vector3((Math.random()-0.5)*3, 2+Math.random()*2, (Math.random()-0.5)*3),
+          life: 0.8
+        });
+      }
+
+      scene.remove(a.mesh); scene.remove(a.trail);
+      acidProjectiles.splice(i, 1);
+    }
+  }
 }
 
 // ── Enter Game Mode ──────────────────────────────────────────
@@ -7132,6 +7545,8 @@ async function exitGame() {
   // Clean up game mode
   villagers.forEach(v => scene.remove(v.group)); villagers.length = 0;
   gmMonsters.length = 0; gmState = null; currentGameMode = 'canvas';
+  acidProjectiles.forEach(a => { scene.remove(a.mesh); scene.remove(a.trail); });
+  acidProjectiles.length = 0; _villageData = null;
   // Reset selection state
   selectedGogCostume = null; selectedGogCreature = null;
   // Clean up sky
