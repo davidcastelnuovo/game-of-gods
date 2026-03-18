@@ -1,0 +1,10 @@
+node_modules/
+server/data/
+.DS_Store
+*.log
+article-reader/
+.next/
+.localized/
+Icon*
+textures/
+.claude/
