@@ -2822,6 +2822,12 @@ const CREATURE_DEFS = [
   {id:'dolphin',   n:'דולפין',   e:'🐬', ground:false, scale:0.8, archetype:'aquatic', floatH:2, hp:4},
   {id:'fish',      n:'דג',       e:'🐟', ground:false, scale:0.5, archetype:'aquatic', floatH:1, hp:2},
   {id:'mermaid',   n:'בת ים',    e:'🧜‍♀️', ground:false, scale:0.8, archetype:'aquatic', floatH:2, hp:5},
+  // ── חיות מיתולוגיות ייחודיות (GOG) ────────────────────
+  {id:'kraken_m',  n:'קראקן',    e:'🐙', ground:false, scale:1.3, archetype:'kraken',  floatH:2, hp:12},
+  {id:'kir_deer_m',n:'איילת קירינייה',e:'🦌', ground:true, scale:0.95, archetype:'quadruped', hp:6},
+  {id:'manticore_m',n:'מנטיקור', e:'🦁', ground:false, scale:1.1, archetype:'manticore', floatH:4, hp:9},
+  {id:'phoenix_g', n:'פניקס',    e:'🔥', ground:false, scale:1.0, archetype:'phoenix', floatH:6, hp:7},
+  {id:'pegasus_m', n:'פגסוס',    e:'🐴', ground:false, scale:1.0, archetype:'pegasus', floatH:5, hp:6},
 ];
 
 const creatures = [];
@@ -2887,6 +2893,12 @@ const C_PALETTES = {
   dolphin:   { top:0x708090,  belly:0xF0F8FF, fin:0x4F6070  },
   fish:      { scale:0xFF7F50,fin:0xFFD700,   eye:0x000000  },
   mermaid:   { skin:0xFFE4C4, hair:0x00CED1,  tail:0x20B2AA },
+  // GOG mythological creatures
+  kraken_m:  { body:0x2B0B3D, tentacle:0x4A1259, eye:0xFF2200, sucker:0x8B3A8B, belly:0x3D1A54 },
+  kir_deer_m:{ coat:0xDAA520, belly:0xFFE4B5, antler:0xB8860B, hoof:0x654321, eye:0x4169E1 },
+  manticore_m:{ lion:0xCC8800, mane:0x8B4513, wing:0x3B1A1A, tail:0x6B2222, sting:0x1A1A1A, face:0xDEB887 },
+  phoenix_g: { fire:0xFF4500, gold:0xFFD700, ember:0xFF2200, wing:0xFF8C00, tail:0xFFFF00, core:0xFFA500 },
+  pegasus_m: { coat:0xF5F5FF, mane:0xE8E8FF, wing:0xFFFFFF, hoof:0xC0C0C0, eye:0x4169E1 },
 };
 
 function buildCreatureBody(def) {
@@ -3071,7 +3083,238 @@ function buildCreatureBody(def) {
         const eyeM2 = eyeM.clone(); eyeM2.position.x = -0.22*s; group.add(eyeM2);
       }
     }
+
+  } else if (def.archetype === 'kraken') {
+    // ── Kraken: massive sea monster with tentacles ──────
+    const bodyCol = pal.body || 0x2B0B3D;
+    const tentCol = pal.tentacle || 0x4A1259;
+    const bellyCol = pal.belly || 0x3D1A54;
+
+    // Large bulbous head/mantle
+    ud.head = mkHead(new THREE.BoxGeometry(0.9*s, 0.8*s, 0.85*s), bodyCol, pal.eye||0xFF2200);
+    ud.head.position.set(0, 0.6*s, 0);
+    group.add(ud.head);
+
+    // Two big menacing eyes on sides
+    const bigEye1 = new THREE.Mesh(new THREE.BoxGeometry(0.25*s,0.2*s,0.08*s), flatMat(pal.eye||0xFF2200));
+    bigEye1.position.set(+0.38*s, 0.7*s, 0.35*s); group.add(bigEye1);
+    const pupil1 = new THREE.Mesh(new THREE.BoxGeometry(0.1*s,0.12*s,0.08*s), flatMat(0x111111));
+    pupil1.position.set(+0.38*s, 0.7*s, 0.39*s); group.add(pupil1);
+    const bigEye2 = bigEye1.clone(); bigEye2.position.x = -0.38*s; group.add(bigEye2);
+    const pupil2 = pupil1.clone(); pupil2.position.x = -0.38*s; group.add(pupil2);
+
+    // Body/mantle
+    ud.body = new THREE.Mesh(new THREE.BoxGeometry(0.75*s, 0.55*s, 0.7*s), shadedMat(bellyCol));
+    ud.body.position.set(0, 0.05*s, 0);
+    group.add(ud.body);
+
+    // 8 tentacles hanging down in a circle
+    ud.tentacles = [];
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      const tx = Math.cos(a) * 0.35 * s;
+      const tz = Math.sin(a) * 0.35 * s;
+      // Upper tentacle segment
+      const t1 = new THREE.Mesh(new THREE.BoxGeometry(0.16*s, 0.55*s, 0.16*s), shadedMat(tentCol));
+      t1.position.set(tx, -0.35*s, tz);
+      t1.rotation.z = Math.cos(a) * 0.25;
+      t1.rotation.x = -Math.sin(a) * 0.25;
+      group.add(t1);
+      // Lower tentacle tip (thinner)
+      const t2 = new THREE.Mesh(new THREE.BoxGeometry(0.1*s, 0.4*s, 0.1*s), shadedMat(tentCol));
+      t2.position.set(tx * 1.4, -0.82*s, tz * 1.4);
+      t2.rotation.z = Math.cos(a) * 0.45;
+      t2.rotation.x = -Math.sin(a) * 0.45;
+      group.add(t2);
+      // Suckers (dots on tentacles)
+      const suck = new THREE.Mesh(new THREE.BoxGeometry(0.06*s,0.06*s,0.06*s), flatMat(pal.sucker||0x8B3A8B));
+      suck.position.set(tx*1.1, -0.5*s, tz*1.1); group.add(suck);
+      ud.tentacles.push(t1, t2);
+    }
+
+  } else if (def.archetype === 'manticore') {
+    // ── Manticore: lion body + bat wings + scorpion tail + human-like face ──
+    const lionCol = pal.lion || 0xCC8800;
+    const maneCol = pal.mane || 0x8B4513;
+    const wingCol = pal.wing || 0x3B1A1A;
+    const tailCol = pal.tail || 0x6B2222;
+    const faceCol = pal.face || 0xDEB887;
+
+    // Lion body
+    ud.body = new THREE.Mesh(new THREE.BoxGeometry(0.6*s, 0.6*s, 1.05*s), shadedMat(lionCol));
+    ud.body.position.set(0, 0.5*s, 0);
+    group.add(ud.body);
+
+    // Human-like face head
+    ud.head = mkHead(new THREE.BoxGeometry(0.6*s, 0.58*s, 0.55*s), faceCol, 0xFF0000);
+    ud.head.position.set(0, 0.92*s, 0.55*s);
+    group.add(ud.head);
+
+    // Mane around head
+    const mane = new THREE.Mesh(new THREE.BoxGeometry(0.75*s, 0.65*s, 0.4*s), shadedMat(maneCol));
+    mane.position.set(0, 0.9*s, 0.3*s); group.add(mane);
+
+    // Rows of sharp teeth
+    const teeth = new THREE.Mesh(new THREE.BoxGeometry(0.35*s, 0.08*s, 0.06*s), flatMat(0xFFFFFF));
+    teeth.position.set(0, 0.68*s, 0.78*s); group.add(teeth);
+
+    // 4 lion legs
+    const legGeo = new THREE.BoxGeometry(0.22*s, 0.48*s, 0.22*s);
+    const lm = shadedMat(lionCol);
+    ud.legFL = new THREE.Mesh(legGeo, lm); ud.legFL.position.set(+0.2*s, 0.04*s, +0.35*s);
+    ud.legFR = new THREE.Mesh(legGeo, lm); ud.legFR.position.set(-0.2*s, 0.04*s, +0.35*s);
+    ud.legBL = new THREE.Mesh(legGeo, lm); ud.legBL.position.set(+0.2*s, 0.04*s, -0.35*s);
+    ud.legBR = new THREE.Mesh(legGeo, lm); ud.legBR.position.set(-0.2*s, 0.04*s, -0.35*s);
+    [ud.legFL, ud.legFR, ud.legBL, ud.legBR].forEach(l => group.add(l));
+
+    // Bat wings (dark, angular)
+    ud.wingL = new THREE.Mesh(new THREE.BoxGeometry(1.0*s, 0.14*s, 0.6*s), shadedMat(wingCol));
+    ud.wingR = new THREE.Mesh(new THREE.BoxGeometry(1.0*s, 0.14*s, 0.6*s), shadedMat(wingCol));
+    ud.wingL.position.set(+0.75*s, 0.7*s, -0.05*s);
+    ud.wingR.position.set(-0.75*s, 0.7*s, -0.05*s);
+    group.add(ud.wingL); group.add(ud.wingR);
+    // Wing membrane details
+    const memL = new THREE.Mesh(new THREE.BoxGeometry(0.65*s, 0.06*s, 0.35*s), shadedMat(wingCol));
+    memL.position.set(+1.1*s, 0.6*s, 0.05*s); group.add(memL);
+    const memR = memL.clone(); memR.position.x = -1.1*s; group.add(memR);
+
+    // Scorpion tail — arched segments
+    const seg1 = new THREE.Mesh(new THREE.BoxGeometry(0.15*s, 0.15*s, 0.35*s), shadedMat(tailCol));
+    seg1.position.set(0, 0.7*s, -0.65*s); seg1.rotation.x = -0.3; group.add(seg1);
+    const seg2 = new THREE.Mesh(new THREE.BoxGeometry(0.13*s, 0.13*s, 0.3*s), shadedMat(tailCol));
+    seg2.position.set(0, 0.95*s, -0.85*s); seg2.rotation.x = -0.6; group.add(seg2);
+    const seg3 = new THREE.Mesh(new THREE.BoxGeometry(0.11*s, 0.11*s, 0.25*s), shadedMat(tailCol));
+    seg3.position.set(0, 1.2*s, -0.9*s); seg3.rotation.x = -1.0; group.add(seg3);
+    // Stinger
+    const sting = new THREE.Mesh(new THREE.BoxGeometry(0.08*s, 0.2*s, 0.08*s), flatMat(pal.sting||0x1A1A1A));
+    sting.position.set(0, 1.42*s, -0.82*s); group.add(sting);
+
+  } else if (def.archetype === 'phoenix') {
+    // ── Phoenix: majestic fire bird ─────────────────────
+    const fireCol = pal.fire || 0xFF4500;
+    const goldCol = pal.gold || 0xFFD700;
+    const emberCol = pal.ember || 0xFF2200;
+    const wingCol = pal.wing || 0xFF8C00;
+    const tailCol = pal.tail || 0xFFFF00;
+    const coreCol = pal.core || 0xFFA500;
+
+    // Elegant bird head
+    ud.head = mkHead(new THREE.BoxGeometry(0.45*s, 0.42*s, 0.42*s), goldCol, 0xFF0000);
+    ud.head.position.set(0, 0.38*s, 0.55*s);
+    group.add(ud.head);
+    // Crest/crown of flames on head
+    const crest1 = new THREE.Mesh(new THREE.BoxGeometry(0.06*s, 0.25*s, 0.06*s), flatMat(fireCol));
+    crest1.position.set(0, 0.68*s, 0.55*s); group.add(crest1);
+    const crest2 = new THREE.Mesh(new THREE.BoxGeometry(0.06*s, 0.2*s, 0.06*s), flatMat(emberCol));
+    crest2.position.set(+0.1*s, 0.63*s, 0.52*s); crest2.rotation.z = -0.3; group.add(crest2);
+    const crest3 = crest2.clone(); crest3.position.x = -0.1*s; crest3.rotation.z = 0.3; group.add(crest3);
+
+    // Beak
+    const beak = new THREE.Mesh(new THREE.BoxGeometry(0.12*s, 0.1*s, 0.18*s), flatMat(0xFF6600));
+    beak.position.set(0, 0.3*s, 0.72*s); group.add(beak);
+
+    // Body - glowing fire core
+    ud.body = new THREE.Mesh(new THREE.BoxGeometry(0.45*s, 0.45*s, 0.85*s), shadedMat(coreCol));
+    group.add(ud.body);
+
+    // Fire wings — large and flowing
+    ud.wingL = new THREE.Mesh(new THREE.BoxGeometry(1.15*s, 0.12*s, 0.65*s), shadedMat(wingCol));
+    ud.wingR = new THREE.Mesh(new THREE.BoxGeometry(1.15*s, 0.12*s, 0.65*s), shadedMat(wingCol));
+    ud.wingL.position.set(+0.82*s, 0.18*s, 0);
+    ud.wingR.position.set(-0.82*s, 0.18*s, 0);
+    group.add(ud.wingL); group.add(ud.wingR);
+    // Wing flame tips
+    const ftipL = new THREE.Mesh(new THREE.BoxGeometry(0.4*s,0.08*s,0.35*s), flatMat(fireCol));
+    ftipL.position.set(+1.35*s, 0.15*s, 0); group.add(ftipL);
+    const ftipR = ftipL.clone(); ftipR.position.x = -1.35*s; group.add(ftipR);
+
+    // Long flowing tail of flames
+    const t1 = new THREE.Mesh(new THREE.BoxGeometry(0.2*s, 0.16*s, 0.4*s), shadedMat(fireCol));
+    t1.position.set(0, 0, -0.6*s); group.add(t1);
+    const t2 = new THREE.Mesh(new THREE.BoxGeometry(0.25*s, 0.12*s, 0.35*s), shadedMat(tailCol));
+    t2.position.set(0, -0.05*s, -0.9*s); group.add(t2);
+    const t3 = new THREE.Mesh(new THREE.BoxGeometry(0.18*s, 0.1*s, 0.3*s), shadedMat(emberCol));
+    t3.position.set(0, -0.1*s, -1.15*s); group.add(t3);
+    // Side tail feathers
+    const tf1 = new THREE.Mesh(new THREE.BoxGeometry(0.12*s,0.08*s,0.3*s), flatMat(goldCol));
+    tf1.position.set(+0.15*s, -0.05*s, -0.95*s); tf1.rotation.y = 0.3; group.add(tf1);
+    const tf2 = tf1.clone(); tf2.position.x = -0.15*s; tf2.rotation.y = -0.3; group.add(tf2);
+
+  } else if (def.archetype === 'pegasus') {
+    // ── Pegasus: white winged horse ─────────────────────
+    const coatCol = pal.coat || 0xF5F5FF;
+    const maneCol = pal.mane || 0xE8E8FF;
+    const wingCol = pal.wing || 0xFFFFFF;
+    const hoofCol = pal.hoof || 0xC0C0C0;
+
+    // Horse head
+    ud.head = mkHead(new THREE.BoxGeometry(0.55*s, 0.52*s, 0.55*s), coatCol, pal.eye||0x4169E1);
+    ud.head.position.set(0, 0.88*s, 0.55*s);
+    group.add(ud.head);
+
+    // Mane flowing down neck
+    const maneTop = new THREE.Mesh(new THREE.BoxGeometry(0.12*s, 0.3*s, 0.5*s), shadedMat(maneCol));
+    maneTop.position.set(0, 1.02*s, 0.25*s); group.add(maneTop);
+
+    // Horse body
+    ud.body = new THREE.Mesh(new THREE.BoxGeometry(0.5*s, 0.58*s, 1.0*s), shadedMat(coatCol));
+    ud.body.position.set(0, 0.5*s, 0);
+    group.add(ud.body);
+
+    // 4 horse legs with silver hooves
+    const legGeo = new THREE.BoxGeometry(0.2*s, 0.48*s, 0.2*s);
+    const lm = shadedMat(coatCol);
+    ud.legFL = new THREE.Mesh(legGeo, lm); ud.legFL.position.set(+0.15*s, 0.04*s, +0.32*s);
+    ud.legFR = new THREE.Mesh(legGeo, lm); ud.legFR.position.set(-0.15*s, 0.04*s, +0.32*s);
+    ud.legBL = new THREE.Mesh(legGeo, lm); ud.legBL.position.set(+0.15*s, 0.04*s, -0.32*s);
+    ud.legBR = new THREE.Mesh(legGeo, lm); ud.legBR.position.set(-0.15*s, 0.04*s, -0.32*s);
+    [ud.legFL, ud.legFR, ud.legBL, ud.legBR].forEach(l => group.add(l));
+    // Silver hooves
+    for (const leg of [ud.legFL, ud.legFR, ud.legBL, ud.legBR]) {
+      const hoof = new THREE.Mesh(new THREE.BoxGeometry(0.22*s,0.08*s,0.22*s), flatMat(hoofCol));
+      hoof.position.set(leg.position.x, -0.15*s, leg.position.z); group.add(hoof);
+    }
+
+    // Large feathered wings
+    ud.wingL = new THREE.Mesh(new THREE.BoxGeometry(1.2*s, 0.14*s, 0.6*s), shadedMat(wingCol));
+    ud.wingR = new THREE.Mesh(new THREE.BoxGeometry(1.2*s, 0.14*s, 0.6*s), shadedMat(wingCol));
+    ud.wingL.position.set(+0.85*s, 0.72*s, 0);
+    ud.wingR.position.set(-0.85*s, 0.72*s, 0);
+    group.add(ud.wingL); group.add(ud.wingR);
+    // Wing feather details
+    const feathL = new THREE.Mesh(new THREE.BoxGeometry(0.5*s,0.08*s,0.4*s), shadedMat(maneCol));
+    feathL.position.set(+1.35*s, 0.68*s, 0); group.add(feathL);
+    const feathR = feathL.clone(); feathR.position.x = -1.35*s; group.add(feathR);
+
+    // Flowing tail
+    const ptail = new THREE.Mesh(new THREE.BoxGeometry(0.14*s, 0.14*s, 0.4*s), shadedMat(maneCol));
+    ptail.position.set(0, 0.55*s, -0.65*s); group.add(ptail);
   }
+
+  // ── Kir Deer special parts (within quadruped) ─────────
+  if (def.id === 'kir_deer_m') {
+    // Large golden antlers (branching)
+    const antCol = C_PALETTES.kir_deer_m.antler;
+    // Main antler shafts
+    const antL = new THREE.Mesh(new THREE.BoxGeometry(0.08*s,0.5*s,0.08*s), flatMat(antCol));
+    antL.position.set(+0.18*s, 1.3*s, 0.5*s); antL.rotation.z = -0.2; group.add(antL);
+    const antR = new THREE.Mesh(new THREE.BoxGeometry(0.08*s,0.5*s,0.08*s), flatMat(antCol));
+    antR.position.set(-0.18*s, 1.3*s, 0.5*s); antR.rotation.z = 0.2; group.add(antR);
+    // Branches (left)
+    const brL1 = new THREE.Mesh(new THREE.BoxGeometry(0.06*s,0.25*s,0.06*s), flatMat(antCol));
+    brL1.position.set(+0.3*s, 1.45*s, 0.5*s); brL1.rotation.z = -0.5; group.add(brL1);
+    const brL2 = new THREE.Mesh(new THREE.BoxGeometry(0.06*s,0.2*s,0.06*s), flatMat(antCol));
+    brL2.position.set(+0.22*s, 1.55*s, 0.45*s); brL2.rotation.z = -0.8; group.add(brL2);
+    // Branches (right)
+    const brR1 = new THREE.Mesh(new THREE.BoxGeometry(0.06*s,0.25*s,0.06*s), flatMat(antCol));
+    brR1.position.set(-0.3*s, 1.45*s, 0.5*s); brR1.rotation.z = 0.5; group.add(brR1);
+    const brR2 = new THREE.Mesh(new THREE.BoxGeometry(0.06*s,0.2*s,0.06*s), flatMat(antCol));
+    brR2.position.set(-0.22*s, 1.55*s, 0.45*s); brR2.rotation.z = 0.8; group.add(brR2);
+    // Golden glow spot on forehead
+    const glow = new THREE.Mesh(new THREE.BoxGeometry(0.1*s,0.1*s,0.06*s), flatMat(0xFFD700));
+    glow.position.set(0, 0.95*s, 0.78*s); group.add(glow);
+  }
+
   return group;
 }
 
@@ -3125,7 +3368,9 @@ function updateCreatures(dt) {
   creatures.forEach(c => {
     const { group, def } = c;
     const ud = group.userData;
-    const isFlying = def.archetype === 'flying' || def.archetype === 'aquatic';
+    const isFlying = def.archetype === 'flying' || def.archetype === 'aquatic'
+                   || def.archetype === 'kraken' || def.archetype === 'manticore'
+                   || def.archetype === 'phoenix' || def.archetype === 'pegasus';
 
     // ── מכונת מצבים ──────────────────────────────────
     c.stateTimer -= dt;
@@ -3201,6 +3446,46 @@ function updateCreatures(dt) {
       group.rotation.y += (wf * 0.12 - group.rotation.y) * 0.15;
       if (ud.tail) ud.tail.rotation.y = wf * 0.45;
       if (ud.armL) { ud.armL.rotation.x = wf * 0.4; ud.armR.rotation.x = -wf * 0.4; }
+
+    } else if (def.archetype === 'kraken') {
+      // Tentacle swaying animation
+      const wf = Math.sin(t * 1.5 + c.phase);
+      if (ud.tentacles) {
+        ud.tentacles.forEach((tn, i) => {
+          tn.rotation.z += Math.sin(t * 2.0 + i * 0.8) * 0.008;
+          tn.rotation.x += Math.cos(t * 1.8 + i * 0.6) * 0.008;
+        });
+      }
+      // Gentle body bob
+      group.position.y = c.baseY + Math.sin(t * 0.8 + c.phase) * 0.25;
+
+    } else if (def.archetype === 'manticore') {
+      // Quadruped legs + wing flapping
+      if (ud.legFL) ud.legFL.rotation.x = -w * 0.65;
+      if (ud.legBR) ud.legBR.rotation.x = -w * 0.65;
+      if (ud.legFR) ud.legFR.rotation.x = +w * 0.65;
+      if (ud.legBL) ud.legBL.rotation.x = +w * 0.65;
+      const wf = Math.sin(t * 2.8 + c.phase);
+      if (ud.wingL) ud.wingL.rotation.z = +wf * 0.4;
+      if (ud.wingR) ud.wingR.rotation.z = -wf * 0.4;
+
+    } else if (def.archetype === 'phoenix') {
+      // Fire bird — wing flapping + gentle body glow effect via position
+      const wf = Math.sin(t * 3.5 + c.phase);
+      if (ud.wingL) ud.wingL.rotation.z = +wf * 0.6;
+      if (ud.wingR) ud.wingR.rotation.z = -wf * 0.6;
+      // Slight rising/falling like flames
+      group.position.y = c.baseY + Math.sin(t * 1.8 + c.phase) * 0.3;
+
+    } else if (def.archetype === 'pegasus') {
+      // Winged horse — quadruped legs + wing flapping
+      if (ud.legFL) ud.legFL.rotation.x = -w * 0.55;
+      if (ud.legBR) ud.legBR.rotation.x = -w * 0.55;
+      if (ud.legFR) ud.legFR.rotation.x = +w * 0.55;
+      if (ud.legBL) ud.legBL.rotation.x = +w * 0.55;
+      const wf = Math.sin(t * 3.0 + c.phase);
+      if (ud.wingL) ud.wingL.rotation.z = +wf * 0.5;
+      if (ud.wingR) ud.wingR.rotation.z = -wf * 0.5;
     }
 
     // ── אנימציית אכילה / מנוחה ──────────────────────
@@ -3646,25 +3931,25 @@ const GOG_CREATURE_DEFS = [
     desc:'מפלצת מרובת ראשים — מגנה ותוקפת', creatureId:'hydra'   },
   { id:'kraken',    nameHeb:'קראקן',          emoji:'🐙',
     deco:['🌊','💧'], bg:'linear-gradient(160deg,#00050f,#001535)',
-    desc:'אדון הים — שולט בגלים',           creatureId:'dolphin' },
+    desc:'אדון הים — שולט בגלים',           creatureId:'kraken_m' },
   { id:'cerberus',  nameHeb:'סרברוס',         emoji:'🐕',
     deco:['🦴','🔥'], bg:'linear-gradient(160deg,#070707,#1a0505)',
     desc:'שומר השאול — נאמן ועז',           creatureId:'cerberus'},
   { id:'kir_deer',  nameHeb:'איילת קירינייה', emoji:'🦌',
     deco:['🌙','🌿'], bg:'linear-gradient(160deg,#061406,#0d2b0d)',
-    desc:'האיילה האגדית — מהירה כרוח',      creatureId:'unicorn' },
+    desc:'האיילה האגדית — מהירה כרוח',      creatureId:'kir_deer_m' },
   { id:'manticore', nameHeb:'מנטיקור',        emoji:'🦁',
     deco:['🦇','🩸'], bg:'linear-gradient(160deg,#200000,#500010)',
-    desc:'גוף אריה, כנפי עטלף — אדיר',     creatureId:'chimera' },
+    desc:'גוף אריה, כנפי עטלף — אדיר',     creatureId:'manticore_m' },
   { id:'phoenix',   nameHeb:'פניקס',          emoji:'🦅',
     deco:['🔥','✨'], bg:'linear-gradient(160deg,#2a0500,#5a1200)',
-    desc:'ציפור האש — קם לתחיה',            creatureId:'harpy'   },
+    desc:'ציפור האש — קם לתחיה',            creatureId:'phoenix_g' },
   { id:'pegasus',   nameHeb:'פגסוס',          emoji:'🐴',
     deco:['☁️','✨'], bg:'linear-gradient(160deg,#001040,#003080)',
-    desc:'הסוס המעופף — שמיים פתוחים',      creatureId:'horse'   },
+    desc:'הסוס המעופף — שמיים פתוחים',      creatureId:'pegasus_m' },
   { id:'minotaur',  nameHeb:'מינוטאור',       emoji:'🐂',
     deco:['🛡️','💪'], bg:'linear-gradient(160deg,#1e0000,#500000)',
-    desc:'שומר המבוך — כוח ללא גבול',       creatureId:'cerberus'},
+    desc:'שומר המבוך — כוח ללא גבול',       creatureId:'minotaur'},
 ];
 
 let selectedGogCostume  = null;
