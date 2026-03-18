@@ -2307,8 +2307,38 @@ function updatePlayer(dt) {
   }
   // הצג/הסתר fpBody — נראה רק כשמביטים למטה (pitch-based)
   if (fpBody) {
-    fpBody.visible = (camMode === 0);
-    // לא צריך לוגיקה נוספת כאן — מבוצע בבלוק FP למטה
+    if (camMode !== 0 || !locked) {
+      fpBody.visible = false;
+    } else {
+      fpBody.visible = true;
+      // pitch: negative = looking down, positive = looking up
+      const PITCH_START = Math.PI * 0.11;   // ~20° — מתחיל להיראות
+      const PITCH_FULL  = Math.PI * 0.50;   // ~90° — גלוי לחלוטין
+      const pitchClamped = Math.max(0, Math.min(1,
+        (-player.pitch - PITCH_START) / (PITCH_FULL - PITCH_START)
+      ));
+      const pitchFactor = pitchClamped * pitchClamped;
+
+      if (pitchFactor <= 0) {
+        fpBody.visible = false;
+      } else {
+        fpBody.scale.setScalar(1); // always full scale
+        const slideY = (1 - pitchFactor) * (-0.45);
+        const t2 = performance.now() / 1000;
+        const moving2 = K.KeyW || K.KeyA || K.KeyS || K.KeyD ||
+                       K.ArrowUp || K.ArrowDown || K.ArrowLeft || K.ArrowRight;
+        const legAmp  = moving2 ? 0.28 : 0;
+        const legFreq = 9;
+        const lLeg = fpBody.getObjectByName('fpLLeg');
+        const rLeg = fpBody.getObjectByName('fpRLeg');
+        if (lLeg) lLeg.rotation.x = Math.sin(t2 * legFreq) * legAmp;
+        if (rLeg) rLeg.rotation.x = Math.sin(t2 * legFreq + Math.PI) * legAmp;
+        const bob = Math.sin(t2 * legFreq * 2) * (moving2 ? 0.007 : 0);
+        fpBody.position.y = slideY + bob;
+        fpBody.position.x = 0;
+        fpBody.position.z = 0;
+      }
+    }
   }
 
   // ── Camera update by mode ──
@@ -2429,35 +2459,7 @@ function updatePlayer(dt) {
       }
       // יד שמאל מוסתרת — אין צורך לאנימציה
 
-      // ── אנימציית רגלי FP + נראות לפי pitch ──────────────────────────────
-      if (fpBody) {
-        // pitch: negative = looking down, positive = looking up
-        // רגלים נראות רק כשמביטים למטה — fade in החל מ-20° עד 90°
-        const PITCH_START = Math.PI * 0.11;   // ~20° — מתחיל להיראות
-        const PITCH_FULL  = Math.PI * 0.50;   // ~90° — גלוי לחלוטין
-        const pitchClamped = Math.max(0, Math.min(1,
-          (-player.pitch - PITCH_START) / (PITCH_FULL - PITCH_START)
-        ));
-        // smooth curve
-        const pitchFactor = pitchClamped * pitchClamped;
-
-        if (pitchFactor <= 0) {
-          // מסתיר לחלוטין — scale 0 מאפשר ל-visible להישאר true
-          fpBody.scale.setScalar(0.001);
-        } else {
-          fpBody.scale.setScalar(pitchFactor);
-          // הסליידינג: כשמביטים קדימה הגוף יורד מחוץ למסך
-          const slideY = (1 - pitchFactor) * (-0.35);
-          const legAmp  = moving ? 0.28 : 0;
-          const legFreq = 9;
-          const lLeg = fpBody.getObjectByName('fpLLeg');
-          const rLeg = fpBody.getObjectByName('fpRLeg');
-          if (lLeg) lLeg.rotation.x = Math.sin(t * legFreq) * legAmp;
-          if (rLeg) rLeg.rotation.x = Math.sin(t * legFreq + Math.PI) * legAmp;
-          const bob = Math.sin(t * legFreq * 2) * (moving ? 0.007 : 0);
-          fpBody.position.y = slideY + bob;
-        }
-      }
+      // fpBody pitch logic is now handled earlier in updatePlayer (see above)
     }
   }
 
@@ -4573,6 +4575,7 @@ function updateCostumeHUD() {
     createFPHands(selectedGod);
     if (playerBody) playerBody.visible = wasVisible;
     updateBodyWeapon();
+    updateFPWeapon();  // re-attach FP weapon after hands rebuild
   }
 }
 
