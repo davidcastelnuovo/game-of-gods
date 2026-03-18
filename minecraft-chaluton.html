@@ -5077,6 +5077,11 @@ function buildFarTile(cx, cz) {
 
 function updateFarLOD(px, pz) {
   if (++lodTick % 30 !== 0) return;
+  // Disable LOD tiles in game mode — they use creative-mode terrainH which is wrong
+  if (currentGameMode === 'game') {
+    farTiles.forEach(tile => { tile.visible = false; });
+    return;
+  }
   const near2 = RENDER_DIST * RENDER_DIST;
   const far2  = FAR_DIST    * FAR_DIST;
   const minCX = Math.floor((px - FAR_DIST) / LOD_SZ);
@@ -6352,6 +6357,9 @@ function _clearWorld() {
   interactWorld.forEach(m => scene.remove(m));
   interactWorld.clear();
   animInteract.clear();
+  // Clear LOD tiles (they use creative-mode terrain, wrong for game mode)
+  farTiles.forEach(m => scene.remove(m));
+  farTiles.clear();
   // Clear game mode entities
   if (typeof villagers !== 'undefined') {
     villagers.forEach(v => scene.remove(v.group));
