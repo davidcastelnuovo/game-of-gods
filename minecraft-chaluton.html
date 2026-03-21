@@ -4666,7 +4666,7 @@ function updateFPWeapon() {
   // מיקומים יחסיים לקבוצת הזרוע (arm group) במצב FP.
   // הזרוע עומדת ב-y=0.05 (מצלמה). אגרוף ב-y_rel=-0.27 → abs y=-0.22.
   // טווח נראות: ±0.34. נשקים מוצבים מה"אגרוף" כלפי מעלה.
-  if (wDef.id === 'sword') {
+  if (wDef.id === 'gladius' || wDef.id === 'sword') {
     // ── חרב ארוכה ────────────────────────────────────────
     const pommel = mk(new THREE.BoxGeometry(0.06, 0.04, 0.06), 0x5D4037);
     pommel.position.y = -0.30;
@@ -4684,7 +4684,7 @@ function updateFPWeapon() {
     tip.position.y    = +0.50;
     wg.add(pommel, grip, guardL, guardR, ricasso, blade, tip);
 
-  } else if (wDef.id === 'axe') {
+  } else if (wDef.id === 'axedual' || wDef.id === 'axe') {
     // ── גרזן ─────────────────────────────────────────────
     const shaft  = mk(new THREE.BoxGeometry(0.05, 0.32, 0.05), 0x8B4513);
     shaft.position.y  = -0.10;                            // עוקץ עולה מהאגרוף
@@ -4696,7 +4696,7 @@ function updateFPWeapon() {
     spike.position.set(0.04, +0.18, 0);                   // קרן עליונה
     wg.add(shaft, headB, edge, spike);
 
-  } else if (wDef.id === 'bow') {
+  } else if (wDef.id === 'huntbow' || wDef.id === 'bow') {
     // ── קשת עם חץ ────────────────────────────────────────
     const grip   = mk(new THREE.BoxGeometry(0.05, 0.12, 0.04), 0x8B6914);
     grip.position.y = -0.04;                              // אחיזה מרכזית
@@ -4723,7 +4723,7 @@ function updateFPWeapon() {
     flt2.position.set(-0.02, -0.04, -0.20);               // נוצה אופקית
     wg.add(grip, upArm, dnArm, upTip, dnTip, string, shaft2, head2, flt1, flt2);
 
-  } else if (wDef.id === 'staff') {
+  } else if (wDef.id === 'caduceus' || wDef.id === 'staff') {
     // ── שרביט ────────────────────────────────────────────
     const staff  = mk(new THREE.BoxGeometry(0.05, 0.40, 0.05), 0x6A1B9A);
     staff.position.y  = -0.04;                            // עמוד שרביט
@@ -4751,6 +4751,48 @@ function updateFPWeapon() {
       wg.add(p);
     });
     wg.add(pole, collar);
+
+  } else if (wDef.id === 'bolt') {
+    // ── ברק של זאוס ─────────────────────────────────────
+    const core  = mk(new THREE.BoxGeometry(0.04, 0.44, 0.04), 0xFFD600);
+    core.position.y = +0.05;
+    const zig1  = mk(new THREE.BoxGeometry(0.10, 0.04, 0.04), 0xFFF176);
+    zig1.position.set(0.05, +0.18, 0); zig1.rotation.z = 0.3;
+    const zig2  = mk(new THREE.BoxGeometry(0.10, 0.04, 0.04), 0xFFF176);
+    zig2.position.set(-0.05, +0.06, 0); zig2.rotation.z = -0.3;
+    const zig3  = mk(new THREE.BoxGeometry(0.10, 0.04, 0.04), 0xFFF176);
+    zig3.position.set(0.05, -0.06, 0); zig3.rotation.z = 0.3;
+    const tip   = mk(new THREE.BoxGeometry(0.06, 0.08, 0.04), 0xFFAB00);
+    tip.position.y = +0.30;
+    const glow  = mk(new THREE.BoxGeometry(0.06, 0.50, 0.02), 0xFFFFFF);
+    glow.position.y = +0.05; glow.material.transparent = true; glow.material.opacity = 0.3;
+    wg.add(core, zig1, zig2, zig3, tip, glow);
+
+  } else if (wDef.id === 'aegis') {
+    // ── מגן של אתינה ────────────────────────────────────
+    const shield = mk(new THREE.BoxGeometry(0.28, 0.32, 0.04), 0x1A237E);
+    shield.position.set(0, 0, 0.06);
+    const rim    = mk(new THREE.BoxGeometry(0.32, 0.36, 0.02), 0xFFD700);
+    rim.position.set(0, 0, 0.04);
+    const boss   = mk(new THREE.BoxGeometry(0.08, 0.08, 0.05), 0xC0C0C0);
+    boss.position.set(0, 0, 0.09);
+    const owl    = mk(new THREE.BoxGeometry(0.05, 0.05, 0.03), 0xFFFFFF);
+    owl.position.set(0, 0.06, 0.10);
+    wg.add(rim, shield, boss, owl);
+
+  } else if (wDef.id === 'hammer') {
+    // ── פטיש של הייפסטוס ─────────────────────────────────
+    const handle = mk(new THREE.BoxGeometry(0.05, 0.36, 0.05), 0x8B4513);
+    handle.position.y = -0.06;
+    const head   = mk(new THREE.BoxGeometry(0.18, 0.12, 0.14), 0x607D8B);
+    head.position.y = +0.16;
+    const face1  = mk(new THREE.BoxGeometry(0.20, 0.10, 0.04), 0x78909C);
+    face1.position.set(0, +0.16, +0.08);
+    const face2  = mk(new THREE.BoxGeometry(0.20, 0.10, 0.04), 0x78909C);
+    face2.position.set(0, +0.16, -0.08);
+    const band   = mk(new THREE.BoxGeometry(0.06, 0.04, 0.06), 0xFFD700);
+    band.position.y = +0.08;
+    wg.add(handle, head, face1, face2, band);
   }
 
   wg.traverse(o => {
@@ -4777,7 +4819,7 @@ function updateBodyWeapon() {
   const mk = (geo, col) => new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: col }));
 
   // הנשק תלוי מהאגרוף כלפי מטה (y=-0.30 הוא מרכז האגרוף בזרוע).
-  if (wDef.id === 'sword') {
+  if (wDef.id === 'gladius' || wDef.id === 'sword') {
     // ── חרב ארוכה (גוף) ──────────────────────────────────
     const pommel = mk(new THREE.BoxGeometry(0.07, 0.05, 0.07), 0x5D4037);
     pommel.position.y = -0.28;
@@ -4793,7 +4835,7 @@ function updateBodyWeapon() {
     tip.position.y    = -1.25;
     wg.add(pommel, grip, guardL, guardR, blade, tip);
 
-  } else if (wDef.id === 'axe') {
+  } else if (wDef.id === 'axedual' || wDef.id === 'axe') {
     // ── גרזן (גוף) ───────────────────────────────────────
     const shaft  = mk(new THREE.BoxGeometry(0.06, 0.48, 0.06), 0x8B4513);
     shaft.position.y  = -0.54;
@@ -4805,7 +4847,7 @@ function updateBodyWeapon() {
     spike.position.set(0.06, -0.24, 0);
     wg.add(shaft, headB, edge, spike);
 
-  } else if (wDef.id === 'bow') {
+  } else if (wDef.id === 'huntbow' || wDef.id === 'bow') {
     // ── קשת עם חץ (גוף) ──────────────────────────────────
     const grip   = mk(new THREE.BoxGeometry(0.05, 0.14, 0.05), 0x8B6914);
     grip.position.y = -0.36;
@@ -4830,7 +4872,7 @@ function updateBodyWeapon() {
     flt2.position.set(-0.02, -0.37, -0.26);
     wg.add(grip, upArm, dnArm, upTip, dnTip, string, shft, aHead, flt1, flt2);
 
-  } else if (wDef.id === 'staff') {
+  } else if (wDef.id === 'caduceus' || wDef.id === 'staff') {
     // ── שרביט (גוף) ──────────────────────────────────────
     const staff  = mk(new THREE.BoxGeometry(0.06, 0.56, 0.06), 0x6A1B9A);
     staff.position.y  = -0.55;
@@ -4857,6 +4899,44 @@ function updateBodyWeapon() {
       wg.add(p);
     });
     wg.add(pole, collar);
+
+  } else if (wDef.id === 'bolt') {
+    // ── ברק של זאוס (גוף) ───────────────────────────────
+    const core  = mk(new THREE.BoxGeometry(0.05, 0.52, 0.05), 0xFFD600);
+    core.position.y = -0.54;
+    const zig1  = mk(new THREE.BoxGeometry(0.12, 0.05, 0.05), 0xFFF176);
+    zig1.position.set(0.06, -0.38, 0); zig1.rotation.z = 0.3;
+    const zig2  = mk(new THREE.BoxGeometry(0.12, 0.05, 0.05), 0xFFF176);
+    zig2.position.set(-0.06, -0.52, 0); zig2.rotation.z = -0.3;
+    const zig3  = mk(new THREE.BoxGeometry(0.12, 0.05, 0.05), 0xFFF176);
+    zig3.position.set(0.06, -0.66, 0); zig3.rotation.z = 0.3;
+    const tip   = mk(new THREE.BoxGeometry(0.07, 0.10, 0.05), 0xFFAB00);
+    tip.position.y = -0.82;
+    wg.add(core, zig1, zig2, zig3, tip);
+
+  } else if (wDef.id === 'aegis') {
+    // ── מגן של אתינה (גוף) ──────────────────────────────
+    const shield = mk(new THREE.BoxGeometry(0.32, 0.38, 0.05), 0x1A237E);
+    shield.position.set(0, -0.48, 0.07);
+    const rim    = mk(new THREE.BoxGeometry(0.36, 0.42, 0.03), 0xFFD700);
+    rim.position.set(0, -0.48, 0.05);
+    const boss   = mk(new THREE.BoxGeometry(0.10, 0.10, 0.06), 0xC0C0C0);
+    boss.position.set(0, -0.48, 0.11);
+    wg.add(rim, shield, boss);
+
+  } else if (wDef.id === 'hammer') {
+    // ── פטיש של הייפסטוס (גוף) ──────────────────────────
+    const handle = mk(new THREE.BoxGeometry(0.06, 0.48, 0.06), 0x8B4513);
+    handle.position.y = -0.54;
+    const head   = mk(new THREE.BoxGeometry(0.22, 0.14, 0.16), 0x607D8B);
+    head.position.y = -0.82;
+    const face1  = mk(new THREE.BoxGeometry(0.24, 0.12, 0.05), 0x78909C);
+    face1.position.set(0, -0.82, +0.10);
+    const face2  = mk(new THREE.BoxGeometry(0.24, 0.12, 0.05), 0x78909C);
+    face2.position.set(0, -0.82, -0.10);
+    const band   = mk(new THREE.BoxGeometry(0.07, 0.05, 0.07), 0xFFD700);
+    band.position.y = -0.34;
+    wg.add(handle, head, face1, face2, band);
   }
   rArm.add(wg);
 }
