@@ -2320,8 +2320,8 @@ window.addEventListener('keydown', e => {
     showInfo(`🌄 מרחק תצוגה: ${RENDER_DIST} (LOD עד ${FAR_DIST})`, '#87CEEB', 2000);
   }
 
-  // F → place block in front of player (fallback for right-click, only when no lib item selected)
-  if (e.code === 'KeyF' && locked && lastHit && !placingItem) {
+  // G → place block in front of player (fallback for right-click, only when no lib item selected)
+  if (e.code === 'KeyG' && locked && lastHit && !placingItem) {
     const n = lastHit.face.normal;
     const {x,y,z} = lastHit.object.userData;
     const nx=x+Math.round(n.x), ny=y+Math.round(n.y), nz=z+Math.round(n.z);
@@ -3200,7 +3200,8 @@ function updateCreatures(dt) {
       // גוף לאורך Z → rotation.y = התנדנדות צידה (כמו דולפין)
       group.rotation.y += (wf * 0.12 - group.rotation.y) * 0.15;
       if (ud.tail) ud.tail.rotation.y = wf * 0.45;
-      if (ud.armL) { ud.armL.rotation.x = wf * 0.4; ud.armR.rotation.x = -wf * 0.4; }
+      if (ud.armL) ud.armL.rotation.x = wf * 0.4;
+      if (ud.armR) ud.armR.rotation.x = -wf * 0.4;
     }
 
     // ── אנימציית אכילה / מנוחה ──────────────────────
@@ -5508,7 +5509,7 @@ function initAuth() {
     // Apply selected weapon to playerCostume then enter game
     if (selectedGogWeapon) {
       const match = WEAPON_DEFS.find(w => w.id === selectedGogWeapon.id)
-                 || WEAPON_DEFS.find(w => selectedGogWeapon.emoji.includes(w.e))
+                 || (selectedGogWeapon.emoji && WEAPON_DEFS.find(w => selectedGogWeapon.emoji.includes(w.e)))
                  || WEAPON_DEFS[0];
       if (match) playerCostume.weapon = match.id;
     }
