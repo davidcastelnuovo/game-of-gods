@@ -1082,7 +1082,8 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.shadowMap.enabled = false;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 renderer.outputEncoding = THREE.sRGBEncoding;
@@ -1109,6 +1110,27 @@ scene.add(camera); // נדרש כדי שאובייקטים שמחוברים למ
 // ── LIGHTING ──────────────────────────────────────────
 const sun = new THREE.DirectionalLight(0xFFF8E8, 2.2);
 sun.position.set(80, 100, 50);
+
+// Dynamic shadows from the sun — orthographic shadow camera that tracks the
+// player in updateSky() so the active shadow footprint always covers what the
+// player sees. Map size is modest (1024²) to keep cost low on mid GPUs.
+sun.castShadow = true;
+const _SHADOW_HALF = 48; // world units on each axis from the player center
+sun.shadow.camera.left   = -_SHADOW_HALF;
+sun.shadow.camera.right  =  _SHADOW_HALF;
+sun.shadow.camera.top    =  _SHADOW_HALF;
+sun.shadow.camera.bottom = -_SHADOW_HALF;
+sun.shadow.camera.near   = 0.5;
+sun.shadow.camera.far    = 260;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.bias          = -0.0005;
+sun.shadow.normalBias    = 0.04;
+
+// A target that follows the player so the shadow camera is always aimed at them.
+const sunTarget = new THREE.Object3D();
+scene.add(sunTarget);
+sun.target = sunTarget;
+
 const hemiLight = new THREE.HemisphereLight(0x6bb8e8, 0x5c3a1a, 0.70);
 scene.add(sun, new THREE.AmbientLight(0x223040, 0.40), hemiLight);
 
@@ -1214,6 +1236,12 @@ function updateSky(dt) {
       camera.position.z - 45
     );
     sun.position.copy(sunSphere.position);
+    // Keep the shadow camera centred on the player so the map's footprint
+    // follows wherever they walk. Without this, shadows only exist near origin.
+    sunTarget.position.set(camera.position.x, 0, camera.position.z);
+    // Disable shadow casting when the sun is below the horizon — otherwise the
+    // light direction inverts and shadows point the wrong way.
+    sun.castShadow = Math.sin(sa) > 0.05;
     // Sunrise/sunset warm tint
     const dayT = Math.max(0, Math.sin(sa));
     sun.intensity = 1.2 + dayT * 1.0;
@@ -1713,6 +1741,11 @@ function _makeIMesh(id, capacity) {
   const im = new THREE.InstancedMesh(geom, mats(id), capacity);
   im.count = 0;
   im.frustumCulled = false; // whole-world imeshes — rely on GPU frustum per-instance via shader
+  // Shadows: opaque blocks both cast and receive. Water + glass skip casting
+  // (transparent shadows look bad) but still receive shadows from terrain.
+  const transparentIDs = { water: 1, glass: 1, window_glass: 1 };
+  im.castShadow    = !transparentIDs[id];
+  im.receiveShadow = true;
   im.userData = {
     id,
     capacity,
@@ -1733,6 +1766,8 @@ function _growIMesh(im) {
   fresh.frustumCulled = false;
   fresh.name   = im.name;
   fresh.renderOrder = im.renderOrder;
+  fresh.castShadow    = im.castShadow;
+  fresh.receiveShadow = im.receiveShadow;
   // Copy matrices
   for (let i = 0; i < im.count; i++) {
     im.getMatrixAt(i, _tmpMat4);
@@ -1754,6 +1789,19 @@ function _growIMesh(im) {
 
 function _getOrCreateIMesh(id) {
   return imeshByID[id] || (imeshByID[id] = _makeIMesh(id, INITIAL_CAPACITY));
+}
+
+// Enables shadow casting + receiving on every Mesh in a hierarchy.
+// Used after building creatures, player body, doors/windows, etc.
+function enableShadows(root) {
+  if (!root) return root;
+  root.traverse(o => {
+    if (o.isMesh) {
+      o.castShadow    = true;
+      o.receiveShadow = true;
+    }
+  });
+  return root;
 }
 
 function wk(x,y,z) { return `${x|0}|${y|0}|${z|0}`; }
@@ -1873,6 +1921,7 @@ function setInteractBlock(x, y, z, id, opts = {}) {
                       anchorKey, allKeys, targetScaleY: 1 };
   }
 
+  enableShadows(root);
   scene.add(root);
   allKeys.forEach(k => interactWorld.set(k, root));
 }
@@ -3177,6 +3226,7 @@ function spawnCreature(defId, atPos = null, silent = false) {
   if (!def) return;
 
   const group = buildCreatureBody(def);
+  enableShadows(group);
 
   let sx, sz;
   let sy = 1;
@@ -4067,6 +4117,7 @@ function buildFarTile(cx, cz) {
   mesh.position.set(x0 + LOD_SZ / 2, 0, z0 + LOD_SZ / 2);
   mesh.visible = false;
   mesh.renderOrder = -1;
+  mesh.receiveShadow = true; // catch sun shadows for seamless blend with near blocks
   scene.add(mesh);
   farTiles.set(key, mesh);
   return mesh;
@@ -4680,6 +4731,7 @@ function createGodBody(god) {
   group.userData.torso = torso;
 
   group.visible = false; // hidden until a mode sets it visible
+  enableShadows(group);
   scene.add(group);
   playerBody = group;
 }
@@ -5036,6 +5088,7 @@ function addRemotePlayer({ playerId, username, color, pos }) {
   if (remotePlayers.has(playerId)) return;
   const group = createRemotePlayerMesh(username, color);
   group.position.set(pos.x, pos.y, pos.z);
+  enableShadows(group);
   scene.add(group);
   remotePlayers.set(playerId, {
     group,
