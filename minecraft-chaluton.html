@@ -6930,7 +6930,7 @@ function showModeSelect() {
 }
 
 // ── Game World Generator ─────────────────────────────────────
-function genGameWorld(sz) {
+async function genGameWorld(sz) {
   _clearWorld();
   worldSZ = sz;
   const mid = Math.floor(sz / 2);
@@ -6961,6 +6961,7 @@ function genGameWorld(sz) {
   const SEA_LEVEL = 4;
 
   for (let x = 0; x < sz; x++) {
+    if (x % 8 === 0) await new Promise(r => setTimeout(r, 0)); // yield to UI thread
     for (let z = 0; z < sz; z++) {
 
       // Find closest island influence
@@ -8699,7 +8700,7 @@ async function enterGameMode() {
   loadBarFill.style.width = '30%';
   await new Promise(r => setTimeout(r, 50));
 
-  genGameWorld(gmWorldSZ);
+  await genGameWorld(gmWorldSZ);
   loadBarFill.style.width = '70%';
   await new Promise(r => setTimeout(r, 50));
 
@@ -8794,7 +8795,7 @@ async function enterGame(worldData, inviteCode) {
     if (_lbf) _lbf.style.width = '20%';
     await new Promise(r => setTimeout(r, 60));
     _clearWorld();
-    genGameWorld(worldSZ);
+    await genGameWorld(worldSZ);
     if (_lbf) _lbf.style.width = '90%';
     await new Promise(r => setTimeout(r, 40));
     if (_lb) _lb.style.display = 'none';
