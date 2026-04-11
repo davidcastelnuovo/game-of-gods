@@ -1304,7 +1304,9 @@ const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'hi
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
+// PCFShadowMap is ~2x faster than the soft variant — shadow edges are
+// slightly harder but the performance gain is significant at 60 FPS targets.
+renderer.shadowMap.type    = THREE.PCFShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 renderer.outputEncoding = THREE.sRGBEncoding;
@@ -1334,16 +1336,17 @@ sun.position.set(80, 100, 50);
 
 // Dynamic shadows from the sun — orthographic shadow camera that tracks the
 // player in updateSky() so the active shadow footprint always covers what the
-// player sees. Map size is modest (1024²) to keep cost low on mid GPUs.
+// player sees. Map size 768² + PCFShadowMap is tuned for smooth 60 FPS even
+// with a busy game-mode scene (villagers, monster waves, buildings).
 sun.castShadow = true;
-const _SHADOW_HALF = 48; // world units on each axis from the player center
+const _SHADOW_HALF = 40; // world units on each axis from the player center
 sun.shadow.camera.left   = -_SHADOW_HALF;
 sun.shadow.camera.right  =  _SHADOW_HALF;
 sun.shadow.camera.top    =  _SHADOW_HALF;
 sun.shadow.camera.bottom = -_SHADOW_HALF;
 sun.shadow.camera.near   = 0.5;
-sun.shadow.camera.far    = 260;
-sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.far    = 200;
+sun.shadow.mapSize.set(768, 768);
 sun.shadow.bias          = -0.0005;
 sun.shadow.normalBias    = 0.04;
 
@@ -2014,12 +2017,16 @@ function _getOrCreateIMesh(id) {
 
 // Enables shadow casting + receiving on every Mesh in a hierarchy.
 // Used after building creatures, player body, doors/windows, etc.
-function enableShadows(root) {
+// Pass { cast:false } for dynamic entities with many sub-meshes (creatures,
+// villagers, remote players) — skipping their cast halves the shadow-pass cost.
+function enableShadows(root, opts) {
   if (!root) return root;
+  const cast    = !opts || opts.cast    !== false;
+  const receive = !opts || opts.receive !== false;
   root.traverse(o => {
     if (o.isMesh) {
-      o.castShadow    = true;
-      o.receiveShadow = true;
+      o.castShadow    = cast;
+      o.receiveShadow = receive;
     }
   });
   return root;
@@ -2807,20 +2814,28 @@ hlBox.visible = false;
 scene.add(hlBox);
 
 let lastHit = null;
+// Reusable scratch array for raycast targets — avoids allocating a new
+// array every frame. The contents are rebuilt each call but the array
+// object itself is pooled.
+const _raycastTargets = [];
 
 function updateRayCast() {
   // Always cast from the screen centre — this way the crosshair is meaningful in every mode.
   ray.setFromCamera(new THREE.Vector2(0, 0), camera);
 
-  // Gather creature meshes for raycasting (tagged with creatureRef in spawnCreature)
-  const creatureMeshes = [];
-  creatures.forEach(c => c.group.traverse(o => { if (o.isMesh) creatureMeshes.push(o); }));
+  // Build targets list in place. intersectObjects(recursive=true) will
+  // descend into each creature group on its own, so we just pass the root
+  // group — no per-frame traversal / flattening allocation.
+  _raycastTargets.length = 0;
+  for (const id in imeshByID) _raycastTargets.push(imeshByID[id]);
+  const seen = new Set();
+  interactWorld.forEach(obj => {
+    if (!seen.has(obj)) { seen.add(obj); _raycastTargets.push(obj); }
+  });
+  for (let i = 0; i < creatures.length; i++) _raycastTargets.push(creatures[i].group);
 
   // recursive=true כדי לפגוע בלוחות ילד בתוך pivot Object3D של דלתות.
-  // Targets = all block InstancedMeshes + interactive roots + creatures.
-  const hits = ray.intersectObjects(
-    [...Object.values(imeshByID), ...new Set(interactWorld.values()), ...creatureMeshes], true
-  );
+  const hits = ray.intersectObjects(_raycastTargets, true);
 
   // Accept closest hit within reach — creature or block
   let validHit = null;
@@ -4233,7 +4248,10 @@ function spawnCreature(defId, atPos = null, silent = false) {
   if (!def) return;
 
   const group = buildCreatureBody(def);
-  enableShadows(group);
+  // Receive-only: many sub-meshes per creature (body, limbs, wings, horns)
+  // would dominate the shadow pass if they all cast. They still look lit
+  // correctly because they receive shadows from terrain around them.
+  enableShadows(group, { cast: false });
 
   let sx, sz;
   let sy = 1;
@@ -6329,7 +6347,7 @@ function addRemotePlayer({ playerId, username, color, pos }) {
   if (remotePlayers.has(playerId)) return;
   const group = createRemotePlayerMesh(username, color);
   group.position.set(pos.x, pos.y, pos.z);
-  enableShadows(group);
+  enableShadows(group, { cast: false });
   scene.add(group);
   remotePlayers.set(playerId, {
     group,
@@ -7020,7 +7038,9 @@ function spawnVillager(x, y, z) {
   group.add(excl);
 
   group.position.set(x + 0.5, y, z + 0.5);
-  enableShadows(group);
+  // Villagers have many sub-meshes (body, head, eyes, arms, legs, excl marker);
+  // receive-only keeps shadow pass cheap in game mode.
+  enableShadows(group, { cast: false });
   scene.add(group);
 
   // Assign random home house
