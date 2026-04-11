@@ -4071,85 +4071,13 @@ function cullDistantBlocks() {
   });
 }
 
-// ── FAR LOD — terrain-shaped tiles with biome colors ──
-const LOD_SZ   = 4;                 // one tile covers 4×4 blocks
-const farTiles = new Map();          // "cx|cz" → THREE.Mesh
-let   lodTick  = 0;
-
-// Biome color lookup for LOD tiles
-function lodBiomeColor(x, z) {
-  const h = terrainH(x, z);
-  if (h >= 28) return 0xDDDDEE; // snow
-  if (h >= 22) return 0x888888; // mountain stone
-  const biome = getBiome(x, z);
-  if (biome === 'desert') return 0xD4B066;
-  if (biome === 'jungle') return 0x2d7a2d;
-  if (h <= 5) return 0x2277BB; // water
-  return 0x3d8b37; // plains grass
-}
-
-function buildFarTile(cx, cz) {
-  const key = `${cx}|${cz}`;
-  if (farTiles.has(key)) return farTiles.get(key);
-  const x0 = cx * LOD_SZ, z0 = cz * LOD_SZ;
-  if (x0 < 0 || z0 < 0 || x0 >= worldSZ || z0 >= worldSZ) return null;
-
-  // Create subdivided plane for terrain shape
-  const geo = new THREE.PlaneGeometry(LOD_SZ, LOD_SZ, LOD_SZ, LOD_SZ);
-  geo.rotateX(-Math.PI / 2);
-
-  // Set vertex heights and colors from terrain
-  const colors = [];
-  const posAttr = geo.attributes.position;
-  for (let i = 0; i < posAttr.count; i++) {
-    const vx = posAttr.getX(i) + x0 + LOD_SZ / 2;
-    const vz = posAttr.getZ(i) + z0 + LOD_SZ / 2;
-    const h = terrainH(Math.round(vx), Math.round(vz));
-    posAttr.setY(i, h + 0.3);
-    const c = new THREE.Color(lodBiomeColor(Math.round(vx), Math.round(vz)));
-    colors.push(c.r, c.g, c.b);
-  }
-  geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-  geo.computeVertexNormals();
-
-  const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.set(x0 + LOD_SZ / 2, 0, z0 + LOD_SZ / 2);
-  mesh.visible = false;
-  mesh.renderOrder = -1;
-  mesh.receiveShadow = true; // catch sun shadows for seamless blend with near blocks
-  scene.add(mesh);
-  farTiles.set(key, mesh);
-  return mesh;
-}
-
-function updateFarLOD(px, pz) {
-  if (++lodTick % 30 !== 0) return;
-  const near2 = RENDER_DIST * RENDER_DIST;
-  const far2  = FAR_DIST    * FAR_DIST;
-  const minCX = Math.floor((px - FAR_DIST) / LOD_SZ);
-  const maxCX = Math.ceil ((px + FAR_DIST) / LOD_SZ);
-  const minCZ = Math.floor((pz - FAR_DIST) / LOD_SZ);
-  const maxCZ = Math.ceil ((pz + FAR_DIST) / LOD_SZ);
-  for (let cx = minCX; cx <= maxCX; cx++) {
-    for (let cz = minCZ; cz <= maxCZ; cz++) {
-      const tx = cx * LOD_SZ + LOD_SZ / 2 - px;
-      const tz = cz * LOD_SZ + LOD_SZ / 2 - pz;
-      const d2 = tx * tx + tz * tz;
-      const tile = buildFarTile(cx, cz);
-      if (tile) tile.visible = (d2 >= near2 && d2 < far2);
-    }
-  }
-  // Hide stale tiles outside the annular band
-  farTiles.forEach((tile, key) => {
-    if (!tile.visible) return;
-    const [cx, cz] = key.split('|').map(Number);
-    const tx = cx * LOD_SZ + LOD_SZ / 2 - px;
-    const tz = cz * LOD_SZ + LOD_SZ / 2 - pz;
-    const d2 = tx * tx + tz * tz;
-    if (d2 < near2 || d2 >= far2) tile.visible = false;
-  });
-}
+// ── FAR LOD (disabled) ────────────────────────────────
+// The smooth low-poly terrain tiles that used to fill the distant horizon
+// looked fake and didn't match the voxel aesthetic. The system is kept as
+// no-ops so the game loop's updateFarLOD() call still works, but nothing is
+// ever built or drawn. Beyond RENDER_DIST the player now just sees sky.
+const farTiles = new Map();
+function updateFarLOD(/* px, pz */) { /* intentionally empty */ }
 
 // ── WATER FLOW PHYSICS ────────────────────────────────
 const waterFlowQ = [];   // [{x,y,z,dist}] — בלוקי מים שממתינים להתפשטות
