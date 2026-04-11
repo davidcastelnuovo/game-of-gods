@@ -1122,6 +1122,81 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
 .gmBarVal   { color: #1a3a5c !important; }
 #gmWaveInfo { color: #c9184a !important; border-left-color: #8ab4d4 !important; }
 #gmVillagerCount { color: #1a6bb5 !important; border-left-color: #8ab4d4 !important; }
+
+/* ═══ WORLD MAP ═══════════════════════════════════════════════ */
+#worldMapOverlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.82);
+  z-index: 200;
+  align-items: center; justify-content: center;
+  flex-direction: column;
+  font-family: 'Cinzel', serif;
+}
+#worldMapOverlay.open { display: flex; }
+#worldMapTitle {
+  color: #d4af37; font-size: 1.4rem; letter-spacing: 3px;
+  text-shadow: 0 0 12px #d4af37;
+  margin-bottom: 14px;
+}
+#worldMapCanvas {
+  border: 2px solid #d4af37;
+  border-radius: 8px;
+  box-shadow: 0 0 30px rgba(212,175,55,0.4);
+  cursor: crosshair;
+}
+#worldMapLegend {
+  color: #aaa; font-size: 0.75rem; margin-top: 10px;
+  font-family: 'Heebo', sans-serif;
+}
+#worldMapClose {
+  position: absolute; top: 18px; right: 22px;
+  background: none; border: 1px solid #d4af37;
+  color: #d4af37; font-size: 1.2rem;
+  padding: 4px 12px; cursor: pointer; border-radius: 4px;
+  font-family: 'Cinzel', serif;
+}
+#worldMapClose:hover { background: rgba(212,175,55,0.2); }
+
+/* ═══ COMPASS HUD ══════════════════════════════════════════════ */
+#compassHUD {
+  display: none; position: fixed; top: 90px; right: 14px;
+  width: 64px; height: 64px;
+  z-index: 15;
+}
+#compassHUD canvas { width: 64px; height: 64px; }
+
+/* ═══ ISLAND MARKERS ══════════════════════════════════════════ */
+.islandMarker {
+  position: fixed;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 14;
+  display: flex; flex-direction: column; align-items: center;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+.islandMarker.visible { opacity: 1; }
+.islandMarkerDot {
+  width: 8px; height: 8px;
+  background: #d4af37;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #d4af37;
+  margin-bottom: 3px;
+}
+.islandMarkerName {
+  color: #d4af37;
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem;
+  text-shadow: 0 1px 3px #000, 0 0 8px rgba(212,175,55,0.6);
+  white-space: nowrap;
+  letter-spacing: 1px;
+}
+.islandMarkerDist {
+  color: #aaa;
+  font-family: 'Heebo', sans-serif;
+  font-size: 0.6rem;
+  text-shadow: 0 1px 2px #000;
+}
 </style>
 </head>
 <body>
@@ -1354,6 +1429,20 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
     <span class="statVal" id="divinityVal">0</span>
   </div>
 </div>
+<!-- ── WORLD MAP OVERLAY ─────────────────────────────── -->
+<div id="worldMapOverlay">
+  <button id="worldMapClose">✕ סגור</button>
+  <div id="worldMapTitle">🗺 מפת האיים האגאיים</div>
+  <canvas id="worldMapCanvas" width="600" height="600"></canvas>
+  <div id="worldMapLegend">לחץ M לפתיחה/סגירה &nbsp;|&nbsp; ⬜ אי לא מבוקר &nbsp;|&nbsp; 🟡 אי שביקרת &nbsp;|&nbsp; ▲ מיקומך</div>
+</div>
+
+<!-- ── COMPASS HUD ─────────────────────────────────────── -->
+<div id="compassHUD"><canvas id="compassCanvas" width="64" height="64"></canvas></div>
+
+<!-- ── ISLAND MARKERS CONTAINER ───────────────────────── -->
+<div id="islandMarkersContainer"></div>
+
 <div id="underwaterOverlay">
   <div class="uw-tint"></div>
   <div class="uw-rays"></div>
@@ -5472,6 +5561,16 @@ document.addEventListener('keydown', e => {
     // Do NOT clearLibPlacing() — selection persists so the user can keep placing
     // the same item until they explicitly pick something else
   }
+
+  // M key — toggle world map
+  if (e.code === 'KeyM' && locked) {
+    if (_worldMapOpen) {
+      _closeWorldMap();
+    } else {
+      _openWorldMap();
+    }
+    e.preventDefault();
+  }
 });
 
 // World size buttons
@@ -5858,6 +5957,8 @@ function animate(t) {
     _tickGodCooldown(dt);
     // Update minimap (game mode only)
     if (currentGameMode === 'game') _updateMiniMap();
+    // Infinite world system (sea plane, compass, island streaming)
+    if (typeof _updateInfiniteWorld === 'function') _updateInfiniteWorld(dt);
     // Dionysus rainbow effect
     if (selectedGod?.id === 'dionysus' && dionysusActive) {
       renderer.domElement.style.filter = `hue-rotate(${(t/50)%360}deg) saturate(1.8)`;
@@ -8310,6 +8411,581 @@ function _fmtTime(ms) {
   return m > 0 ? `${m}m ${s % 60}s` : `${s}s`;
 }
 
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ── INFINITE AEGEAN WORLD SYSTEM ──────────────────────────────────────────
+// 20 Cycladic islands scattered across a virtual 2000×2000 sea.
+// Only the island the player is near is loaded into the block world.
+// An infinite sea plane follows the camera. Horizon fog hides the edges.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── Virtual world coordinate system ──────────────────────────────────────
+// Each island has a "world position" in virtual units (vx, vz).
+// The block world (worldSZ×worldSZ) is always centred on the current island.
+// Player's "world position" is tracked separately as _worldX, _worldZ.
+// When the player leaves an island's block grid, they enter open sea.
+// The sea plane always follows the camera.
+
+const ISLAND_LOAD_DIST   = 120;  // blocks — start loading when within this distance
+const ISLAND_UNLOAD_DIST = 220;  // blocks — unload when farther than this
+const SEA_PLANE_SIZE     = 2000; // how wide the infinite sea plane is (world units)
+const HORIZON_FOG_NEAR   = 60;   // fog starts here
+const HORIZON_FOG_FAR    = 160;  // fog ends here (full opacity)
+
+// ── 20 Cycladic islands ───────────────────────────────────────────────────
+// vx/vz: virtual world position (centre of island, in block units)
+// type: 'village'|'temple'|'volcanic'|'harbor'|'ruins'|'wild'
+// nameHe: Hebrew name, nameEn: English name, radius: island radius in blocks
+const WORLD_ISLANDS = [
+  { id: 0,  vx:   32, vz:   32, type: 'village',  nameHe: 'נאוסה',       nameEn: 'Naoussa',    radius: 28, visited: false, loaded: false, blocks: null },
+  { id: 1,  vx:  280, vz:   80, type: 'temple',   nameHe: 'דלוס',        nameEn: 'Delos',      radius: 22, visited: false, loaded: false, blocks: null },
+  { id: 2,  vx:  500, vz:  200, type: 'volcanic', nameHe: 'סנטוריני',    nameEn: 'Santorini',  radius: 30, visited: false, loaded: false, blocks: null },
+  { id: 3,  vx:  150, vz:  350, type: 'harbor',   nameHe: 'מיקונוס',     nameEn: 'Mykonos',    radius: 24, visited: false, loaded: false, blocks: null },
+  { id: 4,  vx:  420, vz:  420, type: 'village',  nameHe: 'נקסוס',       nameEn: 'Naxos',      radius: 32, visited: false, loaded: false, blocks: null },
+  { id: 5,  vx:  700, vz:  100, type: 'ruins',    nameHe: 'רודוס',       nameEn: 'Rhodes',     radius: 26, visited: false, loaded: false, blocks: null },
+  { id: 6,  vx:  650, vz:  380, type: 'wild',     nameHe: 'קוס',         nameEn: 'Kos',        radius: 20, visited: false, loaded: false, blocks: null },
+  { id: 7,  vx:  900, vz:  250, type: 'temple',   nameHe: 'סמוס',        nameEn: 'Samos',      radius: 24, visited: false, loaded: false, blocks: null },
+  { id: 8,  vx:  200, vz:  620, type: 'volcanic', nameHe: 'מילוס',       nameEn: 'Milos',      radius: 22, visited: false, loaded: false, blocks: null },
+  { id: 9,  vx:  480, vz:  680, type: 'harbor',   nameHe: 'סיפנוס',      nameEn: 'Sifnos',     radius: 20, visited: false, loaded: false, blocks: null },
+  { id: 10, vx:  800, vz:  600, type: 'village',  nameHe: 'פארוס',       nameEn: 'Paros',      radius: 28, visited: false, loaded: false, blocks: null },
+  { id: 11, vx: 1050, vz:  450, type: 'ruins',    nameHe: 'לסבוס',       nameEn: 'Lesbos',     radius: 26, visited: false, loaded: false, blocks: null },
+  { id: 12, vx:  350, vz:  900, type: 'wild',     nameHe: 'אנטיפארוס',   nameEn: 'Antiparos',  radius: 18, visited: false, loaded: false, blocks: null },
+  { id: 13, vx:  650, vz:  900, type: 'temple',   nameHe: 'אמורגוס',     nameEn: 'Amorgos',    radius: 22, visited: false, loaded: false, blocks: null },
+  { id: 14, vx: 1000, vz:  800, type: 'harbor',   nameHe: 'חיוס',        nameEn: 'Chios',      radius: 24, visited: false, loaded: false, blocks: null },
+  { id: 15, vx:  150, vz: 1100, type: 'village',  nameHe: 'קיתנוס',      nameEn: 'Kythnos',    radius: 20, visited: false, loaded: false, blocks: null },
+  { id: 16, vx:  500, vz: 1150, type: 'volcanic', nameHe: 'תירה',        nameEn: 'Thira',      radius: 26, visited: false, loaded: false, blocks: null },
+  { id: 17, vx:  850, vz: 1100, type: 'ruins',    nameHe: 'פטמוס',       nameEn: 'Patmos',     radius: 20, visited: false, loaded: false, blocks: null },
+  { id: 18, vx: 1200, vz:  200, type: 'wild',     nameHe: 'איקריה',      nameEn: 'Ikaria',     radius: 22, visited: false, loaded: false, blocks: null },
+  { id: 19, vx: 1200, vz:  700, type: 'temple',   nameHe: 'ניסירוס',     nameEn: 'Nisyros',    radius: 20, visited: false, loaded: false, blocks: null },
+];
+
+// ── Player virtual world position ─────────────────────────────────────────
+// Starts on island 0. Updated every frame based on movement.
+let _worldX = WORLD_ISLANDS[0].vx;
+let _worldZ = WORLD_ISLANDS[0].vz;
+let _currentIslandId = 0;       // which island's blocks are loaded
+let _infiniteSeaPlane = null;   // THREE.Mesh — the infinite sea
+let _islandMarkerEls  = [];     // DOM elements for island name markers
+let _visitedIslands   = new Set([0]); // island ids the player has visited
+
+// ── Infinite sea plane ────────────────────────────────────────────────────
+function _createInfiniteSeaPlane() {
+  if (_infiniteSeaPlane) return;
+  const geo = new THREE.PlaneGeometry(SEA_PLANE_SIZE, SEA_PLANE_SIZE, 1, 1);
+  geo.rotateX(-Math.PI / 2);
+  const mat = new THREE.MeshLambertMaterial({
+    color: 0x00B4D8,
+    transparent: true,
+    opacity: 0.82,
+  });
+  _infiniteSeaPlane = new THREE.Mesh(geo, mat);
+  _infiniteSeaPlane.position.y = SEA_LEVEL - 0.6; // just below sea level blocks
+  _infiniteSeaPlane.receiveShadow = false;
+  _infiniteSeaPlane.name = 'infiniteSeaPlane';
+  scene.add(_infiniteSeaPlane);
+}
+
+function _updateInfiniteSeaPlane() {
+  if (!_infiniteSeaPlane) return;
+  // Follow player horizontally so it always covers the horizon
+  _infiniteSeaPlane.position.x = camera.position.x;
+  _infiniteSeaPlane.position.z = camera.position.z;
+  // Animate colour slightly
+  const t = performance.now() * 0.0003;
+  const g = Math.floor(0xB4 + Math.sin(t) * 8);
+  const b = Math.floor(0xD8 - Math.sin(t * 0.7) * 12);
+  _infiniteSeaPlane.material.color.setRGB(0, g / 255, b / 255);
+}
+
+// ── Horizon fog ──────────────────────────────────────────────────────────
+function _enableHorizonFog() {
+  scene.fog = new THREE.Fog(0x87CEEB, HORIZON_FOG_NEAR, HORIZON_FOG_FAR);
+}
+
+function _updateHorizonFog() {
+  if (!scene.fog) return;
+  // Sync fog colour with sky background
+  scene.fog.color.copy(scene.background);
+}
+
+// ── Island streaming ─────────────────────────────────────────────────────
+// The block world is always centred at (worldSZ/2, *, worldSZ/2).
+// When we load a new island, we clear the world and regenerate it.
+// _worldX/_worldZ track the player in virtual space.
+
+function _worldDistToIsland(island) {
+  const dx = _worldX - island.vx;
+  const dz = _worldZ - island.vz;
+  return Math.sqrt(dx * dx + dz * dz);
+}
+
+let _streamingBusy = false;
+async function _tickIslandStreaming() {
+  if (_streamingBusy) return;
+
+  // Find nearest island
+  let nearest = null, nearestDist = Infinity;
+  for (const isl of WORLD_ISLANDS) {
+    const d = _worldDistToIsland(isl);
+    if (d < nearestDist) { nearestDist = d; nearest = isl; }
+  }
+  if (!nearest) return;
+
+  // Mark visited
+  if (nearestDist < nearest.radius + 10) {
+    _visitedIslands.add(nearest.id);
+    nearest.visited = true;
+  }
+
+  // If we're already on this island, nothing to do
+  if (nearest.id === _currentIslandId) return;
+
+  // Only switch if we're close enough
+  if (nearestDist > ISLAND_LOAD_DIST) return;
+
+  _streamingBusy = true;
+  _currentIslandId = nearest.id;
+
+  // Show loading indicator
+  const overlay = document.getElementById('overlay');
+  const msg = document.getElementById('overlayMsg');
+  if (overlay && msg) {
+    msg.textContent = `⛵ מפליג אל ${nearest.nameHe}...`;
+    overlay.style.display = 'flex';
+  }
+
+  // Clear current world blocks
+  const idsToRemove = [...world.keys()];
+  for (const k of idsToRemove) {
+    const info = world.get(k);
+    if (!info) continue;
+    const im = imeshByID[info.id];
+    if (im) {
+      const last = im.count - 1;
+      if (info.instanceId !== last) {
+        const lastKey = im.userData.slotKey[last];
+        im.setMatrixAt(info.instanceId, _tmpMat4.makeScale(0,0,0));
+        if (lastKey) {
+          const lastInfo = world.get(lastKey);
+          if (lastInfo) {
+            lastInfo.instanceId = info.instanceId;
+            im.getMatrixAt(last, _tmpMat4);
+            im.setMatrixAt(info.instanceId, _tmpMat4);
+            im.userData.slotKey[info.instanceId] = lastKey;
+          }
+        }
+      }
+      im.count--;
+      im.instanceMatrix.needsUpdate = true;
+    }
+    world.delete(k);
+  }
+  animBlocks.clear();
+
+  // Reposition player to island centre
+  const mid = Math.floor(worldSZ / 2);
+  player.pos.set(mid + 3, SEA_LEVEL + 3, mid + 3);
+  player.vel.set(0, 0, 0);
+
+  // Generate new island
+  await genGameWorld(worldSZ);
+
+  // Spawn village/temple/etc based on island type
+  if (nearest.type === 'village' || nearest.type === 'harbor') {
+    buildCycladesVillage(worldSZ);
+  } else if (nearest.type === 'temple') {
+    _buildTempleIsland(worldSZ, nearest);
+  } else if (nearest.type === 'volcanic') {
+    _buildVolcanicIsland(worldSZ, nearest);
+  }
+
+  // Find spawn point
+  let spawnY = -1;
+  for (let y = 40; y >= 1; y--) {
+    const info = world.get(`${mid}|${y}|${mid}`);
+    if (info && !_PASSABLE_IDS.has(info.id)) { spawnY = y; break; }
+  }
+  if (spawnY < SEA_LEVEL) spawnY = SEA_LEVEL + 2;
+  player.pos.set(mid + 0.5, spawnY + 1.5, mid + 0.5);
+
+  // Hide loading
+  if (overlay) overlay.style.display = 'none';
+
+  _streamingBusy = false;
+}
+
+// ── Update virtual world position based on player movement ───────────────
+// The block world wraps toroidally (wrapX/wrapZ). We detect when the player
+// crosses the world edge and update _worldX/_worldZ accordingly.
+let _prevBlockX = -1, _prevBlockZ = -1;
+function _updateVirtualPosition() {
+  const bx = Math.floor(player.pos.x);
+  const bz = Math.floor(player.pos.z);
+  if (_prevBlockX < 0) { _prevBlockX = bx; _prevBlockZ = bz; return; }
+
+  // Detect toroidal wrap (player teleported from edge to edge)
+  const dx = bx - _prevBlockX;
+  const dz = bz - _prevBlockZ;
+  // Normal movement: |dx|,|dz| < worldSZ/2
+  // Wrap: |dx| or |dz| > worldSZ/2
+  const halfW = worldSZ / 2;
+  const realDx = Math.abs(dx) > halfW ? (dx > 0 ? dx - worldSZ : dx + worldSZ) : dx;
+  const realDz = Math.abs(dz) > halfW ? (dz > 0 ? dz - worldSZ : dz + worldSZ) : dz;
+
+  _worldX += realDx;
+  _worldZ += realDz;
+  _prevBlockX = bx;
+  _prevBlockZ = bz;
+}
+
+// ── Temple island builder ─────────────────────────────────────────────────
+function _buildTempleIsland(sz, island) {
+  const mid = Math.floor(sz / 2);
+  // Central marble platform
+  for (let x = mid-8; x <= mid+8; x++) {
+    for (let z = mid-8; z <= mid+8; z++) {
+      const ty = _topBlockAt(x, z, sz);
+      if (ty > SEA_LEVEL) {
+        setBlock(x, ty+1, z, 'marble');
+        setBlock(x, ty+2, z, 'marble');
+      }
+    }
+  }
+  // 6 columns
+  const cols = [[-6,-6],[-6,0],[-6,6],[6,-6],[6,0],[6,6]];
+  for (const [cx, cz] of cols) {
+    for (let h = 0; h < 6; h++) {
+      setBlock(mid+cx, _topBlockAt(mid+cx, mid+cz, sz)+h+2, mid+cz, 'marble');
+    }
+  }
+}
+
+// ── Volcanic island builder ───────────────────────────────────────────────
+function _buildVolcanicIsland(sz, island) {
+  const mid = Math.floor(sz / 2);
+  // Add lava at the peak
+  for (let y = 18; y <= 22; y++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      for (let dz = -2; dz <= 2; dz++) {
+        if (Math.abs(dx) + Math.abs(dz) <= 2) {
+          setBlock(mid+dx, y, mid+dz, 'lava');
+        }
+      }
+    }
+  }
+}
+
+function _topBlockAt(x, z, sz) {
+  for (let y = 40; y >= 1; y--) {
+    const info = world.get(`${x}|${y}|${z}`);
+    if (info && !_PASSABLE_IDS.has(info.id)) return y;
+  }
+  return SEA_LEVEL;
+}
+
+// ── World Map ─────────────────────────────────────────────────────────────
+let _worldMapOpen = false;
+
+function _openWorldMap() {
+  _worldMapOpen = true;
+  const overlay = document.getElementById('worldMapOverlay');
+  if (overlay) overlay.classList.add('open');
+  _drawWorldMap();
+  // Release pointer lock so user can interact with map
+  document.exitPointerLock?.();
+}
+
+function _closeWorldMap() {
+  _worldMapOpen = false;
+  const overlay = document.getElementById('worldMapOverlay');
+  if (overlay) overlay.classList.remove('open');
+}
+
+function _drawWorldMap() {
+  const canvas = document.getElementById('worldMapCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  // Background — deep sea
+  const seaGrad = ctx.createLinearGradient(0, 0, W, H);
+  seaGrad.addColorStop(0, '#012a4a');
+  seaGrad.addColorStop(1, '#023e8a');
+  ctx.fillStyle = seaGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid lines (subtle)
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < W; i += 60) {
+    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(W, i); ctx.stroke();
+  }
+
+  // Find virtual world bounds
+  const maxVX = Math.max(...WORLD_ISLANDS.map(i => i.vx)) + 60;
+  const maxVZ = Math.max(...WORLD_ISLANDS.map(i => i.vz)) + 60;
+  const minVX = Math.min(...WORLD_ISLANDS.map(i => i.vx)) - 60;
+  const minVZ = Math.min(...WORLD_ISLANDS.map(i => i.vz)) - 60;
+
+  const toCanvasX = (vx) => ((vx - minVX) / (maxVX - minVX)) * (W - 40) + 20;
+  const toCanvasZ = (vz) => ((vz - minVZ) / (maxVZ - minVZ)) * (H - 40) + 20;
+
+  // Draw islands
+  for (const isl of WORLD_ISLANDS) {
+    const cx = toCanvasX(isl.vx);
+    const cy = toCanvasZ(isl.vz);
+    const r = Math.max(6, isl.radius * 0.4);
+
+    // Island shape
+    const islandGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+    if (isl.visited) {
+      islandGrad.addColorStop(0, '#d4af37');
+      islandGrad.addColorStop(1, '#8B6914');
+    } else {
+      islandGrad.addColorStop(0, '#6b7280');
+      islandGrad.addColorStop(1, '#374151');
+    }
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = islandGrad;
+    ctx.fill();
+
+    // Glow for visited
+    if (isl.visited) {
+      ctx.shadowColor = '#d4af37';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.strokeStyle = '#d4af37';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    // Current island indicator
+    if (isl.id === _currentIslandId) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r + 4, 0, Math.PI * 2);
+      ctx.strokeStyle = '#00ff88';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 3]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Island name
+    ctx.fillStyle = isl.visited ? '#d4af37' : '#9ca3af';
+    ctx.font = `${isl.id === _currentIslandId ? 'bold ' : ''}10px Cinzel, serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(isl.nameHe, cx, cy + r + 13);
+
+    // Island type icon
+    const typeIcon = { village:'🏘', temple:'🏛', volcanic:'🌋', harbor:'⚓', ruins:'🏚', wild:'🌿' }[isl.type] || '🏝';
+    ctx.font = '11px serif';
+    ctx.fillText(typeIcon, cx, cy + 4);
+  }
+
+  // Player position
+  const px = toCanvasX(_worldX);
+  const pz = toCanvasZ(_worldZ);
+  // Player arrow
+  ctx.save();
+  ctx.translate(px, pz);
+  ctx.rotate(player.yaw + Math.PI);
+  ctx.fillStyle = '#00ff88';
+  ctx.shadowColor = '#00ff88';
+  ctx.shadowBlur = 8;
+  ctx.beginPath();
+  ctx.moveTo(0, -10);
+  ctx.lineTo(-5, 6);
+  ctx.lineTo(0, 3);
+  ctx.lineTo(5, 6);
+  ctx.closePath();
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.restore();
+
+  // Legend
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(10, H - 30, 200, 22);
+  ctx.fillStyle = '#aaa';
+  ctx.font = '10px Heebo, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(`ביקרת ב-${_visitedIslands.size}/${WORLD_ISLANDS.length} איים`, 16, H - 15);
+}
+
+// ── Compass HUD ───────────────────────────────────────────────────────────
+function _drawCompass() {
+  const canvas = document.getElementById('compassCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = 64, H = 64, cx = 32, cy = 32, r = 28;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Background circle
+  const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+  bg.addColorStop(0, 'rgba(10,30,60,0.85)');
+  bg.addColorStop(1, 'rgba(0,10,30,0.95)');
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = bg;
+  ctx.fill();
+  ctx.strokeStyle = '#d4af37';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Cardinal directions
+  const dirs = [
+    { label: 'צ', angle: 0,         color: '#ff4444' },
+    { label: 'ד', angle: Math.PI,   color: '#aaa' },
+    { label: 'מ', angle: -Math.PI/2, color: '#aaa' },
+    { label: 'ע', angle: Math.PI/2, color: '#aaa' },
+  ];
+
+  const yaw = player.yaw; // camera yaw
+
+  for (const d of dirs) {
+    const a = d.angle - yaw;
+    const x = cx + Math.sin(a) * (r - 8);
+    const y = cy - Math.cos(a) * (r - 8);
+    ctx.fillStyle = d.color;
+    ctx.font = 'bold 9px Heebo, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(d.label, x, y);
+  }
+
+  // Needle
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(-yaw);
+  // North (red)
+  ctx.beginPath();
+  ctx.moveTo(0, -r + 10);
+  ctx.lineTo(-4, 4);
+  ctx.lineTo(4, 4);
+  ctx.closePath();
+  ctx.fillStyle = '#ff4444';
+  ctx.fill();
+  // South (white)
+  ctx.beginPath();
+  ctx.moveTo(0, r - 10);
+  ctx.lineTo(-4, -4);
+  ctx.lineTo(4, -4);
+  ctx.closePath();
+  ctx.fillStyle = '#eee';
+  ctx.fill();
+  ctx.restore();
+
+  // Centre dot
+  ctx.beginPath();
+  ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+  ctx.fillStyle = '#d4af37';
+  ctx.fill();
+}
+
+// ── Island name markers on horizon ────────────────────────────────────────
+function _updateIslandMarkers() {
+  const container = document.getElementById('islandMarkersContainer');
+  if (!container) return;
+
+  // Remove old markers
+  container.innerHTML = '';
+
+  const fov = camera.fov * (Math.PI / 180);
+  const aspect = camera.aspect;
+
+  for (const isl of WORLD_ISLANDS) {
+    if (isl.id === _currentIslandId) continue;
+
+    const dx = isl.vx - _worldX;
+    const dz = isl.vz - _worldZ;
+    const dist = Math.sqrt(dx * dx + dz * dz);
+
+    // Only show markers for islands within 600 virtual units
+    if (dist > 600) continue;
+
+    // Direction to island in world space
+    const angleToIsland = Math.atan2(dx, dz); // angle from north
+    const relAngle = angleToIsland - player.yaw; // relative to camera
+
+    // Normalise to [-π, π]
+    const normAngle = ((relAngle + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+
+    // Only show if within horizontal FOV
+    const halfFovH = Math.atan(Math.tan(fov / 2) * aspect);
+    if (Math.abs(normAngle) > halfFovH * 0.9) continue;
+
+    // Project to screen X
+    const screenX = (normAngle / halfFovH) * 0.5 + 0.5; // 0..1
+    const screenXpx = screenX * window.innerWidth;
+
+    // Vertical position — always near top of screen (horizon)
+    const screenYpx = window.innerHeight * 0.28;
+
+    // Opacity based on distance
+    const opacity = Math.max(0, Math.min(1, (600 - dist) / 400));
+
+    const el = document.createElement('div');
+    el.className = 'islandMarker visible';
+    el.style.left = screenXpx + 'px';
+    el.style.top = screenYpx + 'px';
+    el.style.opacity = opacity;
+    el.innerHTML = `
+      <div class="islandMarkerDot"></div>
+      <div class="islandMarkerName">${isl.nameHe}</div>
+      <div class="islandMarkerDist">${Math.round(dist)} יח׳</div>
+    `;
+    container.appendChild(el);
+  }
+}
+
+// ── Init & cleanup ────────────────────────────────────────────────────────
+function _initInfiniteWorld() {
+  _worldX = WORLD_ISLANDS[0].vx;
+  _worldZ = WORLD_ISLANDS[0].vz;
+  _currentIslandId = 0;
+  _prevBlockX = -1;
+  _prevBlockZ = -1;
+  _visitedIslands = new Set([0]);
+  WORLD_ISLANDS.forEach(i => { i.visited = i.id === 0; });
+
+  _createInfiniteSeaPlane();
+  _enableHorizonFog();
+
+  // Show compass
+  const compass = document.getElementById('compassHUD');
+  if (compass) compass.style.display = 'block';
+}
+
+function _cleanupInfiniteWorld() {
+  if (_infiniteSeaPlane) {
+    scene.remove(_infiniteSeaPlane);
+    _infiniteSeaPlane = null;
+  }
+  const compass = document.getElementById('compassHUD');
+  if (compass) compass.style.display = 'none';
+  _closeWorldMap();
+}
+
+// ── Per-frame update (called from animate loop) ───────────────────────────
+let _islandStreamTick = 0;
+function _updateInfiniteWorld(dt) {
+  _updateVirtualPosition();
+  _updateInfiniteSeaPlane();
+  _updateHorizonFog();
+  _drawCompass();
+
+  // Check island streaming every 60 frames (~1 second)
+  if (++_islandStreamTick % 60 === 0) {
+    _tickIslandStreaming();
+    _updateIslandMarkers();
+  }
+}
+
+
 function _buildStatRows(rows) {
   return rows.map(([label, val]) =>
     `<div class="endStatRow"><span>${label}</span><span class="val">${val}</span></div>`
@@ -8988,6 +9664,9 @@ async function enterGame(worldData, inviteCode) {
     }, 800);
   }
 
+  // Initialise infinite world system (sea plane, compass, island streaming)
+  _initInfiniteWorld();
+
   // Show game overlay (click to lock pointer)
   document.getElementById('overlay').style.display = 'flex';
 }
@@ -9303,6 +9982,10 @@ function initAuth() {
       showInfo(`🔗 הקישור הועתק! שתף אותו עם חברים:\n${url}`, '#00E5FF', 4000);
     });
   });
+
+  // ── World map close button ──
+  const _wmClose = document.getElementById('worldMapClose');
+  if (_wmClose) _wmClose.addEventListener('click', _closeWorldMap);
 
   // ── Victory / Game-Over screen buttons ──
   document.getElementById('victoryRestartBtn').addEventListener('click', _restartGameMode);
