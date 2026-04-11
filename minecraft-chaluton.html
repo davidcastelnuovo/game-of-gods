@@ -2266,13 +2266,16 @@ function setBlock(x,y,z,id) {
 
 function hasBlock(x,y,z) {
   const info = world.get(wk(x,y,z));
-  if (info && info.id !== 'water') return true; // מוצק בלבד — מים לא חוסמים תנועה
+  // Non-solid blocks (passable): liquids and decorative plants
+  const PASSABLE_IDS = new Set(['water','sea_shallow','sea_deep','lava','bougainvillea']);
+  if (info && !PASSABLE_IDS.has(info.id)) return true; // מוצק בלבד — נוזלים/צמחייה לא חוסמים תנועה
   const im = interactWorld.get(wk(x,y,z));
   return im ? !im.userData.open : false;  // סגור=חסום, פתוח=לא חסום
 }
 // בדוק אם הבלוק במיקום זה הוא מים (נוזל עביר)
 function isWaterAt(x, y, z) {
-  return world.get(wk(x|0, y|0, z|0))?.id === 'water';
+  const id = world.get(wk(x|0, y|0, z|0))?.id;
+  return id === 'water' || id === 'sea_shallow' || id === 'sea_deep';
 }
 
 // ── INTERACTIVE BLOCKS (דלתות + חלונות) ───────────────
