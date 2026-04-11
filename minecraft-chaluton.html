@@ -1015,31 +1015,13 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
   <div class="gogTorch gogTorchL"></div>
   <div class="gogTorch gogTorchR"></div>
   <div class="rbCard" style="max-width:440px">
-    <div class="rbTitle">✨ עולם חדש</div>
-    <div id="worldTypeGrid">
-      <div class="wtCard sel" data-type="adventure">
-        <span class="wtIcon">🏔️</span>
-        הרפתקאות
-        <small>הרים, כפרים, יצורים</small>
-      </div>
-      <div class="wtCard" data-type="flat">
-        <span class="wtIcon">🟩</span>
-        שטוח
-        <small>מושלם לבנייה</small>
-      </div>
-      <div class="wtCard" data-type="block">
-        <span class="wtIcon">🎲</span>
-        בלוקים
-        <small>גבעות קלאסיות</small>
-      </div>
-    </div>
+    <div class="rbTitle">🏝️ עולם חדש — איי יוון</div>
+    <p style="color:#c8b89a;font-size:.88rem;line-height:1.6;direction:rtl;text-align:center;margin:6px 0 10px">
+      עולם אחד גדול שכולו ים ואיים בסגנון האיים היווניים (קיקלדס).<br>
+      בכל אי: הרים, כפר דייגים עם בתים לבנים וחלונות כחולים, טחנת רוח, באר, נחל הר, ומרינה עם ספינות.
+    </p>
     <input id="newWorldName" class="gpInput" placeholder="✏️  שם העולם" maxlength="30" />
-    <select id="newWorldSize" class="gpSelect">
-      <option value="26">🗺️  קטן — 26×26</option>
-      <option value="64">🗺️  בינוני — 64×64</option>
-      <option value="100">🗺️  גדול — 100×100</option>
-    </select>
-    <button id="createWorldConfirm" class="gpBtn primary">✨ צור עולם!</button>
+    <button id="createWorldConfirm" class="gpBtn primary">🏝️ צור עולם!</button>
     <button id="createWorldCancel" class="gpBtn">← חזרה</button>
     <div id="createWorldErr" class="gpErr"></div>
   </div>
@@ -7829,11 +7811,36 @@ async function enterGame(worldData, inviteCode) {
   // Load terrain (async for large worlds — shows progress bar)
   await loadWorldBlocks(worldData.blocks);
 
-  // Spawn player above center
+  // Spawn player on the highest land column closest to the map center.
+  // For Cyclades worlds the center is often ocean, so we spiral out until
+  // we find a non-water top block above sea level.
   const mid = Math.floor(worldSZ / 2);
-  for (let y = 30; y >= 0; y--) {
-    if (hasBlock(mid, y, mid)) { player.pos.set(mid + 0.5, y + 1, mid + 0.5); break; }
+  const SEA_LEVEL = 6;
+  function topBlockAt(sx, sz) {
+    for (let y = 40; y >= 1; y--) {
+      const info = world.get(`${sx}|${y}|${sz}`);
+      if (info && info.id !== 'water') return y;
+    }
+    return -1;
   }
+  let spawnX = mid, spawnZ = mid, spawnY = -1;
+  outer:
+  for (let radius = 0; radius < worldSZ / 2; radius++) {
+    for (let dx = -radius; dx <= radius; dx++) {
+      for (let dz = -radius; dz <= radius; dz++) {
+        if (Math.max(Math.abs(dx), Math.abs(dz)) !== radius && radius > 0) continue;
+        const sx = mid + dx, sz = mid + dz;
+        if (sx < 0 || sz < 0 || sx >= worldSZ || sz >= worldSZ) continue;
+        const ty = topBlockAt(sx, sz);
+        if (ty > SEA_LEVEL) {
+          spawnX = sx; spawnZ = sz; spawnY = ty + 1;
+          break outer;
+        }
+      }
+    }
+  }
+  if (spawnY < 0) spawnY = SEA_LEVEL + 2; // fallback — spawn above sea
+  player.pos.set(spawnX + 0.5, spawnY, spawnZ + 0.5);
 
   // Camera
   camera.position.set(player.pos.x, player.pos.y + EYE, player.pos.z);
@@ -8144,24 +8151,15 @@ function initAuth() {
     document.getElementById('newWorldName').focus();
   });
 
-  // ── World type cards ──
-  document.querySelectorAll('.wtCard').forEach(card => {
-    card.addEventListener('click', () => {
-      document.querySelectorAll('.wtCard').forEach(c => c.classList.remove('sel'));
-      card.classList.add('sel');
-    });
-  });
-
   // ── Create world confirm ──
+  // Every new world is now a fixed-size Cyclades island archipelago.
   document.getElementById('createWorldConfirm').addEventListener('click', async () => {
     const name = document.getElementById('newWorldName').value.trim();
     if (!name) { document.getElementById('createWorldErr').textContent = 'הזן שם לעולם'; return; }
-    const type = document.querySelector('.wtCard.sel')?.dataset.type || 'block';
-    const size = document.getElementById('newWorldSize').value;
     document.getElementById('createWorldErr').textContent = '⏳ יוצר עולם…';
     document.getElementById('createWorldConfirm').disabled = true;
     try {
-      const worldData = await api('POST', '/api/worlds', { name, type, size: Number(size) });
+      const worldData = await api('POST', '/api/worlds', { name, type: 'cyclades' });
       document.getElementById('createWorldConfirm').disabled = false;
       showGodSelect(worldData, '');
     } catch (e) {
