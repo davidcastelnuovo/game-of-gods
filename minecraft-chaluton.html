@@ -2634,8 +2634,10 @@ function updatePlayer(dt) {
     if (lLeg)  lLeg.visible  = !fp;   // רגל שמאל
   }
   // הצג/הסתר fpBody — נראה רק כשמביטים למטה (pitch-based)
+  // Never show when looking up (positive pitch)
   if (fpBody) {
-    if (camMode !== 0 || !locked) {
+    const pitchDegBody = (player.pitch || 0) * (180 / Math.PI);
+    if (camMode !== 0 || !locked || pitchDegBody > 10) {
       fpBody.visible = false;
     } else {
       fpBody.visible = true;
@@ -2755,7 +2757,10 @@ function updatePlayer(dt) {
 
   // ── First-person hand animation ──────────────────────────
   if (fpHands) {
-    const show = (camMode === 0 && locked);
+    // Hide hands when looking too far up (pitch > 55°) or down (pitch < -70°)
+    const pitchDeg = (player.pitch || 0) * (180 / Math.PI);
+    const handsHidden = (camMode !== 0 || !locked || pitchDeg > 55 || pitchDeg < -70);
+    const show = !handsHidden;
     fpHands.visible = show;
     if (show) {
       const t   = performance.now() / 1000;
