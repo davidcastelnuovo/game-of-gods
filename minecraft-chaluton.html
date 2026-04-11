@@ -138,6 +138,8 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
   font-size: 1.5rem; gap: 2px; transition: .12s; user-select: none;
 }
 .libItem span { font-size: 8px; color: #c8b89a; font-family: 'Nunito', sans-serif; text-align: center; }
+.structSprite { width: 42px; height: 42px; image-rendering: pixelated; }
+.structSprite svg { width: 100%; height: 100%; }
 .libItem:hover {
   box-shadow: 0 0 0 2px #1a1200, 0 0 0 3px #ffd700, 0 0 8px rgba(255,215,0,.35);
   transform: scale(1.06);
@@ -429,9 +431,31 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
 }
 .gpSelect:focus { border-color: #ffd700; }
 
-/* ── In-game HUD buttons ── */
+/* ── Menu Dropdown ── */
+#menuDropdown {
+  position: fixed; left: 14px; top: 12px; z-index: 20;
+}
+#menuToggleBtn {
+  background: linear-gradient(to bottom, #ffe066, #c9950a);
+  border: none; border-radius: 3px;
+  color: #1a0d00; font-size: 1.1rem;
+  font-family: 'Press Start 2P', monospace;
+  padding: 8px 14px; cursor: pointer; transition: all .12s;
+  box-shadow: 0 4px 0 #7a5a00, 0 5px 10px rgba(0,0,0,0.5);
+  display: none;
+}
+#menuToggleBtn:hover {
+  background: linear-gradient(to bottom,#ffed80,#e0aa18);
+  transform: translateY(-2px); box-shadow: 0 6px 0 #7a5a00;
+}
+#menuDropdownContent {
+  display: none; flex-direction: column; gap: 6px;
+  margin-top: 8px; min-width: 160px;
+}
+#menuDropdown.open #menuDropdownContent { display: flex; }
+
+/* ── In-game HUD buttons (inside dropdown) ── */
 #saveBtn, #inviteBtn, #exitGameBtn {
-  position: fixed; left: 14px; z-index: 10;
   background: linear-gradient(to bottom, #ffe066, #c9950a);
   border: none; border-radius: 3px;
   color: #1a0d00; font-size: clamp(0.38rem, 0.75vw, 0.52rem);
@@ -440,16 +464,12 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
   box-shadow: 0 4px 0 #7a5a00, 0 5px 10px rgba(0,0,0,0.5);
   display: none; text-transform: uppercase; letter-spacing: 1px;
 }
-#saveBtn    { top: 12px; }
-#inviteBtn  { top: 50px; }
-#exitGameBtn{ top: 88px; }
 #saveBtn:hover, #inviteBtn:hover, #exitGameBtn:hover {
   background: linear-gradient(to bottom,#ffed80,#e0aa18);
   transform: translateY(-2px); box-shadow: 0 6px 0 #7a5a00;
 }
 
 #onlinePlayers {
-  position:fixed; left:14px; top:134px; z-index:10;
   background:rgba(15,10,6,0.90);
   box-shadow:0 0 0 2px #1a1200,0 0 0 4px #b8860b,0 0 0 6px #1a1200;
   border-radius:3px; color:#c8b89a; font-size:.7rem; font-weight:700;
@@ -459,7 +479,6 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
 
 /* ── God Badge (in-game) ── */
 #godBadge {
-  position:fixed; left:14px; top:252px; z-index:10;
   background:rgba(15,10,6,0.90);
   box-shadow:0 0 0 2px #1a1200,0 0 0 4px #b8860b,0 0 0 6px #1a1200;
   border-radius:3px;
@@ -468,10 +487,125 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
   padding:8px 12px; display:none; line-height:1.7; color:#ffd700;
 }
 
+/* ── Stats HUD Bar ── */
+#statsBar {
+  position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+  z-index: 10; display: none;
+  background: rgba(10,8,4,0.88);
+  box-shadow: 0 0 0 2px #1a1200, 0 0 0 4px #b8860b, 0 0 0 6px #1a1200;
+  border-radius: 4px; padding: 6px 16px;
+  gap: 18px; align-items: center; direction: rtl;
+  font-family: 'Press Start 2P', monospace;
+}
+.statItem {
+  display: flex; align-items: center; gap: 5px;
+}
+.statIcon { font-size: 0.9rem; }
+.statLabel {
+  color: #c8b89a; font-size: 0.45rem; text-transform: uppercase;
+}
+.statVal {
+  color: #ffd700; font-size: 0.55rem; min-width: 28px; text-align: center;
+  font-weight: bold;
+}
+.statBarBg {
+  width: 70px; height: 10px; background: #2a1a0a;
+  border: 2px solid #5a3a10; border-radius: 2px; overflow: hidden;
+}
+.statBarFill {
+  height: 100%; background: linear-gradient(to right, #ff2222, #ff4444);
+  transition: width 0.3s;
+}
+
+/* ── Lib Panel Close Button ── */
+#libCloseBtn {
+  flex-shrink: 0; z-index: 20;
+  background: rgba(180,30,30,0.85); border: 2px solid #ff4444;
+  border-radius: 3px; color: #fff; font-size: 1rem;
+  width: 32px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: Arial, sans-serif; transition: all .15s;
+  line-height: 1;
+}
+#libCloseBtn:hover {
+  background: #ff2222; transform: scale(1.1);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MODE SELECT SCREEN
+═══════════════════════════════════════════════════════════════ */
+.modeCards {
+  display: flex; gap: 28px; justify-content: center; align-items: stretch;
+  padding: 30px 20px; flex: 1; max-height: 420px;
+}
+.modeCard {
+  width: 280px; padding: 28px 22px; border-radius: 8px; cursor: pointer;
+  background: rgba(20,16,10,.92);
+  box-shadow: 0 0 0 3px #1a1200, 0 0 0 5px #7a5800, 0 0 20px rgba(0,0,0,.6);
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  transition: all .25s; position: relative; overflow: hidden;
+}
+.modeCard::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(to bottom, rgba(255,215,0,.08), transparent);
+  opacity: 0; transition: opacity .25s;
+}
+.modeCard:hover { transform: translateY(-6px) scale(1.03);
+  box-shadow: 0 0 0 3px #1a1200, 0 0 0 5px #ffd700, 0 0 30px rgba(255,215,0,.3);
+}
+.modeCard:hover::before { opacity: 1; }
+.modeIcon { font-size: 3.5rem; margin-bottom: 14px; filter: drop-shadow(0 4px 8px rgba(0,0,0,.6)); }
+.modeTitle {
+  font-family: 'Press Start 2P', monospace; font-size: .95rem;
+  color: #ffd700; margin-bottom: 12px; text-shadow: 2px 2px 0 #000;
+}
+.modeDesc {
+  font-family: 'Nunito', sans-serif; font-size: .82rem; color: #c8b89a;
+  line-height: 1.7; direction: rtl;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GAME MODE HUD
+═══════════════════════════════════════════════════════════════ */
+#gameModeHUD {
+  position: fixed; top: 50px; left: 50%; transform: translateX(-50%);
+  z-index: 12; display: flex; gap: 14px; align-items: center;
+  background: rgba(10,8,4,.85); border: 2px solid #b8860b; border-radius: 6px;
+  padding: 6px 16px; font-family: 'Press Start 2P', monospace;
+  box-shadow: 0 4px 16px rgba(0,0,0,.5);
+}
+#gmStageBar {
+  display: flex; align-items: center; gap: 6px;
+  color: #ffd700; font-size: .6rem;
+  border-right: 1px solid #5a4a20; padding-right: 12px;
+}
+#gmPowerBar, #gmBelieversBar {
+  display: flex; align-items: center; gap: 5px;
+}
+.gmBarLabel { color: #c8a840; font-size: .45rem; white-space: nowrap; }
+.gmBarTrack {
+  width: 80px; height: 10px; background: rgba(0,0,0,.6);
+  border: 1px solid #7a5800; border-radius: 3px; overflow: hidden;
+}
+.gmBarFill {
+  height: 100%; background: linear-gradient(to right, #ff6600, #ffd700);
+  transition: width .3s; border-radius: 2px;
+}
+.gmBarVal { color: #fff; font-size: .5rem; min-width: 24px; text-align: center; }
+#gmWaveInfo {
+  display: flex; align-items: center; gap: 6px;
+  color: #ff6666; font-size: .5rem;
+  border-left: 1px solid #5a4a20; padding-left: 12px;
+}
+#gmVillagerCount {
+  color: #88cc66; font-size: .5rem;
+  border-left: 1px solid #5a4a20; padding-left: 12px;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    GAMES OF GODS — Pixel-Art God/Weapon Select Screens
 ═══════════════════════════════════════════════════════════════ */
-#godSelectScreen, #weaponSelectScreen {
+#godSelectScreen, #weaponSelectScreen, #modeSelectScreen {
   position: fixed; inset: 0; z-index: 40;
   display: none; flex-direction: column; align-items: center;
   justify-content: flex-start;
@@ -812,30 +946,30 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
 }
 #underwaterOverlay .uw-tint {
   position: absolute; inset: 0;
-  background: rgba(0, 55, 150, 0.40);
+  background: rgba(40, 130, 210, 0.22);
   animation: uwtint 3.5s ease-in-out infinite;
 }
 @keyframes uwtint {
-  0%, 100% { background: rgba(0, 55, 150, 0.40); }
-  50%       { background: rgba(0, 80, 175, 0.46); }
+  0%, 100% { background: rgba(40, 130, 210, 0.22); }
+  50%      { background: rgba(55, 150, 225, 0.26); }
 }
 #underwaterOverlay .uw-rays {
   position: absolute; inset: 0;
   background:
-    radial-gradient(ellipse 38% 22% at 28% 18%, rgba(140,220,255,0.22) 0%, transparent 65%),
-    radial-gradient(ellipse 28% 18% at 72% 12%, rgba(110,200,255,0.17) 0%, transparent 65%),
-    radial-gradient(ellipse 22% 14% at 50% 25%, rgba(160,235,255,0.14) 0%, transparent 60%);
+    radial-gradient(ellipse 42% 28% at 28% 16%, rgba(190,240,255,0.30) 0%, transparent 65%),
+    radial-gradient(ellipse 32% 22% at 72% 12%, rgba(160,225,255,0.24) 0%, transparent 65%),
+    radial-gradient(ellipse 24% 18% at 50% 25%, rgba(200,250,255,0.20) 0%, transparent 60%);
   animation: uwrays 5s ease-in-out infinite alternate;
 }
 @keyframes uwrays {
-  0%   { transform: scaleX(1)    translateY(0%);   opacity: 0.6; }
-  40%  { transform: scaleX(1.06) translateY(-2%);  opacity: 1.0; }
-  70%  { transform: scaleX(0.95) translateY(1%);   opacity: 0.7; }
-  100% { transform: scaleX(1.03) translateY(-1%);  opacity: 0.9; }
+  0%   { transform: scaleX(1)    translateY(0%);   opacity: 0.75; }
+  40%  { transform: scaleX(1.06) translateY(-2%);  opacity: 1.0;  }
+  70%  { transform: scaleX(0.95) translateY(1%);   opacity: 0.85; }
+  100% { transform: scaleX(1.03) translateY(-1%);  opacity: 0.95; }
 }
 #underwaterOverlay .uw-vignette {
   position: absolute; inset: 0;
-  background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 15, 70, 0.55) 100%);
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(10, 50, 110, 0.35) 100%);
 }
 </style>
 </head>
@@ -881,31 +1015,13 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
   <div class="gogTorch gogTorchL"></div>
   <div class="gogTorch gogTorchR"></div>
   <div class="rbCard" style="max-width:440px">
-    <div class="rbTitle">✨ עולם חדש</div>
-    <div id="worldTypeGrid">
-      <div class="wtCard sel" data-type="adventure">
-        <span class="wtIcon">🏔️</span>
-        הרפתקאות
-        <small>הרים, כפרים, יצורים</small>
-      </div>
-      <div class="wtCard" data-type="flat">
-        <span class="wtIcon">🟩</span>
-        שטוח
-        <small>מושלם לבנייה</small>
-      </div>
-      <div class="wtCard" data-type="block">
-        <span class="wtIcon">🎲</span>
-        בלוקים
-        <small>גבעות קלאסיות</small>
-      </div>
-    </div>
+    <div class="rbTitle">🏝️ עולם חדש — איי יוון</div>
+    <p style="color:#c8b89a;font-size:.88rem;line-height:1.6;direction:rtl;text-align:center;margin:6px 0 10px">
+      עולם אחד גדול שכולו ים ואיים בסגנון האיים היווניים (קיקלדס).<br>
+      בכל אי: הרים, כפר דייגים עם בתים לבנים וחלונות כחולים, טחנת רוח, באר, נחל הר, ומרינה עם ספינות.
+    </p>
     <input id="newWorldName" class="gpInput" placeholder="✏️  שם העולם" maxlength="30" />
-    <select id="newWorldSize" class="gpSelect">
-      <option value="26">🗺️  קטן — 26×26</option>
-      <option value="64">🗺️  בינוני — 64×64</option>
-      <option value="100">🗺️  גדול — 100×100</option>
-    </select>
-    <button id="createWorldConfirm" class="gpBtn primary">✨ צור עולם!</button>
+    <button id="createWorldConfirm" class="gpBtn primary">🏝️ צור עולם!</button>
     <button id="createWorldCancel" class="gpBtn">← חזרה</button>
     <div id="createWorldErr" class="gpErr"></div>
   </div>
@@ -983,13 +1099,101 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
   <div class="gogLiveSmall"><div class="gogLiveSmallDot"></div>LIVE</div>
 </div>
 
-<!-- ── COSTUME SELECT SCREEN ─────────────────────────────── -->
+<!-- ── MODE SELECT SCREEN ───────────────────────────────── -->
+<div id="modeSelectScreen" style="display:none">
+  <div class="gogHudBars">
+    <div class="gogBar"><div class="gogBarIcon" style="color:#ff3333">❤</div><div class="gogBarTrack"><div class="gogBarFill hp" style="width:100%"></div></div></div>
+    <div class="gogBar"><div class="gogBarIcon" style="color:#33aaff">◆</div><div class="gogBarTrack"><div class="gogBarFill mp" style="width:80%"></div></div></div>
+  </div>
+  <div class="gogHudRight">
+    <div class="gogLive"><div class="gogLiveDot"></div>LIVE</div>
+  </div>
+  <div class="gogTorch gogTorchL"></div>
+  <div class="gogTorch gogTorchR"></div>
+  <div class="gogHeader">
+    <div class="gogBigTitle">GAMES OF GODS</div>
+    <div class="gogSubTitle">בחר מוד משחק</div>
+  </div>
+  <div class="modeCards">
+    <div class="modeCard" id="modeCanvas">
+      <div class="modeIcon">🎨</div>
+      <div class="modeTitle">מוד קאנבה</div>
+      <div class="modeDesc">בנייה חופשית, יצירה ללא גבולות.<br>בנה עולמות, הנח מבנים, ספון יצורים.<br>המקבילה לקריאייטיב במיינקראפט.</div>
+    </div>
+    <div class="modeCard" id="modeGame">
+      <div class="modeIcon">⚔️</div>
+      <div class="modeTitle">מוד המשחק</div>
+      <div class="modeDesc">תחרות האלים! הצל כפרים ממפלצות,<br>צבור מאמינים וכוח אלוהי.<br>הישרד או הפוך לבן תמותה!</div>
+    </div>
+  </div>
+  <div class="gogFooter">
+    <div class="gogBtnRow">
+      <button id="modeBackBtn" class="gogBtn gogBtnBack">← חזרה</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── GAME MODE HUD ───────────────────────────────────── -->
+<div id="gameModeHUD" style="display:none">
+  <div id="gmStageBar">
+    <span id="gmStageIcon">⚔️</span>
+    <span id="gmStageText">שלב 1 — הגן על הכפר</span>
+  </div>
+  <div id="gmPowerBar">
+    <div class="gmBarLabel">⚡ כוח אלוהי</div>
+    <div class="gmBarTrack"><div class="gmBarFill" id="gmPowerFill" style="width:100%"></div></div>
+    <span class="gmBarVal" id="gmPowerVal">100</span>
+  </div>
+  <div id="gmBelieversBar">
+    <div class="gmBarLabel">🙏 מאמינים</div>
+    <span class="gmBarVal" id="gmBelieversVal">0</span>
+  </div>
+  <div id="gmWaveInfo">
+    <span id="gmWaveText">גל 1/5</span>
+    <span id="gmEnemyCount">👹 0</span>
+  </div>
+  <div id="gmVillagerCount">
+    <span>🏘️ כפריים: </span><span id="gmVillagerVal">0</span>
+  </div>
+</div>
+
 <!-- ── IN-GAME HUD EXTRAS ──────────────────────────────── -->
-<button id="saveBtn">💾 שמור</button>
-<button id="inviteBtn">🔗 הזמן חבר</button>
-<button id="exitGameBtn">🏠 יציאה</button>
-<div id="onlinePlayers"></div>
-<div id="godBadge"></div>
+
+<!-- Dropdown menu for left-side buttons -->
+<div id="menuDropdown">
+  <button id="menuToggleBtn">☰</button>
+  <div id="menuDropdownContent">
+    <button id="saveBtn">💾 שמור</button>
+    <button id="inviteBtn">🔗 הזמן חבר</button>
+    <button id="exitGameBtn">🏠 יציאה</button>
+    <div id="onlinePlayers"></div>
+    <div id="godBadge"></div>
+  </div>
+</div>
+
+<!-- ── HUD Stats Bar ── -->
+<div id="statsBar">
+  <div class="statItem" id="statHP">
+    <span class="statIcon">❤️</span>
+    <div class="statBarBg"><div class="statBarFill" id="hpBar" style="width:100%"></div></div>
+    <span class="statVal" id="hpVal">100</span>
+  </div>
+  <div class="statItem" id="statBelievers">
+    <span class="statIcon">🙏</span>
+    <span class="statLabel">מאמינים</span>
+    <span class="statVal" id="believersVal">0</span>
+  </div>
+  <div class="statItem" id="statGold">
+    <span class="statIcon">🪙</span>
+    <span class="statLabel">זהב</span>
+    <span class="statVal" id="goldVal">0</span>
+  </div>
+  <div class="statItem" id="statDivinity">
+    <span class="statIcon">⚡</span>
+    <span class="statLabel">אלוהות</span>
+    <span class="statVal" id="divinityVal">0</span>
+  </div>
+</div>
 <div id="underwaterOverlay">
   <div class="uw-tint"></div>
   <div class="uw-rays"></div>
@@ -1023,6 +1227,7 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
 
 <div id="libPanel">
   <div id="libTabs">
+    <button id="libCloseBtn" title="סגור ספריה">✕</button>
     <button class="lTab sel" data-tab="structs">🏗️<br>מבנים</button>
     <button class="lTab" data-tab="interact">🚪<br>דלתות</button>
     <button class="lTab" data-tab="creatures">🐾<br>יצורים</button>
@@ -1045,8 +1250,6 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
 
     <!-- ── CREATURES ── -->
     <div id="tab-creatures" style="display:none">
-      <div class="lSection">🐾 יצורים</div>
-      <div class="libGrid" id="creatureGrid"></div>
       <div class="lSection">🐉 יצורים מיתולוגיים</div>
       <div class="libGogGrid" id="libGogCreatureGrid"></div>
     </div>
@@ -1082,7 +1285,10 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.shadowMap.enabled = false;
+renderer.shadowMap.enabled = true;
+// PCFShadowMap is ~2x faster than the soft variant — shadow edges are
+// slightly harder but the performance gain is significant at 60 FPS targets.
+renderer.shadowMap.type    = THREE.PCFShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 renderer.outputEncoding = THREE.sRGBEncoding;
@@ -1099,7 +1305,9 @@ const scene  = new THREE.Scene();
 scene.background = new THREE.Color(0x87CEEB);
 let RENDER_DIST = 20;  // near detail distance (F key to cycle: 12/20/30/40)
 let FAR_DIST    = RENDER_DIST * 4; // far LOD distance — extended for dramatic views
-scene.fog = new THREE.Fog(0x87CEEB, RENDER_DIST * 0.85, FAR_DIST);
+// Fog kept but pushed far off by default → clean horizon.
+// Still available for underwater tint / apollo / hades / poseidon god effects.
+scene.fog = new THREE.Fog(0x87CEEB, 9000, 10000);
 
 const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.05, 400);
 scene.add(camera); // נדרש כדי שאובייקטים שמחוברים למצלמה (fpHands, נשק) יצטיירו
@@ -1107,6 +1315,28 @@ scene.add(camera); // נדרש כדי שאובייקטים שמחוברים למ
 // ── LIGHTING ──────────────────────────────────────────
 const sun = new THREE.DirectionalLight(0xFFF8E8, 2.2);
 sun.position.set(80, 100, 50);
+
+// Dynamic shadows from the sun — orthographic shadow camera that tracks the
+// player in updateSky() so the active shadow footprint always covers what the
+// player sees. Map size 768² + PCFShadowMap is tuned for smooth 60 FPS even
+// with a busy game-mode scene (villagers, monster waves, buildings).
+sun.castShadow = true;
+const _SHADOW_HALF = 40; // world units on each axis from the player center
+sun.shadow.camera.left   = -_SHADOW_HALF;
+sun.shadow.camera.right  =  _SHADOW_HALF;
+sun.shadow.camera.top    =  _SHADOW_HALF;
+sun.shadow.camera.bottom = -_SHADOW_HALF;
+sun.shadow.camera.near   = 0.5;
+sun.shadow.camera.far    = 200;
+sun.shadow.mapSize.set(768, 768);
+sun.shadow.bias          = -0.0005;
+sun.shadow.normalBias    = 0.04;
+
+// A target that follows the player so the shadow camera is always aimed at them.
+const sunTarget = new THREE.Object3D();
+scene.add(sunTarget);
+sun.target = sunTarget;
+
 const hemiLight = new THREE.HemisphereLight(0x6bb8e8, 0x5c3a1a, 0.70);
 scene.add(sun, new THREE.AmbientLight(0x223040, 0.40), hemiLight);
 
@@ -1118,30 +1348,11 @@ const gameClouds = [];
 let _skyTime = 0;
 
 function setupSky() {
-  // ── Sky dome — gradient sphere (inverted) ──
-  const skyGeo = new THREE.SphereGeometry(350, 32, 16);
-  const skyCvs = document.createElement('canvas');
-  skyCvs.width = 2; skyCvs.height = 128;
-  const skyCtx = skyCvs.getContext('2d');
-  const skyGrad = skyCtx.createLinearGradient(0, 0, 0, 128);
-  skyGrad.addColorStop(0,    '#0b3566');
-  skyGrad.addColorStop(0.28, '#1a65b8');
-  skyGrad.addColorStop(0.58, '#4a9fd4');
-  skyGrad.addColorStop(0.80, '#87ceeb');
-  skyGrad.addColorStop(0.92, '#c0e4f5');
-  skyGrad.addColorStop(1,    '#d8eef8');
-  skyCtx.fillStyle = skyGrad;
-  skyCtx.fillRect(0, 0, 2, 128);
-  const skyTex = new THREE.CanvasTexture(skyCvs);
-  skyTex.magFilter = THREE.LinearFilter;
-  skyTex.minFilter = THREE.LinearFilter;
-  skyDome = new THREE.Mesh(
-    skyGeo,
-    new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, fog: false, depthWrite: false })
-  );
-  skyDome.renderOrder = -2;
-  skyDome.name = 'skyDome';
-  scene.add(skyDome);
+  // Sky dome removed — the gradient horizon was an ugly hard line against the
+  // terrain. The flat scene.background color is used instead (updated dynamically
+  // in updateSky for day / sunset / night transitions). skyDome stays null so all
+  // the existing `if (skyDome)` guards in enter/exit underwater etc. just skip.
+  skyDome = null;
 
   // ── Sun sphere ──
   const sunGeo = new THREE.SphereGeometry(3.8, 20, 14);
@@ -1231,6 +1442,12 @@ function updateSky(dt) {
       camera.position.z - 45
     );
     sun.position.copy(sunSphere.position);
+    // Keep the shadow camera centred on the player so the map's footprint
+    // follows wherever they walk. Without this, shadows only exist near origin.
+    sunTarget.position.set(camera.position.x, 0, camera.position.z);
+    // Disable shadow casting when the sun is below the horizon — otherwise the
+    // light direction inverts and shadows point the wrong way.
+    sun.castShadow = Math.sin(sa) > 0.05;
     // Sunrise/sunset warm tint
     const dayT = Math.max(0, Math.sin(sa));
     sun.intensity = 1.2 + dayT * 1.0;
@@ -1245,7 +1462,6 @@ function updateSky(dt) {
     } else {
       fogC = new THREE.Color(0x0d1b3a); // night
     }
-    scene.fog.color.lerp(fogC, 0.04);
     scene.background.lerp(fogC, 0.04);
   }
 
@@ -1295,6 +1511,10 @@ const PALETTE = ['grass','dirt','stone','wood','leaves','sand','water',
 // Shared geometry
 const BGEOM      = new THREE.BoxGeometry(1,1,1);
 const WIN_GEOM    = new THREE.BoxGeometry(1,1,0.1); // חלון דק בציר Z
+// Water is a bit shorter so the surface sits below the top of the cube — gives
+// it a liquid-pool look instead of a solid ice block.
+const WATER_GEOM  = new THREE.BoxGeometry(1, 0.88, 1);
+WATER_GEOM.translate(0, -0.06, 0); // bottom stays at y=0, top sits at ~y=0.88
 
 // Material cache
 const MC = {};
@@ -1455,6 +1675,8 @@ function getPixelMats(id) {
     m6 = [m, m, m, m, m, m];
 
   } else if (id === 'water') {
+    // Liquid water — low opacity, no depth write (avoids stacking artifacts
+    // between adjacent water blocks and lets terrain behind show through clearly).
     const m = makePixelMat((ctx, sz) => {
       const pal = ['#0d5fa0','#1565C0','#1a78d8','#1E88E5','#2196F3','#42A5F5','#64B5F6','#0d47a1'];
       for (let y = 0; y < sz; y++) for (let x = 0; x < sz; x++) {
@@ -1463,10 +1685,19 @@ function getPixelMats(id) {
         const idx  = Math.min(Math.floor((n * 0.35 + wave * 0.65) * pal.length), pal.length - 1);
         ctx.fillStyle = pal[idx];
         ctx.fillRect(x, y, 1, 1);
-        // White wave glint on top row
-        if (y === 0 && n > 0.7) { ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fillRect(x, y, 1, 1); }
+        // White wave glint scattered for a sparkle look
+        if (n > 0.82) { ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fillRect(x, y, 1, 1); }
       }
-    }, { transparent: true, opacity: 0.72 });
+    }, {
+      transparent: true,
+      opacity:     0.55,
+      depthWrite:  false,
+      side:        THREE.DoubleSide,
+    });
+    // Tag the texture so we can animate UV scroll in animateBlocks()
+    m.map.wrapS = THREE.RepeatWrapping;
+    m.map.wrapT = THREE.RepeatWrapping;
+    m.userData = { waterScroll: true };
     m6 = [m, m, m, m, m, m];
 
   } else if (id === 'gold') {
@@ -1698,33 +1929,142 @@ function mats(id) {
 
 // ── WORLD ─────────────────────────────────────────────
 const SZ = 26;
-const world      = new Map();  // "x|y|z" → Mesh
+// world: "x|y|z" → { id, x, y, z, instanceId }
+// Blocks are drawn via one InstancedMesh per id — ~16 draw calls instead of thousands.
+const world      = new Map();
 const animBlocks = new Set();  // subset of world keys: only water + lava (for fast animation)
+
+// ── INSTANCED BLOCK RENDERING ─────────────────────────
+// One InstancedMesh per block id. Grows on demand, never shrinks (count is
+// managed explicitly and freed slots are reclaimed via a swap-with-last trick).
+const INITIAL_CAPACITY = 2048;
+const imeshByID = Object.create(null);   // id → InstancedMesh
+const _tmpMat4  = new THREE.Matrix4();
+const _hiddenM4 = new THREE.Matrix4().makeScale(0, 0, 0); // for momentarily freed slots
+
+function _makeIMesh(id, capacity) {
+  const geom = (id === 'water') ? WATER_GEOM : BGEOM;
+  const im = new THREE.InstancedMesh(geom, mats(id), capacity);
+  im.count = 0;
+  im.frustumCulled = false; // whole-world imeshes — rely on GPU frustum per-instance via shader
+  // Shadows: opaque blocks both cast and receive. Water + glass skip casting
+  // (transparent shadows look bad) but still receive shadows from terrain.
+  const transparentIDs = { water: 1, glass: 1, window_glass: 1 };
+  im.castShadow    = !transparentIDs[id];
+  im.receiveShadow = true;
+  im.userData = {
+    id,
+    capacity,
+    slotKey: new Array(capacity),   // instanceId → world-map key (for swap-remove)
+  };
+  im.name = 'iblocks_' + id;
+  // Transparent water renders AFTER opaque terrain so blend looks right.
+  im.renderOrder = (id === 'water') ? 1 : 0;
+  scene.add(im);
+  return im;
+}
+
+function _growIMesh(im) {
+  const oldCap = im.userData.capacity;
+  const newCap = Math.max(oldCap * 2, oldCap + 512);
+  const fresh  = new THREE.InstancedMesh(im.geometry, im.material, newCap);
+  fresh.count  = im.count;
+  fresh.frustumCulled = false;
+  fresh.name   = im.name;
+  fresh.renderOrder = im.renderOrder;
+  fresh.castShadow    = im.castShadow;
+  fresh.receiveShadow = im.receiveShadow;
+  // Copy matrices
+  for (let i = 0; i < im.count; i++) {
+    im.getMatrixAt(i, _tmpMat4);
+    fresh.setMatrixAt(i, _tmpMat4);
+  }
+  fresh.instanceMatrix.needsUpdate = true;
+  fresh.userData = {
+    id:       im.userData.id,
+    capacity: newCap,
+    slotKey:  im.userData.slotKey.slice(),
+  };
+  fresh.userData.slotKey.length = newCap;
+  scene.remove(im);
+  im.dispose?.();
+  imeshByID[im.userData.id] = fresh;
+  scene.add(fresh);
+  return fresh;
+}
+
+function _getOrCreateIMesh(id) {
+  return imeshByID[id] || (imeshByID[id] = _makeIMesh(id, INITIAL_CAPACITY));
+}
+
+// Enables shadow casting + receiving on every Mesh in a hierarchy.
+// Used after building creatures, player body, doors/windows, etc.
+// Pass { cast:false } for dynamic entities with many sub-meshes (creatures,
+// villagers, remote players) — skipping their cast halves the shadow-pass cost.
+function enableShadows(root, opts) {
+  if (!root) return root;
+  const cast    = !opts || opts.cast    !== false;
+  const receive = !opts || opts.receive !== false;
+  root.traverse(o => {
+    if (o.isMesh) {
+      o.castShadow    = cast;
+      o.receiveShadow = receive;
+    }
+  });
+  return root;
+}
 
 function wk(x,y,z) { return `${x|0}|${y|0}|${z|0}`; }
 
+// Remove an entry from the world (no imesh add). Swap-with-last to keep count dense.
+function _removeWorldEntry(k) {
+  const ex = world.get(k);
+  if (!ex) return;
+  let im = imeshByID[ex.id];
+  if (im) {
+    const lastIdx = im.count - 1;
+    if (ex.instanceId !== lastIdx) {
+      // Move last instance into the hole
+      im.getMatrixAt(lastIdx, _tmpMat4);
+      im.setMatrixAt(ex.instanceId, _tmpMat4);
+      const lastKey = im.userData.slotKey[lastIdx];
+      im.userData.slotKey[ex.instanceId] = lastKey;
+      const lastInfo = world.get(lastKey);
+      if (lastInfo) lastInfo.instanceId = ex.instanceId;
+    }
+    im.userData.slotKey[lastIdx] = undefined;
+    im.count = lastIdx;
+    im.instanceMatrix.needsUpdate = true;
+  }
+  world.delete(k);
+  animBlocks.delete(k);
+}
+
 function setBlock(x,y,z,id) {
   x=x|0; y=y|0; z=z|0;
-  const k = wk(x,y,z), ex = world.get(k);
-  if (ex) { scene.remove(ex); world.delete(k); animBlocks.delete(k); }
+  const k = wk(x,y,z);
+  if (world.has(k)) _removeWorldEntry(k);
   if (!id) return;
-  const m = new THREE.Mesh(BGEOM, mats(id));
-  m.position.set(x+.5, y+.5, z+.5);
-  m.userData = { id, x, y, z };
-  scene.add(m);
-  world.set(k, m);
+  let im = _getOrCreateIMesh(id);
+  if (im.count >= im.userData.capacity) im = _growIMesh(im);
+  const instanceId = im.count++;
+  _tmpMat4.makeTranslation(x + 0.5, y + 0.5, z + 0.5);
+  im.setMatrixAt(instanceId, _tmpMat4);
+  im.instanceMatrix.needsUpdate = true;
+  im.userData.slotKey[instanceId] = k;
+  world.set(k, { id, x, y, z, instanceId });
   if (id === 'water' || id === 'lava') animBlocks.add(k);
 }
 
 function hasBlock(x,y,z) {
-  const m = world.get(wk(x,y,z));
-  if (m && m.userData.id !== 'water') return true; // מוצק בלבד — מים לא חוסמים תנועה
+  const info = world.get(wk(x,y,z));
+  if (info && info.id !== 'water') return true; // מוצק בלבד — מים לא חוסמים תנועה
   const im = interactWorld.get(wk(x,y,z));
   return im ? !im.userData.open : false;  // סגור=חסום, פתוח=לא חסום
 }
 // בדוק אם הבלוק במיקום זה הוא מים (נוזל עביר)
 function isWaterAt(x, y, z) {
-  return world.get(wk(x|0, y|0, z|0))?.userData.id === 'water';
+  return world.get(wk(x|0, y|0, z|0))?.id === 'water';
 }
 
 // ── INTERACTIVE BLOCKS (דלתות + חלונות) ───────────────
@@ -1791,6 +2131,7 @@ function setInteractBlock(x, y, z, id, opts = {}) {
                       anchorKey, allKeys, targetScaleY: 1 };
   }
 
+  enableShadows(root);
   scene.add(root);
   allKeys.forEach(k => interactWorld.set(k, root));
 }
@@ -2086,8 +2427,38 @@ function updatePlayer(dt) {
   }
   // הצג/הסתר fpBody — נראה רק כשמביטים למטה (pitch-based)
   if (fpBody) {
-    fpBody.visible = (camMode === 0);
-    // לא צריך לוגיקה נוספת כאן — מבוצע בבלוק FP למטה
+    if (camMode !== 0 || !locked) {
+      fpBody.visible = false;
+    } else {
+      fpBody.visible = true;
+      // pitch: negative = looking down, positive = looking up
+      const PITCH_START = Math.PI * 0.11;   // ~20° — מתחיל להיראות
+      const PITCH_FULL  = Math.PI * 0.50;   // ~90° — גלוי לחלוטין
+      const pitchClamped = Math.max(0, Math.min(1,
+        (-player.pitch - PITCH_START) / (PITCH_FULL - PITCH_START)
+      ));
+      const pitchFactor = pitchClamped * pitchClamped;
+
+      if (pitchFactor <= 0) {
+        fpBody.visible = false;
+      } else {
+        fpBody.scale.setScalar(1); // always full scale
+        const slideY = (1 - pitchFactor) * (-0.45);
+        const t2 = performance.now() / 1000;
+        const moving2 = K.KeyW || K.KeyA || K.KeyS || K.KeyD ||
+                       K.ArrowUp || K.ArrowDown || K.ArrowLeft || K.ArrowRight;
+        const legAmp  = moving2 ? 0.28 : 0;
+        const legFreq = 9;
+        const lLeg = fpBody.getObjectByName('fpLLeg');
+        const rLeg = fpBody.getObjectByName('fpRLeg');
+        if (lLeg) lLeg.rotation.x = Math.sin(t2 * legFreq) * legAmp;
+        if (rLeg) rLeg.rotation.x = Math.sin(t2 * legFreq + Math.PI) * legAmp;
+        const bob = Math.sin(t2 * legFreq * 2) * (moving2 ? 0.007 : 0);
+        fpBody.position.y = slideY + bob;
+        fpBody.position.x = 0;
+        fpBody.position.z = 0;
+      }
+    }
   }
 
   // ── Camera update by mode ──
@@ -2135,6 +2506,7 @@ function updatePlayer(dt) {
 
   // ── קדם אנימציית נדנוד נשק ───────────────────────────────
   if (weaponSwingT >= 0) { weaponSwingT += dt; if (weaponSwingT >= SWING_DUR) weaponSwingT = -1; }
+  if (bowShootT >= 0) { bowShootT += dt; if (bowShootT >= BOW_SHOOT_DUR) bowShootT = -1; }
 
   // ── 3rd-person body animations ────────────────────────────
   // Arms, legs and torso swing while walking; right arm swings during mining.
@@ -2205,38 +2577,49 @@ function updatePlayer(dt) {
         rArm.rotation.z = -0.28 + swingZ;  // -0.28 = הטיית בסיס + אלכסון
         rArm.position.y = -0.32 + Math.sin(t * bobFreq) * bobAmp;
         rArm.position.x =  0.46 + Math.sin(t * bobFreq * 2) * bobAmp * 0.4;
-      }
-      // יד שמאל מוסתרת — אין צורך לאנימציה
 
-      // ── אנימציית רגלי FP + נראות לפי pitch ──────────────────────────────
-      if (fpBody) {
-        // pitch: 0 = קדימה, Math.PI/2 = ישר למטה
-        // רגלים נראות רק כשמביטים למטה — fade in החל מ-20° עד 90°
-        const PITCH_START = Math.PI * 0.11;   // ~20° — מתחיל להיראות
-        const PITCH_FULL  = Math.PI * 0.50;   // ~90° — גלוי לחלוטין
-        const pitchClamped = Math.max(0, Math.min(1,
-          (player.pitch - PITCH_START) / (PITCH_FULL - PITCH_START)
-        ));
-        // smooth curve
-        const pitchFactor = pitchClamped * pitchClamped;
-
-        if (pitchFactor <= 0) {
-          // מסתיר לחלוטין — scale 0 מאפשר ל-visible להישאר true
-          fpBody.scale.setScalar(0.001);
-        } else {
-          fpBody.scale.setScalar(pitchFactor);
-          // הסליידינג: כשמביטים קדימה הגוף יורד מחוץ למסך
-          const slideY = (1 - pitchFactor) * (-0.35);
-          const legAmp  = moving ? 0.28 : 0;
-          const legFreq = 9;
-          const lLeg = fpBody.getObjectByName('fpLLeg');
-          const rLeg = fpBody.getObjectByName('fpRLeg');
-          if (lLeg) lLeg.rotation.x = Math.sin(t * legFreq) * legAmp;
-          if (rLeg) rLeg.rotation.x = Math.sin(t * legFreq + Math.PI) * legAmp;
-          const bob = Math.sin(t * legFreq * 2) * (moving ? 0.007 : 0);
-          fpBody.position.y = slideY + bob;
+        // ── Bow shoot animation overlay ──
+        if (bowShootT >= 0) {
+          const bProg = bowShootT / BOW_SHOOT_DUR;
+          if (bProg < 0.3) {
+            // Pull-back phase: arm pulls back, slight tilt
+            const pull = bProg / 0.3;
+            rArm.rotation.x -= pull * 0.4;  // pull arm back
+            rArm.position.z = -pull * 0.08; // move hand back
+          } else if (bProg < 0.5) {
+            // Release phase: snap forward
+            const release = (bProg - 0.3) / 0.2;
+            rArm.rotation.x += release * 0.8; // snap forward
+            rArm.position.z = -0.08 + release * 0.12; // push forward
+          } else {
+            // Recovery: return to normal
+            const recov = (bProg - 0.5) / 0.5;
+            rArm.rotation.x += (1 - recov) * 0.3;
+            rArm.position.z = 0.04 * (1 - recov);
+          }
         }
       }
+      // ── Left arm: bow hold animation ──
+      if (lArm && bowShootT >= 0) {
+        const bProg = bowShootT / BOW_SHOOT_DUR;
+        lArm.visible = true;
+        if (bProg < 0.3) {
+          // Steady hold
+          lArm.rotation.x = -0.3;
+          lArm.rotation.z = 0.4;
+        } else if (bProg < 0.5) {
+          // Recoil from release
+          const r = (bProg - 0.3) / 0.2;
+          lArm.rotation.x = -0.3 + r * 0.2;
+          lArm.rotation.z = 0.4 - r * 0.15;
+        } else {
+          const r = (bProg - 0.5) / 0.5;
+          lArm.rotation.x = -0.1 * (1 - r);
+          lArm.rotation.z = 0.25 * (1 - r);
+        }
+      }
+
+      // fpBody pitch logic is now handled earlier in updatePlayer (see above)
     }
   }
 
@@ -2314,10 +2697,11 @@ window.addEventListener('keydown', e => {
     const next = dists[(dists.indexOf(RENDER_DIST) + 1) % dists.length];
     RENDER_DIST = next;
     FAR_DIST    = RENDER_DIST * 4;
-    scene.fog.near = RENDER_DIST * 0.85;
-    scene.fog.far  = FAR_DIST;
-    cullTick = 0; lodTick = 0; // force immediate re-cull + LOD rebuild
-    showInfo(`🌄 מרחק תצוגה: ${RENDER_DIST} (LOD עד ${FAR_DIST})`, '#87CEEB', 2000);
+    // Fog kept invisible — horizon is clean regardless of render distance
+    scene.fog.near = 9000;
+    scene.fog.far  = 10000;
+    cullTick = 0; // force immediate re-cull (LOD system removed)
+    showInfo(`🌄 מרחק תצוגה: ${RENDER_DIST}`, '#87CEEB', 2000);
   }
 
   // F → place block in front of player (fallback for right-click, only when no lib item selected)
@@ -2412,24 +2796,46 @@ hlBox.visible = false;
 scene.add(hlBox);
 
 let lastHit = null;
+// Reusable scratch array for raycast targets — avoids allocating a new
+// array every frame. The contents are rebuilt each call but the array
+// object itself is pooled.
+const _raycastTargets = [];
 
 function updateRayCast() {
   // Always cast from the screen centre — this way the crosshair is meaningful in every mode.
   ray.setFromCamera(new THREE.Vector2(0, 0), camera);
 
-  // Gather creature meshes for raycasting (tagged with creatureRef in spawnCreature)
-  const creatureMeshes = [];
-  creatures.forEach(c => c.group.traverse(o => { if (o.isMesh) creatureMeshes.push(o); }));
+  // Build targets list in place. intersectObjects(recursive=true) will
+  // descend into each creature group on its own, so we just pass the root
+  // group — no per-frame traversal / flattening allocation.
+  _raycastTargets.length = 0;
+  for (const id in imeshByID) _raycastTargets.push(imeshByID[id]);
+  const seen = new Set();
+  interactWorld.forEach(obj => {
+    if (!seen.has(obj)) { seen.add(obj); _raycastTargets.push(obj); }
+  });
+  for (let i = 0; i < creatures.length; i++) _raycastTargets.push(creatures[i].group);
 
-  // recursive=true כדי לפגוע בלוחות ילד בתוך pivot Object3D של דלתות
-  const hits = ray.intersectObjects(
-    [...world.values(), ...new Set(interactWorld.values()), ...creatureMeshes], true
-  );
+  // recursive=true כדי לפגוע בלוחות ילד בתוך pivot Object3D של דלתות.
+  const hits = ray.intersectObjects(_raycastTargets, true);
 
   // Accept closest hit within reach — creature or block
   let validHit = null;
   let validCreatureHit = null;
   for (const h of hits) {
+    // Normalize InstancedMesh block hits into a mesh-like wrapper with userData{x,y,z,id}.
+    // Downstream code reads h.object.userData.{x,y,z,id}/isDoorPanel, and h.face.normal — both work with this.
+    if (h.object.isInstancedMesh && h.instanceId != null) {
+      const im   = h.object;
+      const key  = im.userData.slotKey[h.instanceId];
+      const info = key && world.get(key);
+      if (!info) continue;
+      h.object = {
+        isMesh: true,
+        userData: { x: info.x, y: info.y, z: info.z, id: info.id },
+      };
+    }
+
     const cr = h.object.userData.creatureRef;
     if (cr) {
       // Creature hit — check range
@@ -2493,12 +2899,161 @@ let weaponSwingT = -1;    // -1 = בשקט; ≥0 = נדנוד בעיצומו
 let weaponSwingDir = 1;   // +1 = אלכסון ימין→שמאל | -1 = שמאל→ימין (מתחלף בכל מכה)
 const SWING_DUR  = 0.30;  // שניות לנדנוד מלא
 
+// ── Bow shoot animation state ────────────────────────────
+let bowShootT = -1;       // -1 = idle; ≥0 = animation in progress
+const BOW_SHOOT_DUR = 0.45; // total animation duration
+
 // ── מערכת קרב ───────────────────────────────────────────
+
+// ── Arrow projectile system ──────────────────────────────
+const activeArrows = [];
+
+function shootArrow() {
+  const dir = new THREE.Vector3();
+  camera.getWorldDirection(dir);
+
+  // ── Visible arrow projectile (bigger, with trail) ──
+  const arrowGroup = new THREE.Group();
+  const mk = (geo, col) => new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: col }));
+  // Arrow shaft (thicker for visibility)
+  const shaft = mk(new THREE.BoxGeometry(0.06, 0.06, 0.8), 0xD2691E);
+  arrowGroup.add(shaft);
+  // Arrow head (larger, pointed)
+  const head = mk(new THREE.BoxGeometry(0.12, 0.12, 0.2), 0x9E9E9E);
+  head.position.z = 0.48; arrowGroup.add(head);
+  // Arrow tip
+  const tip = mk(new THREE.BoxGeometry(0.06, 0.06, 0.1), 0x808080);
+  tip.position.z = 0.6; arrowGroup.add(tip);
+  // Fletching (bigger, more visible)
+  const flt1 = mk(new THREE.BoxGeometry(0.16, 0.03, 0.12), 0xFF5252);
+  flt1.position.z = -0.35; arrowGroup.add(flt1);
+  const flt2 = mk(new THREE.BoxGeometry(0.03, 0.16, 0.12), 0xFF5252);
+  flt2.position.z = -0.35; arrowGroup.add(flt2);
+  // Glow trail effect
+  const glow = mk(new THREE.BoxGeometry(0.04, 0.04, 0.5), 0xFFD700);
+  glow.material.transparent = true; glow.material.opacity = 0.4;
+  glow.position.z = -0.1; arrowGroup.add(glow);
+
+  // Position at player eye level, slightly to the right
+  const right = new THREE.Vector3();
+  right.crossVectors(dir, new THREE.Vector3(0, 1, 0)).normalize();
+  arrowGroup.position.set(
+    player.pos.x + right.x * 0.3,
+    player.pos.y + 1.5,
+    player.pos.z + right.z * 0.3
+  );
+  arrowGroup.lookAt(
+    player.pos.x + dir.x * 10,
+    player.pos.y + 1.5 + dir.y * 10,
+    player.pos.z + dir.z * 10
+  );
+  scene.add(arrowGroup);
+
+  const damage = playerCostume._gogWeaponDamage || 2;
+  activeArrows.push({
+    mesh: arrowGroup,
+    vel: dir.clone().multiplyScalar(40),
+    life: 3.0,
+    damage: damage,
+    hit: false,
+    trail: glow
+  });
+
+  // ── Trigger bow shooting animation ──
+  bowShootT = 0;
+
+  // Sound: twang + whoosh
+  playTone(800, 0.08, 'sine');
+  setTimeout(() => playTone(400, 0.06, 'triangle'), 50);
+}
+
+function updateArrows(dt) {
+  for (let i = activeArrows.length - 1; i >= 0; i--) {
+    const a = activeArrows[i];
+    a.life -= dt;
+    if (a.life <= 0 || a.hit) {
+      scene.remove(a.mesh);
+      activeArrows.splice(i, 1);
+      continue;
+    }
+    // Move arrow
+    a.mesh.position.x += a.vel.x * dt;
+    a.mesh.position.y += a.vel.y * dt;
+    a.mesh.position.z += a.vel.z * dt;
+    // Gravity
+    a.vel.y -= 9.8 * dt;
+    // Update rotation to match velocity
+    const lookTarget = a.mesh.position.clone().add(a.vel.clone().normalize());
+    a.mesh.lookAt(lookTarget);
+    // Fade trail glow
+    if (a.trail) {
+      a.trail.material.opacity = Math.max(0, a.life * 0.15);
+    }
+
+    // Check collision with creatures (larger hitbox for scaled GM monsters)
+    for (const c of creatures) {
+      const scale = c._gmScale || 1;
+      const hitR = 1.2 * scale; // bigger hitbox for bigger monsters
+      const dx = c.group.position.x - a.mesh.position.x;
+      const dy = (c.group.position.y + 0.8 * scale) - a.mesh.position.y;
+      const dz = c.group.position.z - a.mesh.position.z;
+      if (dx*dx + dy*dy + dz*dz < hitR * hitR) {
+        a.hit = true;
+        attackCreatureDirectDamage(c, a.damage);
+        // Impact particles
+        for (let j = 0; j < 4; j++) {
+          const p = new THREE.Mesh(
+            new THREE.BoxGeometry(0.1, 0.1, 0.1),
+            new THREE.MeshLambertMaterial({ color: 0xFFD700, transparent: true })
+          );
+          p.position.copy(a.mesh.position);
+          scene.add(p);
+          deathParticles.push({
+            mesh: p,
+            vel: new THREE.Vector3((Math.random()-0.5)*4, 2+Math.random()*3, (Math.random()-0.5)*4),
+            life: 0.5
+          });
+        }
+        break;
+      }
+    }
+    // Check collision with ground/blocks
+    const bx = Math.floor(a.mesh.position.x);
+    const by = Math.floor(a.mesh.position.y);
+    const bz = Math.floor(a.mesh.position.z);
+    if (by < 0 || (bx >= 0 && bz >= 0 && bx < worldSZ && bz < worldSZ && getBlock(bx, by, bz))) {
+      a.hit = true;
+    }
+  }
+}
+
+function attackCreatureDirectDamage(c, damage) {
+  c.hp -= damage;
+  c.group.traverse(o => {
+    if (o.isMesh && o.material && o.material.color) {
+      if (o._origHex == null) o._origHex = o.material.color.getHex();
+      o.material.color.setHex(0xFF3333);
+    }
+  });
+  setTimeout(() => {
+    c.group.traverse(o => {
+      if (o.isMesh && o.material && o.material.color && o._origHex != null) {
+        o.material.color.setHex(o._origHex);
+        o._origHex = null;
+      }
+    });
+  }, 130);
+  playTone(180, 0.12, 'sawtooth');
+  showInfo(`🏹 ${c.def.e} HP: ${Math.max(0, c.hp)} / ${c.def.hp}`, '#FF6B6B', 1200);
+  weaponSwingDir *= -1;
+  weaponSwingT = 0;
+  if (c.hp <= 0) killCreature(c);
+}
 
 function attackCreature(c) {
   const wDef = WEAPON_DEFS.find(d => d.id === playerCostume.weapon);
   if (!wDef) return;
-  c.hp -= wDef.damage;
+  c.hp -= (playerCostume._gogWeaponDamage || wDef.damage);
 
   // Flash אדום קצר על כל meshes של היצור
   c.group.traverse(o => {
@@ -2564,7 +3119,15 @@ function killCreature(c) {
 
   scene.remove(c.group);
   playTone(90, 0.35, 'sawtooth');
-  showInfo(`${c.def.e} ${c.def.n} הובס! 💀`, '#FF4444', 2500);
+
+  // Reward: gold coins + believers + divinity
+  const goldReward = 5 + Math.floor(Math.random() * 10);
+  const believersReward = 1 + Math.floor(Math.random() * 3);
+  const divinityReward = 2 + Math.floor(Math.random() * 5);
+  addGold(goldReward);
+  addBelievers(believersReward);
+  addDivinity(divinityReward);
+  showInfo(`${c.def.e} ${c.def.n} הובס! 💀 +${goldReward}🪙 +${believersReward}🙏 +${divinityReward}⚡`, '#FF4444', 2500);
 }
 
 function updateDeathParticles(dt) {
@@ -2587,17 +3150,38 @@ document.addEventListener('mousedown', e => {
   // ── קרב: קליק שמאלי + נשק ──
   if (e.button === 0 && playerCostume.weapon) {
     // קודם כל — יצור בצלב הכוונת
-    if (lastHitCreature) { attackCreature(lastHitCreature); return; }
-    // אחרת — מכה קרבית: כל יצור בטווח 3 בלוקים, תוקפים את הקרוב ביותר
-    let closest = null, minD2 = 3.5 * 3.5;
-    creatures.forEach(c => {
-      const dx = c.group.position.x - player.pos.x;
-      const dy = c.group.position.y - (player.pos.y + EYE * 0.5);
-      const dz = c.group.position.z - player.pos.z;
-      const d2 = dx*dx + dy*dy + dz*dz;
-      if (d2 < minD2) { minD2 = d2; closest = c; }
-    });
-    if (closest) { attackCreature(closest); return; }
+    if (lastHitCreature) {
+      attackCreature(lastHitCreature);
+      return;
+    }
+    // Bow weapons shoot arrows only when aiming at creatures nearby
+    if (playerCostume.weapon === 'bow') {
+      let hasTarget = false;
+      creatures.forEach(c => {
+        const dx = c.group.position.x - player.pos.x;
+        const dy = c.group.position.y - (player.pos.y + EYE * 0.5);
+        const dz = c.group.position.z - player.pos.z;
+        if (dx*dx + dy*dy + dz*dz < 12 * 12) hasTarget = true;
+      });
+      if (hasTarget) {
+        shootArrow();
+        weaponSwingDir *= -1;
+        weaponSwingT = 0;
+        return;
+      }
+      // No creatures nearby — fall through to block breaking
+    } else {
+      // מכה קרבית: כל יצור בטווח 3 בלוקים, תוקפים את הקרוב ביותר
+      let closest = null, minD2 = 3.5 * 3.5;
+      creatures.forEach(c => {
+        const dx = c.group.position.x - player.pos.x;
+        const dy = c.group.position.y - (player.pos.y + EYE * 0.5);
+        const dz = c.group.position.z - player.pos.z;
+        const d2 = dx*dx + dy*dy + dz*dz;
+        if (d2 < minD2) { minD2 = d2; closest = c; }
+      });
+      if (closest) { attackCreature(closest); return; }
+    }
   }
 
   if (!lastHit) return;
@@ -2777,21 +3361,344 @@ function placeStructure(type, bx, by, bz) {
       for(let x=i;x<size*2+1-i;x++) for(let z=i;z<size*2+1-i;z++) B(x,i,z,'sand');
     }
   }
+  else if (type.startsWith('temple_')) {
+    // ── Greek temple builder ──
+    // Temple dimensions: W=12, D=8, columns H=6, roof triangle H=4
+    const W=12, D=8, CH=6;
+    // God-specific accent block
+    const godAccents = {
+      temple_zeus:       'gold',
+      temple_hermes:     'diamond',
+      temple_apollo:     'gold',
+      temple_athena:     'brick',
+      temple_aphrodite:  'brick',
+      temple_poseidon:   'diamond',
+      temple_hephaestus: 'brick',
+      temple_ares:       'brick',
+      temple_artemis:    'leaves',
+      temple_demeter:    'leaves',
+      temple_dionysus:   'brick',
+      temple_hades:      'stone',
+    };
+    const accent = godAccents[type] || 'gold';
+
+    // ── Step platform (3 steps) ──
+    for (let s=0; s<3; s++) {
+      for (let x=-s-1; x<=W+s; x++)
+        for (let z=-s-1; z<=D+s; z++)
+          B(x, -s, z, 'stone');
+    }
+
+    // ── Floor ──
+    for (let x=0; x<W; x++)
+      for (let z=0; z<D; z++)
+        B(x, 1, z, accent);
+
+    // ── Columns (4 on each long side) ──
+    const colPositions = [0, 3, 8, 11]; // x positions
+    for (const cx of colPositions) {
+      for (let h=2; h<=CH+1; h++) {
+        B(cx, h, 0, 'stone');     // front row
+        B(cx, h, D-1, 'stone');   // back row
+      }
+      // Column capitals (wider top)
+      B(cx, CH+2, 0, 'stone'); B(cx, CH+2, D-1, 'stone');
+    }
+    // 2 columns at front entrance sides
+    for (let h=2; h<=CH+1; h++) {
+      B(0, h, 2, 'stone'); B(0, h, D-3, 'stone');
+      B(W-1, h, 2, 'stone'); B(W-1, h, D-3, 'stone');
+    }
+
+    // ── Entablature (horizontal beam on top of columns) ──
+    for (let x=0; x<W; x++) {
+      B(x, CH+2, 0, 'stone');
+      B(x, CH+2, D-1, 'stone');
+      B(x, CH+2, 1, accent);
+      B(x, CH+2, D-2, accent);
+    }
+    for (let z=0; z<D; z++) {
+      B(0, CH+2, z, 'stone');
+      B(W-1, CH+2, z, 'stone');
+    }
+
+    // ── Triangular pediment (front and back) ──
+    const midX = Math.floor(W/2);
+    for (let i=0; i<=midX; i++) {
+      const roofY = CH + 3 + i;
+      // Front pediment
+      B(midX - i, roofY, 0, accent);
+      B(midX + i, roofY, 0, accent);
+      B(midX - i, roofY, D-1, accent);
+      B(midX + i, roofY, D-1, accent);
+    }
+    // Fill pediment triangle (front and back)
+    for (let h=0; h<=midX; h++) {
+      for (let x=midX-h; x<=midX+h; x++) {
+        B(x, CH+3+midX-h, 0, 'stone');
+        B(x, CH+3+midX-h, D-1, 'stone');
+      }
+    }
+
+    // ── Roof (sloped, using stepped blocks) ──
+    for (let i=0; i<=midX; i++) {
+      for (let z=0; z<D; z++) {
+        B(midX - i, CH+3+midX-i, z, accent);
+        if (i > 0) B(midX + i, CH+3+midX-i, z, accent);
+      }
+    }
+
+    // ── Back wall ──
+    for (let x=1; x<W-1; x++)
+      for (let h=2; h<=CH+1; h++)
+        B(x, h, D-1, 'stone');
+
+    // ── Side walls (partial, with openings) ──
+    for (let z=1; z<D-1; z++)
+      for (let h=2; h<=CH+1; h++) {
+        B(0, h, z, 'stone');
+        B(W-1, h, z, 'stone');
+      }
+
+    // ── Front entrance (open doorway) ──
+    for (let x=4; x<8; x++)
+      for (let h=2; h<=CH; h++)
+        B(x, h, 0, null); // clear entrance
+
+    // ── Interior: altar at center back ──
+    const altX = Math.floor(W/2), altZ = D-3;
+    B(altX, 2, altZ, accent);
+    B(altX, 3, altZ, accent);
+    B(altX-1, 2, altZ, 'stone');
+    B(altX+1, 2, altZ, 'stone');
+    // Sacred fire/decoration on altar
+    B(altX, 4, altZ, 'gold');
+
+    // ── Interior columns (2 rows) ──
+    for (const cz of [2, D-3]) {
+      for (let h=2; h<=CH+1; h++) {
+        B(3, h, cz, 'stone');
+        B(W-4, h, cz, 'stone');
+      }
+    }
+  }
 
   playTone(440,.3,'triangle');
   showInfo(`✅ ${STRUCT_DEFS.find(s=>s.id===type)?.n || type} הונח בהצלחה!`);
 }
 
+// ── Pixel-art SVG sprites for structure cards ─────────────────
+const STRUCT_SPRITES = {
+  house: `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+<rect x="8" y="20" width="24" height="16" fill="#8B6914"/>
+<rect x="9" y="21" width="22" height="14" fill="#C4963A"/>
+<polygon points="4,22 20,6 36,22" fill="#8B2500"/>
+<polygon points="6,22 20,8 34,22" fill="#B03020"/>
+<polygon points="20,8 20,22 34,22" fill="#9A2818" opacity="0.4"/>
+<rect x="16" y="28" width="8" height="8" fill="#5C3A10"/>
+<rect x="17" y="29" width="6" height="6" fill="#6B4513"/>
+<rect x="22" y="31" width="1.5" height="1.5" rx="0.5" fill="#FFD700"/>
+<rect x="11" y="24" width="5" height="5" fill="#4A7FBA"/>
+<rect x="12" y="25" width="3" height="3" fill="#6CB4EE"/>
+<line x1="13.5" y1="25" x2="13.5" y2="28" stroke="#4A7FBA" stroke-width="0.5"/>
+<line x1="12" y1="26.5" x2="15" y2="26.5" stroke="#4A7FBA" stroke-width="0.5"/>
+<rect x="24" y="24" width="5" height="5" fill="#4A7FBA"/>
+<rect x="25" y="25" width="3" height="3" fill="#6CB4EE"/>
+<line x1="26.5" y1="25" x2="26.5" y2="28" stroke="#4A7FBA" stroke-width="0.5"/>
+<line x1="25" y1="26.5" x2="28" y2="26.5" stroke="#4A7FBA" stroke-width="0.5"/>
+<rect x="18" y="5" width="4" height="8" fill="#8B2500"/>
+<rect x="19" y="2" width="2" height="4" fill="#888"/>
+<rect x="0" y="36" width="40" height="4" fill="#3A7D32"/>
+</svg>`,
+  castle: `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+<rect x="6" y="16" width="28" height="20" fill="#6B6B6B"/>
+<rect x="7" y="17" width="26" height="18" fill="#909090"/>
+<rect x="2" y="10" width="8" height="26" fill="#6B6B6B"/>
+<rect x="3" y="11" width="6" height="24" fill="#808080"/>
+<rect x="30" y="10" width="8" height="26" fill="#6B6B6B"/>
+<rect x="31" y="11" width="6" height="24" fill="#808080"/>
+<rect x="1" y="6" width="2" height="5" fill="#6B6B6B"/>
+<rect x="5" y="6" width="2" height="5" fill="#6B6B6B"/>
+<rect x="9" y="6" width="2" height="5" fill="#6B6B6B"/>
+<rect x="29" y="6" width="2" height="5" fill="#6B6B6B"/>
+<rect x="33" y="6" width="2" height="5" fill="#6B6B6B"/>
+<rect x="37" y="6" width="2" height="5" fill="#6B6B6B"/>
+<rect x="14" y="12" width="2" height="5" fill="#707070"/>
+<rect x="18" y="12" width="2" height="5" fill="#707070"/>
+<rect x="22" y="12" width="2" height="5" fill="#707070"/>
+<rect x="15" y="28" width="10" height="8" fill="#4A3520"/>
+<path d="M15,28 Q20,22 25,28" fill="#5C4030"/>
+<rect x="4" y="22" width="4" height="4" fill="#4A7FBA"/>
+<rect x="32" y="22" width="4" height="4" fill="#4A7FBA"/>
+<rect x="14" y="20" width="4" height="4" fill="#4A7FBA"/>
+<rect x="22" y="20" width="4" height="4" fill="#4A7FBA"/>
+<polygon points="6,10 6,2 4,2 4,4 3,4 3,2 2,2 2,10" fill="#B03030"/>
+<polygon points="34,10 34,2 32,2 32,4 31,4 31,2 30,2 30,10" fill="#B03030"/>
+<rect x="0" y="36" width="40" height="4" fill="#3A7D32"/>
+</svg>`,
+  palace: `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+<rect x="4" y="18" width="32" height="18" fill="#B8860B"/>
+<rect x="5" y="19" width="30" height="16" fill="#DAA520"/>
+<rect x="10" y="12" width="20" height="8" fill="#B8860B"/>
+<rect x="11" y="13" width="18" height="6" fill="#DAA520"/>
+<rect x="16" y="6" width="8" height="8" fill="#B8860B"/>
+<rect x="17" y="7" width="6" height="6" fill="#DAA520"/>
+<polygon points="16,6 20,1 24,6" fill="#FF4444"/>
+<polygon points="10,12 14,8 18,12" fill="#FF4444" opacity="0.7"/>
+<polygon points="22,12 26,8 30,12" fill="#FF4444" opacity="0.7"/>
+<rect x="2" y="14" width="4" height="22" fill="#B8860B"/>
+<rect x="34" y="14" width="4" height="22" fill="#B8860B"/>
+<polygon points="2,14 4,9 6,14" fill="#FF4444"/>
+<polygon points="34,14 36,9 38,14" fill="#FF4444"/>
+<rect x="16" y="28" width="8" height="8" fill="#8B0000"/>
+<path d="M16,28 Q20,24 24,28" fill="#A00000"/>
+<rect x="6" y="22" width="4" height="5" fill="#4A7FBA"/>
+<rect x="14" y="22" width="3" height="4" fill="#4A7FBA"/>
+<rect x="23" y="22" width="3" height="4" fill="#4A7FBA"/>
+<rect x="30" y="22" width="4" height="5" fill="#4A7FBA"/>
+<circle cx="20" cy="4" r="1.5" fill="#FFD700"/>
+<rect x="0" y="36" width="40" height="4" fill="#3A7D32"/>
+</svg>`,
+  mountain: `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="36" width="40" height="4" fill="#3A7D32"/>
+<polygon points="20,4 2,36 38,36" fill="#6B5B4F"/>
+<polygon points="20,4 10,36 30,36" fill="#7D6B5D"/>
+<polygon points="20,4 14,20 26,20" fill="#8B7D6E"/>
+<polygon points="20,4 15,14 25,14" fill="#FFF" opacity="0.9"/>
+<polygon points="20,4 16,12 24,12" fill="#EEF4FF"/>
+<polygon points="15,14 13,16 18,15" fill="#FFF" opacity="0.5"/>
+<polygon points="25,14 27,16 22,15" fill="#FFF" opacity="0.5"/>
+<polygon points="5,36 15,20 25,36" fill="#5C4F43" opacity="0.3"/>
+</svg>`,
+  hill: `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="30" width="40" height="10" fill="#3A7D32"/>
+<ellipse cx="20" cy="30" rx="18" ry="14" fill="#4A8C3F"/>
+<ellipse cx="20" cy="30" rx="16" ry="12" fill="#5AA84D"/>
+<ellipse cx="20" cy="30" rx="12" ry="8" fill="#6BBF5E"/>
+<path d="M10,22 Q12,18 14,22" stroke="#3A7D32" stroke-width="1" fill="#4A8C3F"/>
+<path d="M24,20 Q26,16 28,20" stroke="#3A7D32" stroke-width="1" fill="#4A8C3F"/>
+<circle cx="12" cy="24" r="1" fill="#FFD700"/>
+<circle cx="26" cy="22" r="1" fill="#FF6B6B"/>
+<circle cx="18" cy="20" r="0.8" fill="#FF9ECA"/>
+<circle cx="22" cy="23" r="0.8" fill="#FFD700"/>
+<path d="M0,32 Q10,28 20,32 Q30,36 40,32 L40,40 L0,40 Z" fill="#3A7D32"/>
+</svg>`,
+  lake: `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="40" height="40" fill="#3A7D32"/>
+<ellipse cx="20" cy="22" rx="17" ry="12" fill="#1A5276"/>
+<ellipse cx="20" cy="22" rx="15" ry="10" fill="#2471A3"/>
+<ellipse cx="20" cy="22" rx="12" ry="8" fill="#2E86C1"/>
+<path d="M10,20 Q14,18 18,20" stroke="#5DADE2" stroke-width="0.8" fill="none"/>
+<path d="M22,22 Q26,20 30,22" stroke="#5DADE2" stroke-width="0.8" fill="none"/>
+<path d="M14,24 Q18,22 22,24" stroke="#5DADE2" stroke-width="0.8" fill="none"/>
+<polygon points="6,12 8,4 10,12" fill="#2D572C"/>
+<polygon points="5,12 8,6 11,12" fill="#3A7D32"/>
+<polygon points="30,10 32,2 34,10" fill="#2D572C"/>
+<polygon points="29,10 32,4 35,10" fill="#3A7D32"/>
+<rect x="7" y="12" width="2" height="8" fill="#5C3A10"/>
+<rect x="31" y="10" width="2" height="10" fill="#5C3A10"/>
+</svg>`,
+  pool: `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="40" height="40" fill="#3A7D32"/>
+<rect x="4" y="12" width="32" height="22" rx="4" fill="#808080"/>
+<rect x="6" y="14" width="28" height="18" rx="3" fill="#2471A3"/>
+<rect x="7" y="15" width="26" height="16" rx="2" fill="#2E86C1"/>
+<path d="M10,22 Q14,20 18,22 Q22,24 26,22 Q30,20 33,22" stroke="#5DADE2" stroke-width="1" fill="none"/>
+<path d="M10,26 Q14,24 18,26 Q22,28 26,26 Q30,24 33,26" stroke="#5DADE2" stroke-width="1" fill="none"/>
+<rect x="4" y="12" width="3" height="22" fill="#A0A0A0"/>
+<rect x="33" y="12" width="3" height="22" fill="#A0A0A0"/>
+<rect x="4" y="10" width="32" height="3" rx="1" fill="#A0A0A0"/>
+</svg>`,
+  igloo: `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="30" width="40" height="10" fill="#E8E8E8"/>
+<path d="M4,32 Q4,10 20,10 Q36,10 36,32 Z" fill="#D0D8E0"/>
+<path d="M6,32 Q6,12 20,12 Q34,12 34,32 Z" fill="#E8EFF5"/>
+<path d="M6,20 Q20,18 34,20" stroke="#C0C8D0" stroke-width="0.8" fill="none"/>
+<path d="M5,26 Q20,24 35,26" stroke="#C0C8D0" stroke-width="0.8" fill="none"/>
+<path d="M8,14 Q20,12 32,14" stroke="#C0C8D0" stroke-width="0.8" fill="none"/>
+<line x1="12" y1="12" x2="12" y2="32" stroke="#C0C8D0" stroke-width="0.5"/>
+<line x1="20" y1="10" x2="20" y2="32" stroke="#C0C8D0" stroke-width="0.5"/>
+<line x1="28" y1="12" x2="28" y2="32" stroke="#C0C8D0" stroke-width="0.5"/>
+<path d="M14,32 Q14,24 20,24 Q26,24 26,32 Z" fill="#4A7090"/>
+<path d="M15,32 Q15,25 20,25 Q25,25 25,32 Z" fill="#1A4A6A"/>
+<circle cx="8" cy="6" r="1" fill="#E8EFF5" opacity="0.6"/>
+<circle cx="32" cy="8" r="0.8" fill="#E8EFF5" opacity="0.6"/>
+</svg>`,
+  pyramid: `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+<linearGradient id="sky-pyr" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1A5276"/><stop offset="100%" stop-color="#F4D03F" stop-opacity="0.3"/></linearGradient>
+<rect x="0" y="0" width="40" height="36" fill="url(#sky-pyr)"/>
+<rect x="0" y="34" width="40" height="6" fill="#C4963A"/>
+<polygon points="20,4 2,36 38,36" fill="#B8860B"/>
+<polygon points="20,4 20,36 38,36" fill="#9A7209" opacity="0.7"/>
+<line x1="20" y1="4" x2="2" y2="36" stroke="#DAA520" stroke-width="0.5"/>
+<line x1="20" y1="4" x2="38" y2="36" stroke="#8B6914" stroke-width="0.5"/>
+<path d="M8,28 L14,28 L20,4 L26,28 L32,28" stroke="#C4963A" stroke-width="0.3" fill="none"/>
+<path d="M5,32 L11,32 L20,4 L29,32 L35,32" stroke="#C4963A" stroke-width="0.3" fill="none"/>
+<circle cx="32" cy="8" r="3" fill="#FFD700"/>
+<circle cx="32" cy="8" r="2.5" fill="#FFF700"/>
+</svg>`,
+};
+
+// ── Greek temple sprite generator per god ──
+function _templeSprite(mainColor, accentColor, roofColor, symbolEmoji) {
+  return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="36" width="40" height="4" fill="#3A7D32"/>
+<rect x="2" y="32" width="36" height="5" fill="${mainColor}"/>
+<rect x="3" y="33" width="34" height="3" fill="${accentColor}"/>
+<rect x="4" y="28" width="32" height="5" fill="${mainColor}"/>
+<rect x="6" y="12" width="3" height="17" fill="${mainColor}"/>
+<rect x="12" y="12" width="3" height="17" fill="${mainColor}"/>
+<rect x="25" y="12" width="3" height="17" fill="${mainColor}"/>
+<rect x="31" y="12" width="3" height="17" fill="${mainColor}"/>
+<rect x="18" y="20" width="4" height="9" fill="#4A3520"/>
+<path d="M18,20 Q20,17 22,20" fill="#5C4030"/>
+<rect x="3" y="9" width="34" height="4" fill="${mainColor}"/>
+<rect x="4" y="10" width="32" height="2" fill="${accentColor}"/>
+<polygon points="20,1 1,10 39,10" fill="${roofColor}"/>
+<polygon points="20,1 20,10 39,10" fill="${roofColor}" opacity="0.7"/>
+<rect x="3" y="9" width="34" height="1.5" fill="${accentColor}"/>
+<text x="20" y="8" text-anchor="middle" font-size="5" fill="${accentColor}">${symbolEmoji}</text>
+</svg>`;
+}
+
+const TEMPLE_SPRITES = {
+  temple_zeus:       _templeSprite('#E8E0D0','#FFD700','#C4963A','⚡'),
+  temple_hermes:     _templeSprite('#D8E8F0','#00B0FF','#6090B0','🪽'),
+  temple_apollo:     _templeSprite('#FFF5E0','#FF8F00','#D4A030','☀️'),
+  temple_athena:     _templeSprite('#E8D8F0','#8E24AA','#9060A0','🦉'),
+  temple_aphrodite:  _templeSprite('#FFE8F0','#E91E8C','#C06090','🌹'),
+  temple_poseidon:   _templeSprite('#D8F0F0','#0097A7','#408890','🔱'),
+  temple_hephaestus: _templeSprite('#F0E0D0','#BF360C','#A05030','🔨'),
+  temple_ares:       _templeSprite('#F0D0D0','#B71C1C','#903030','⚔️'),
+  temple_artemis:    _templeSprite('#D8F0D8','#2E7D32','#508050','🏹'),
+  temple_demeter:    _templeSprite('#E8F0D8','#558B2F','#608030','🌾'),
+  temple_dionysus:   _templeSprite('#E8D0F0','#7B1FA2','#805098','🍇'),
+  temple_hades:      _templeSprite('#D0D4D8','#37474F','#506068','💀'),
+};
+
 const STRUCT_DEFS = [
-  {id:'house',    n:'בית',    e:'🏠'},
-  {id:'castle',   n:'טירה',   e:'🏰'},
-  {id:'palace',   n:'ארמון',  e:'🏯'},
-  {id:'mountain', n:'הר',     e:'⛰️'},
-  {id:'hill',     n:'גבעה',   e:'🌄'},
-  {id:'lake',     n:'אגם',    e:'🏞️'},
-  {id:'pool',     n:'בריכה',  e:'🏊'},
-  {id:'igloo',    n:'איגלו',  e:'🧊'},
-  {id:'pyramid',  n:'פירמידה',e:'🔺'},
+  {id:'house',    n:'בית',    e:'<div class="structSprite">'+STRUCT_SPRITES.house+'</div>',    emoji:'🏠'},
+  {id:'castle',   n:'טירה',   e:'<div class="structSprite">'+STRUCT_SPRITES.castle+'</div>',   emoji:'🏰'},
+  {id:'palace',   n:'ארמון',  e:'<div class="structSprite">'+STRUCT_SPRITES.palace+'</div>',   emoji:'🏯'},
+  {id:'mountain', n:'הר',     e:'<div class="structSprite">'+STRUCT_SPRITES.mountain+'</div>', emoji:'⛰️'},
+  {id:'hill',     n:'גבעה',   e:'<div class="structSprite">'+STRUCT_SPRITES.hill+'</div>',     emoji:'🌄'},
+  {id:'lake',     n:'אגם',    e:'<div class="structSprite">'+STRUCT_SPRITES.lake+'</div>',     emoji:'🏞️'},
+  {id:'pool',     n:'בריכה',  e:'<div class="structSprite">'+STRUCT_SPRITES.pool+'</div>',     emoji:'🏊'},
+  {id:'igloo',    n:'איגלו',  e:'<div class="structSprite">'+STRUCT_SPRITES.igloo+'</div>',    emoji:'🧊'},
+  {id:'pyramid',  n:'פירמידה',e:'<div class="structSprite">'+STRUCT_SPRITES.pyramid+'</div>',  emoji:'🔺'},
+  // ── מקדשים יווניים ──
+  {id:'temple_zeus',      n:'מקדש זאוס',     e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_zeus+'</div>',      emoji:'⚡'},
+  {id:'temple_hermes',    n:'מקדש הרמס',     e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_hermes+'</div>',    emoji:'🪽'},
+  {id:'temple_apollo',    n:'מקדש אפולו',    e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_apollo+'</div>',    emoji:'☀️'},
+  {id:'temple_athena',    n:'מקדש אתנה',     e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_athena+'</div>',    emoji:'🦉'},
+  {id:'temple_aphrodite', n:'מקדש אפרודיטה', e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_aphrodite+'</div>', emoji:'🌹'},
+  {id:'temple_poseidon',  n:'מקדש פוסידון',  e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_poseidon+'</div>',  emoji:'🔱'},
+  {id:'temple_hephaestus',n:'מקדש הפסטוס',   e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_hephaestus+'</div>',emoji:'🔨'},
+  {id:'temple_ares',      n:'מקדש ארס',      e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_ares+'</div>',      emoji:'⚔️'},
+  {id:'temple_artemis',   n:'מקדש ארטמיס',   e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_artemis+'</div>',   emoji:'🏹'},
+  {id:'temple_demeter',   n:'מקדש דמטר',     e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_demeter+'</div>', emoji:'🌾'},
+  {id:'temple_dionysus',  n:'מקדש דיוניסוס', e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_dionysus+'</div>',  emoji:'🍇'},
+  {id:'temple_hades',     n:'מקדש האדס',     e:'<div class="structSprite">'+TEMPLE_SPRITES.temple_hades+'</div>',     emoji:'💀'},
 ];
 
 let placingItem = null; // { type: 'structure'|'creature'|'interact', id } — element being placed via F
@@ -2822,6 +3729,12 @@ const CREATURE_DEFS = [
   {id:'dolphin',   n:'דולפין',   e:'🐬', ground:false, scale:0.8, archetype:'aquatic', floatH:2, hp:4},
   {id:'fish',      n:'דג',       e:'🐟', ground:false, scale:0.5, archetype:'aquatic', floatH:1, hp:2},
   {id:'mermaid',   n:'בת ים',    e:'🧜‍♀️', ground:false, scale:0.8, archetype:'aquatic', floatH:2, hp:5},
+  // ── חיות מיתולוגיות ייחודיות (GOG) ────────────────────
+  {id:'kraken_m',  n:'קראקן',    e:'🐙', ground:false, scale:1.3, archetype:'kraken',  floatH:2, hp:12},
+  {id:'kir_deer_m',n:'איילת קירינייה',e:'🦌', ground:true, scale:0.95, archetype:'quadruped', hp:6},
+  {id:'manticore_m',n:'מנטיקור', e:'🦁', ground:false, scale:1.1, archetype:'manticore', floatH:4, hp:9},
+  {id:'phoenix_g', n:'פניקס',    e:'🔥', ground:false, scale:1.0, archetype:'phoenix', floatH:6, hp:7},
+  {id:'pegasus_m', n:'פגסוס',    e:'🐴', ground:false, scale:1.0, archetype:'pegasus', floatH:5, hp:6},
 ];
 
 const creatures = [];
@@ -2887,6 +3800,12 @@ const C_PALETTES = {
   dolphin:   { top:0x708090,  belly:0xF0F8FF, fin:0x4F6070  },
   fish:      { scale:0xFF7F50,fin:0xFFD700,   eye:0x000000  },
   mermaid:   { skin:0xFFE4C4, hair:0x00CED1,  tail:0x20B2AA },
+  // GOG mythological creatures
+  kraken_m:  { body:0x2B0B3D, tentacle:0x4A1259, eye:0xFF2200, sucker:0x8B3A8B, belly:0x3D1A54 },
+  kir_deer_m:{ coat:0xDAA520, belly:0xFFE4B5, antler:0xB8860B, hoof:0x654321, eye:0x4169E1 },
+  manticore_m:{ lion:0xCC8800, mane:0x8B4513, wing:0x3B1A1A, tail:0x6B2222, sting:0x1A1A1A, face:0xDEB887 },
+  phoenix_g: { fire:0xFF4500, gold:0xFFD700, ember:0xFF2200, wing:0xFF8C00, tail:0xFFFF00, core:0xFFA500 },
+  pegasus_m: { coat:0xF5F5FF, mane:0xE8E8FF, wing:0xFFFFFF, hoof:0xC0C0C0, eye:0x4169E1 },
 };
 
 function buildCreatureBody(def) {
@@ -3071,7 +3990,238 @@ function buildCreatureBody(def) {
         const eyeM2 = eyeM.clone(); eyeM2.position.x = -0.22*s; group.add(eyeM2);
       }
     }
+
+  } else if (def.archetype === 'kraken') {
+    // ── Kraken: massive sea monster with tentacles ──────
+    const bodyCol = pal.body || 0x2B0B3D;
+    const tentCol = pal.tentacle || 0x4A1259;
+    const bellyCol = pal.belly || 0x3D1A54;
+
+    // Large bulbous head/mantle
+    ud.head = mkHead(new THREE.BoxGeometry(0.9*s, 0.8*s, 0.85*s), bodyCol, pal.eye||0xFF2200);
+    ud.head.position.set(0, 0.6*s, 0);
+    group.add(ud.head);
+
+    // Two big menacing eyes on sides
+    const bigEye1 = new THREE.Mesh(new THREE.BoxGeometry(0.25*s,0.2*s,0.08*s), flatMat(pal.eye||0xFF2200));
+    bigEye1.position.set(+0.38*s, 0.7*s, 0.35*s); group.add(bigEye1);
+    const pupil1 = new THREE.Mesh(new THREE.BoxGeometry(0.1*s,0.12*s,0.08*s), flatMat(0x111111));
+    pupil1.position.set(+0.38*s, 0.7*s, 0.39*s); group.add(pupil1);
+    const bigEye2 = bigEye1.clone(); bigEye2.position.x = -0.38*s; group.add(bigEye2);
+    const pupil2 = pupil1.clone(); pupil2.position.x = -0.38*s; group.add(pupil2);
+
+    // Body/mantle
+    ud.body = new THREE.Mesh(new THREE.BoxGeometry(0.75*s, 0.55*s, 0.7*s), shadedMat(bellyCol));
+    ud.body.position.set(0, 0.05*s, 0);
+    group.add(ud.body);
+
+    // 8 tentacles hanging down in a circle
+    ud.tentacles = [];
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      const tx = Math.cos(a) * 0.35 * s;
+      const tz = Math.sin(a) * 0.35 * s;
+      // Upper tentacle segment
+      const t1 = new THREE.Mesh(new THREE.BoxGeometry(0.16*s, 0.55*s, 0.16*s), shadedMat(tentCol));
+      t1.position.set(tx, -0.35*s, tz);
+      t1.rotation.z = Math.cos(a) * 0.25;
+      t1.rotation.x = -Math.sin(a) * 0.25;
+      group.add(t1);
+      // Lower tentacle tip (thinner)
+      const t2 = new THREE.Mesh(new THREE.BoxGeometry(0.1*s, 0.4*s, 0.1*s), shadedMat(tentCol));
+      t2.position.set(tx * 1.4, -0.82*s, tz * 1.4);
+      t2.rotation.z = Math.cos(a) * 0.45;
+      t2.rotation.x = -Math.sin(a) * 0.45;
+      group.add(t2);
+      // Suckers (dots on tentacles)
+      const suck = new THREE.Mesh(new THREE.BoxGeometry(0.06*s,0.06*s,0.06*s), flatMat(pal.sucker||0x8B3A8B));
+      suck.position.set(tx*1.1, -0.5*s, tz*1.1); group.add(suck);
+      ud.tentacles.push(t1, t2);
+    }
+
+  } else if (def.archetype === 'manticore') {
+    // ── Manticore: lion body + bat wings + scorpion tail + human-like face ──
+    const lionCol = pal.lion || 0xCC8800;
+    const maneCol = pal.mane || 0x8B4513;
+    const wingCol = pal.wing || 0x3B1A1A;
+    const tailCol = pal.tail || 0x6B2222;
+    const faceCol = pal.face || 0xDEB887;
+
+    // Lion body
+    ud.body = new THREE.Mesh(new THREE.BoxGeometry(0.6*s, 0.6*s, 1.05*s), shadedMat(lionCol));
+    ud.body.position.set(0, 0.5*s, 0);
+    group.add(ud.body);
+
+    // Human-like face head
+    ud.head = mkHead(new THREE.BoxGeometry(0.6*s, 0.58*s, 0.55*s), faceCol, 0xFF0000);
+    ud.head.position.set(0, 0.92*s, 0.55*s);
+    group.add(ud.head);
+
+    // Mane around head
+    const mane = new THREE.Mesh(new THREE.BoxGeometry(0.75*s, 0.65*s, 0.4*s), shadedMat(maneCol));
+    mane.position.set(0, 0.9*s, 0.3*s); group.add(mane);
+
+    // Rows of sharp teeth
+    const teeth = new THREE.Mesh(new THREE.BoxGeometry(0.35*s, 0.08*s, 0.06*s), flatMat(0xFFFFFF));
+    teeth.position.set(0, 0.68*s, 0.78*s); group.add(teeth);
+
+    // 4 lion legs
+    const legGeo = new THREE.BoxGeometry(0.22*s, 0.48*s, 0.22*s);
+    const lm = shadedMat(lionCol);
+    ud.legFL = new THREE.Mesh(legGeo, lm); ud.legFL.position.set(+0.2*s, 0.04*s, +0.35*s);
+    ud.legFR = new THREE.Mesh(legGeo, lm); ud.legFR.position.set(-0.2*s, 0.04*s, +0.35*s);
+    ud.legBL = new THREE.Mesh(legGeo, lm); ud.legBL.position.set(+0.2*s, 0.04*s, -0.35*s);
+    ud.legBR = new THREE.Mesh(legGeo, lm); ud.legBR.position.set(-0.2*s, 0.04*s, -0.35*s);
+    [ud.legFL, ud.legFR, ud.legBL, ud.legBR].forEach(l => group.add(l));
+
+    // Bat wings (dark, angular)
+    ud.wingL = new THREE.Mesh(new THREE.BoxGeometry(1.0*s, 0.14*s, 0.6*s), shadedMat(wingCol));
+    ud.wingR = new THREE.Mesh(new THREE.BoxGeometry(1.0*s, 0.14*s, 0.6*s), shadedMat(wingCol));
+    ud.wingL.position.set(+0.75*s, 0.7*s, -0.05*s);
+    ud.wingR.position.set(-0.75*s, 0.7*s, -0.05*s);
+    group.add(ud.wingL); group.add(ud.wingR);
+    // Wing membrane details
+    const memL = new THREE.Mesh(new THREE.BoxGeometry(0.65*s, 0.06*s, 0.35*s), shadedMat(wingCol));
+    memL.position.set(+1.1*s, 0.6*s, 0.05*s); group.add(memL);
+    const memR = memL.clone(); memR.position.x = -1.1*s; group.add(memR);
+
+    // Scorpion tail — arched segments
+    const seg1 = new THREE.Mesh(new THREE.BoxGeometry(0.15*s, 0.15*s, 0.35*s), shadedMat(tailCol));
+    seg1.position.set(0, 0.7*s, -0.65*s); seg1.rotation.x = -0.3; group.add(seg1);
+    const seg2 = new THREE.Mesh(new THREE.BoxGeometry(0.13*s, 0.13*s, 0.3*s), shadedMat(tailCol));
+    seg2.position.set(0, 0.95*s, -0.85*s); seg2.rotation.x = -0.6; group.add(seg2);
+    const seg3 = new THREE.Mesh(new THREE.BoxGeometry(0.11*s, 0.11*s, 0.25*s), shadedMat(tailCol));
+    seg3.position.set(0, 1.2*s, -0.9*s); seg3.rotation.x = -1.0; group.add(seg3);
+    // Stinger
+    const sting = new THREE.Mesh(new THREE.BoxGeometry(0.08*s, 0.2*s, 0.08*s), flatMat(pal.sting||0x1A1A1A));
+    sting.position.set(0, 1.42*s, -0.82*s); group.add(sting);
+
+  } else if (def.archetype === 'phoenix') {
+    // ── Phoenix: majestic fire bird ─────────────────────
+    const fireCol = pal.fire || 0xFF4500;
+    const goldCol = pal.gold || 0xFFD700;
+    const emberCol = pal.ember || 0xFF2200;
+    const wingCol = pal.wing || 0xFF8C00;
+    const tailCol = pal.tail || 0xFFFF00;
+    const coreCol = pal.core || 0xFFA500;
+
+    // Elegant bird head
+    ud.head = mkHead(new THREE.BoxGeometry(0.45*s, 0.42*s, 0.42*s), goldCol, 0xFF0000);
+    ud.head.position.set(0, 0.38*s, 0.55*s);
+    group.add(ud.head);
+    // Crest/crown of flames on head
+    const crest1 = new THREE.Mesh(new THREE.BoxGeometry(0.06*s, 0.25*s, 0.06*s), flatMat(fireCol));
+    crest1.position.set(0, 0.68*s, 0.55*s); group.add(crest1);
+    const crest2 = new THREE.Mesh(new THREE.BoxGeometry(0.06*s, 0.2*s, 0.06*s), flatMat(emberCol));
+    crest2.position.set(+0.1*s, 0.63*s, 0.52*s); crest2.rotation.z = -0.3; group.add(crest2);
+    const crest3 = crest2.clone(); crest3.position.x = -0.1*s; crest3.rotation.z = 0.3; group.add(crest3);
+
+    // Beak
+    const beak = new THREE.Mesh(new THREE.BoxGeometry(0.12*s, 0.1*s, 0.18*s), flatMat(0xFF6600));
+    beak.position.set(0, 0.3*s, 0.72*s); group.add(beak);
+
+    // Body - glowing fire core
+    ud.body = new THREE.Mesh(new THREE.BoxGeometry(0.45*s, 0.45*s, 0.85*s), shadedMat(coreCol));
+    group.add(ud.body);
+
+    // Fire wings — large and flowing
+    ud.wingL = new THREE.Mesh(new THREE.BoxGeometry(1.15*s, 0.12*s, 0.65*s), shadedMat(wingCol));
+    ud.wingR = new THREE.Mesh(new THREE.BoxGeometry(1.15*s, 0.12*s, 0.65*s), shadedMat(wingCol));
+    ud.wingL.position.set(+0.82*s, 0.18*s, 0);
+    ud.wingR.position.set(-0.82*s, 0.18*s, 0);
+    group.add(ud.wingL); group.add(ud.wingR);
+    // Wing flame tips
+    const ftipL = new THREE.Mesh(new THREE.BoxGeometry(0.4*s,0.08*s,0.35*s), flatMat(fireCol));
+    ftipL.position.set(+1.35*s, 0.15*s, 0); group.add(ftipL);
+    const ftipR = ftipL.clone(); ftipR.position.x = -1.35*s; group.add(ftipR);
+
+    // Long flowing tail of flames
+    const t1 = new THREE.Mesh(new THREE.BoxGeometry(0.2*s, 0.16*s, 0.4*s), shadedMat(fireCol));
+    t1.position.set(0, 0, -0.6*s); group.add(t1);
+    const t2 = new THREE.Mesh(new THREE.BoxGeometry(0.25*s, 0.12*s, 0.35*s), shadedMat(tailCol));
+    t2.position.set(0, -0.05*s, -0.9*s); group.add(t2);
+    const t3 = new THREE.Mesh(new THREE.BoxGeometry(0.18*s, 0.1*s, 0.3*s), shadedMat(emberCol));
+    t3.position.set(0, -0.1*s, -1.15*s); group.add(t3);
+    // Side tail feathers
+    const tf1 = new THREE.Mesh(new THREE.BoxGeometry(0.12*s,0.08*s,0.3*s), flatMat(goldCol));
+    tf1.position.set(+0.15*s, -0.05*s, -0.95*s); tf1.rotation.y = 0.3; group.add(tf1);
+    const tf2 = tf1.clone(); tf2.position.x = -0.15*s; tf2.rotation.y = -0.3; group.add(tf2);
+
+  } else if (def.archetype === 'pegasus') {
+    // ── Pegasus: white winged horse ─────────────────────
+    const coatCol = pal.coat || 0xF5F5FF;
+    const maneCol = pal.mane || 0xE8E8FF;
+    const wingCol = pal.wing || 0xFFFFFF;
+    const hoofCol = pal.hoof || 0xC0C0C0;
+
+    // Horse head
+    ud.head = mkHead(new THREE.BoxGeometry(0.55*s, 0.52*s, 0.55*s), coatCol, pal.eye||0x4169E1);
+    ud.head.position.set(0, 0.88*s, 0.55*s);
+    group.add(ud.head);
+
+    // Mane flowing down neck
+    const maneTop = new THREE.Mesh(new THREE.BoxGeometry(0.12*s, 0.3*s, 0.5*s), shadedMat(maneCol));
+    maneTop.position.set(0, 1.02*s, 0.25*s); group.add(maneTop);
+
+    // Horse body
+    ud.body = new THREE.Mesh(new THREE.BoxGeometry(0.5*s, 0.58*s, 1.0*s), shadedMat(coatCol));
+    ud.body.position.set(0, 0.5*s, 0);
+    group.add(ud.body);
+
+    // 4 horse legs with silver hooves
+    const legGeo = new THREE.BoxGeometry(0.2*s, 0.48*s, 0.2*s);
+    const lm = shadedMat(coatCol);
+    ud.legFL = new THREE.Mesh(legGeo, lm); ud.legFL.position.set(+0.15*s, 0.04*s, +0.32*s);
+    ud.legFR = new THREE.Mesh(legGeo, lm); ud.legFR.position.set(-0.15*s, 0.04*s, +0.32*s);
+    ud.legBL = new THREE.Mesh(legGeo, lm); ud.legBL.position.set(+0.15*s, 0.04*s, -0.32*s);
+    ud.legBR = new THREE.Mesh(legGeo, lm); ud.legBR.position.set(-0.15*s, 0.04*s, -0.32*s);
+    [ud.legFL, ud.legFR, ud.legBL, ud.legBR].forEach(l => group.add(l));
+    // Silver hooves
+    for (const leg of [ud.legFL, ud.legFR, ud.legBL, ud.legBR]) {
+      const hoof = new THREE.Mesh(new THREE.BoxGeometry(0.22*s,0.08*s,0.22*s), flatMat(hoofCol));
+      hoof.position.set(leg.position.x, -0.15*s, leg.position.z); group.add(hoof);
+    }
+
+    // Large feathered wings
+    ud.wingL = new THREE.Mesh(new THREE.BoxGeometry(1.2*s, 0.14*s, 0.6*s), shadedMat(wingCol));
+    ud.wingR = new THREE.Mesh(new THREE.BoxGeometry(1.2*s, 0.14*s, 0.6*s), shadedMat(wingCol));
+    ud.wingL.position.set(+0.85*s, 0.72*s, 0);
+    ud.wingR.position.set(-0.85*s, 0.72*s, 0);
+    group.add(ud.wingL); group.add(ud.wingR);
+    // Wing feather details
+    const feathL = new THREE.Mesh(new THREE.BoxGeometry(0.5*s,0.08*s,0.4*s), shadedMat(maneCol));
+    feathL.position.set(+1.35*s, 0.68*s, 0); group.add(feathL);
+    const feathR = feathL.clone(); feathR.position.x = -1.35*s; group.add(feathR);
+
+    // Flowing tail
+    const ptail = new THREE.Mesh(new THREE.BoxGeometry(0.14*s, 0.14*s, 0.4*s), shadedMat(maneCol));
+    ptail.position.set(0, 0.55*s, -0.65*s); group.add(ptail);
   }
+
+  // ── Kir Deer special parts (within quadruped) ─────────
+  if (def.id === 'kir_deer_m') {
+    // Large golden antlers (branching)
+    const antCol = C_PALETTES.kir_deer_m.antler;
+    // Main antler shafts
+    const antL = new THREE.Mesh(new THREE.BoxGeometry(0.08*s,0.5*s,0.08*s), flatMat(antCol));
+    antL.position.set(+0.18*s, 1.3*s, 0.5*s); antL.rotation.z = -0.2; group.add(antL);
+    const antR = new THREE.Mesh(new THREE.BoxGeometry(0.08*s,0.5*s,0.08*s), flatMat(antCol));
+    antR.position.set(-0.18*s, 1.3*s, 0.5*s); antR.rotation.z = 0.2; group.add(antR);
+    // Branches (left)
+    const brL1 = new THREE.Mesh(new THREE.BoxGeometry(0.06*s,0.25*s,0.06*s), flatMat(antCol));
+    brL1.position.set(+0.3*s, 1.45*s, 0.5*s); brL1.rotation.z = -0.5; group.add(brL1);
+    const brL2 = new THREE.Mesh(new THREE.BoxGeometry(0.06*s,0.2*s,0.06*s), flatMat(antCol));
+    brL2.position.set(+0.22*s, 1.55*s, 0.45*s); brL2.rotation.z = -0.8; group.add(brL2);
+    // Branches (right)
+    const brR1 = new THREE.Mesh(new THREE.BoxGeometry(0.06*s,0.25*s,0.06*s), flatMat(antCol));
+    brR1.position.set(-0.3*s, 1.45*s, 0.5*s); brR1.rotation.z = 0.5; group.add(brR1);
+    const brR2 = new THREE.Mesh(new THREE.BoxGeometry(0.06*s,0.2*s,0.06*s), flatMat(antCol));
+    brR2.position.set(-0.22*s, 1.55*s, 0.45*s); brR2.rotation.z = 0.8; group.add(brR2);
+    // Golden glow spot on forehead
+    const glow = new THREE.Mesh(new THREE.BoxGeometry(0.1*s,0.1*s,0.06*s), flatMat(0xFFD700));
+    glow.position.set(0, 0.95*s, 0.78*s); group.add(glow);
+  }
+
   return group;
 }
 
@@ -3080,6 +4230,10 @@ function spawnCreature(defId, atPos = null, silent = false) {
   if (!def) return;
 
   const group = buildCreatureBody(def);
+  // Receive-only: many sub-meshes per creature (body, limbs, wings, horns)
+  // would dominate the shadow pass if they all cast. They still look lit
+  // correctly because they receive shadows from terrain around them.
+  enableShadows(group, { cast: false });
 
   let sx, sz;
   let sy = 1;
@@ -3125,7 +4279,9 @@ function updateCreatures(dt) {
   creatures.forEach(c => {
     const { group, def } = c;
     const ud = group.userData;
-    const isFlying = def.archetype === 'flying' || def.archetype === 'aquatic';
+    const isFlying = def.archetype === 'flying' || def.archetype === 'aquatic'
+                   || def.archetype === 'kraken' || def.archetype === 'manticore'
+                   || def.archetype === 'phoenix' || def.archetype === 'pegasus';
 
     // ── מכונת מצבים ──────────────────────────────────
     c.stateTimer -= dt;
@@ -3201,6 +4357,46 @@ function updateCreatures(dt) {
       group.rotation.y += (wf * 0.12 - group.rotation.y) * 0.15;
       if (ud.tail) ud.tail.rotation.y = wf * 0.45;
       if (ud.armL) { ud.armL.rotation.x = wf * 0.4; ud.armR.rotation.x = -wf * 0.4; }
+
+    } else if (def.archetype === 'kraken') {
+      // Tentacle swaying animation
+      const wf = Math.sin(t * 1.5 + c.phase);
+      if (ud.tentacles) {
+        ud.tentacles.forEach((tn, i) => {
+          tn.rotation.z += Math.sin(t * 2.0 + i * 0.8) * 0.008;
+          tn.rotation.x += Math.cos(t * 1.8 + i * 0.6) * 0.008;
+        });
+      }
+      // Gentle body bob
+      group.position.y = c.baseY + Math.sin(t * 0.8 + c.phase) * 0.25;
+
+    } else if (def.archetype === 'manticore') {
+      // Quadruped legs + wing flapping
+      if (ud.legFL) ud.legFL.rotation.x = -w * 0.65;
+      if (ud.legBR) ud.legBR.rotation.x = -w * 0.65;
+      if (ud.legFR) ud.legFR.rotation.x = +w * 0.65;
+      if (ud.legBL) ud.legBL.rotation.x = +w * 0.65;
+      const wf = Math.sin(t * 2.8 + c.phase);
+      if (ud.wingL) ud.wingL.rotation.z = +wf * 0.4;
+      if (ud.wingR) ud.wingR.rotation.z = -wf * 0.4;
+
+    } else if (def.archetype === 'phoenix') {
+      // Fire bird — wing flapping + gentle body glow effect via position
+      const wf = Math.sin(t * 3.5 + c.phase);
+      if (ud.wingL) ud.wingL.rotation.z = +wf * 0.6;
+      if (ud.wingR) ud.wingR.rotation.z = -wf * 0.6;
+      // Slight rising/falling like flames
+      group.position.y = c.baseY + Math.sin(t * 1.8 + c.phase) * 0.3;
+
+    } else if (def.archetype === 'pegasus') {
+      // Winged horse — quadruped legs + wing flapping
+      if (ud.legFL) ud.legFL.rotation.x = -w * 0.55;
+      if (ud.legBR) ud.legBR.rotation.x = -w * 0.55;
+      if (ud.legFR) ud.legFR.rotation.x = +w * 0.55;
+      if (ud.legBL) ud.legBL.rotation.x = +w * 0.55;
+      const wf = Math.sin(t * 3.0 + c.phase);
+      if (ud.wingL) ud.wingL.rotation.z = +wf * 0.5;
+      if (ud.wingR) ud.wingR.rotation.z = -wf * 0.5;
     }
 
     // ── אנימציית אכילה / מנוחה ──────────────────────
@@ -3340,9 +4536,10 @@ const GOD_DEFS = [
     power:'ראיית לילה | R: שנה ערפל',
     speedMult:1.0, flyMult:1.3,
     keyR: () => {
-      const isClear = scene.fog.far > FAR_DIST + 5;
-      scene.fog.near = isClear ? RENDER_DIST * 0.85 : 60;
-      scene.fog.far  = isClear ? FAR_DIST           : 120;
+      // Toggle between clear horizon (default) and dense fog for Hades flavor
+      const isClear = scene.fog.far > 500;
+      scene.fog.near = isClear ? 60   : 9000;
+      scene.fog.far  = isClear ? 120  : 10000;
       showInfo(isClear ? '💀 ערפל צפוף!' : '💀 ראיית לילה!','#78909C',1500);
     }},
 ];
@@ -3415,7 +4612,7 @@ STRUCT_DEFS.forEach(s => {
   btn.className='libItem'; btn.id='sBtn_'+s.id;
   btn.innerHTML=`${s.e}<span>${s.n}</span>`;
   btn.addEventListener('click', ()=>{
-    selectLibItem('structure', s.id, s.e, s.n, btn);
+    selectLibItem('structure', s.id, s.emoji || s.e, s.n, btn);
   });
   document.getElementById('structGrid').appendChild(btn);
 });
@@ -3646,25 +4843,25 @@ const GOG_CREATURE_DEFS = [
     desc:'מפלצת מרובת ראשים — מגנה ותוקפת', creatureId:'hydra'   },
   { id:'kraken',    nameHeb:'קראקן',          emoji:'🐙',
     deco:['🌊','💧'], bg:'linear-gradient(160deg,#00050f,#001535)',
-    desc:'אדון הים — שולט בגלים',           creatureId:'dolphin' },
+    desc:'אדון הים — שולט בגלים',           creatureId:'kraken_m' },
   { id:'cerberus',  nameHeb:'סרברוס',         emoji:'🐕',
     deco:['🦴','🔥'], bg:'linear-gradient(160deg,#070707,#1a0505)',
     desc:'שומר השאול — נאמן ועז',           creatureId:'cerberus'},
   { id:'kir_deer',  nameHeb:'איילת קירינייה', emoji:'🦌',
     deco:['🌙','🌿'], bg:'linear-gradient(160deg,#061406,#0d2b0d)',
-    desc:'האיילה האגדית — מהירה כרוח',      creatureId:'unicorn' },
+    desc:'האיילה האגדית — מהירה כרוח',      creatureId:'kir_deer_m' },
   { id:'manticore', nameHeb:'מנטיקור',        emoji:'🦁',
     deco:['🦇','🩸'], bg:'linear-gradient(160deg,#200000,#500010)',
-    desc:'גוף אריה, כנפי עטלף — אדיר',     creatureId:'chimera' },
+    desc:'גוף אריה, כנפי עטלף — אדיר',     creatureId:'manticore_m' },
   { id:'phoenix',   nameHeb:'פניקס',          emoji:'🦅',
     deco:['🔥','✨'], bg:'linear-gradient(160deg,#2a0500,#5a1200)',
-    desc:'ציפור האש — קם לתחיה',            creatureId:'harpy'   },
+    desc:'ציפור האש — קם לתחיה',            creatureId:'phoenix_g' },
   { id:'pegasus',   nameHeb:'פגסוס',          emoji:'🐴',
     deco:['☁️','✨'], bg:'linear-gradient(160deg,#001040,#003080)',
-    desc:'הסוס המעופף — שמיים פתוחים',      creatureId:'horse'   },
+    desc:'הסוס המעופף — שמיים פתוחים',      creatureId:'pegasus_m' },
   { id:'minotaur',  nameHeb:'מינוטאור',       emoji:'🐂',
     deco:['🛡️','💪'], bg:'linear-gradient(160deg,#1e0000,#500000)',
-    desc:'שומר המבוך — כוח ללא גבול',       creatureId:'cerberus'},
+    desc:'שומר המבוך — כוח ללא גבול',       creatureId:'minotaur'},
 ];
 
 let selectedGogCostume  = null;
@@ -3788,18 +4985,20 @@ function updateCostumeHUD() {
   }
   updateFPWeapon();    // נשק על ידי המצלמה (מבט ראשון)
   updateBodyWeapon();  // נשק על גוף הדמות (מבט שלישי)
+  // Rebuild body to reflect armor/costume visually
+  if (selectedGod) {
+    const wasVisible = playerBody ? playerBody.visible : false;
+    createGodBody(selectedGod);
+    createFPHands(selectedGod);
+    if (playerBody) playerBody.visible = wasVisible;
+    updateBodyWeapon();
+    updateFPWeapon();  // re-attach FP weapon after hands rebuild
+  }
 }
 
-// Build creature grid
-CREATURE_DEFS.forEach(c => {
-  const btn = document.createElement('div');
-  btn.className='libItem';
-  btn.innerHTML=`${c.e}<span>${c.n}</span>`;
-  btn.addEventListener('click', ()=>{
-    selectLibItem('creature', c.id, c.e, c.n, btn);
-  });
-  document.getElementById('creatureGrid').appendChild(btn);
-});
+// Old overlay functions removed — armor is now built directly into createGodBody()
+
+// Old creature grid removed — only GOG mythological creatures remain
 
 // Library button — build GOG cards lazily on first open
 document.getElementById('libBtn').addEventListener('click', ()=>{
@@ -3811,6 +5010,52 @@ document.getElementById('libBtn').addEventListener('click', ()=>{
     buildLibGogCreatures();
   }
 });
+
+// Close button inside lib panel
+document.getElementById('libCloseBtn').addEventListener('click', ()=>{
+  document.getElementById('libPanel').classList.remove('open');
+});
+
+// Menu dropdown toggle
+document.getElementById('menuToggleBtn').addEventListener('click', ()=>{
+  document.getElementById('menuDropdown').classList.toggle('open');
+});
+
+// Game stats system
+let playerHP = 100, playerMaxHP = 100;
+let playerBelievers = 0;
+let playerGold = 0;
+let playerDivinity = 0;
+
+function updateStatsHUD() {
+  const hpPct = Math.max(0, Math.min(100, (playerHP / playerMaxHP) * 100));
+  const hpBar = document.getElementById('hpBar');
+  const hpVal = document.getElementById('hpVal');
+  if (hpBar) hpBar.style.width = hpPct + '%';
+  if (hpVal) hpVal.textContent = Math.round(playerHP);
+  // Color HP bar based on health
+  if (hpBar) {
+    if (hpPct > 60) hpBar.style.background = 'linear-gradient(to right, #22cc22, #44ff44)';
+    else if (hpPct > 30) hpBar.style.background = 'linear-gradient(to right, #ccaa00, #ffdd22)';
+    else hpBar.style.background = 'linear-gradient(to right, #cc2222, #ff4444)';
+  }
+  const bv = document.getElementById('believersVal');
+  if (bv) bv.textContent = playerBelievers;
+  const gv = document.getElementById('goldVal');
+  if (gv) gv.textContent = playerGold;
+  const dv = document.getElementById('divinityVal');
+  if (dv) dv.textContent = playerDivinity;
+}
+
+function addGold(n) { playerGold += n; updateStatsHUD(); }
+function addBelievers(n) { playerBelievers += n; updateStatsHUD(); }
+function addDivinity(n) { playerDivinity += n; updateStatsHUD(); }
+function damagePlayer(n) {
+  playerHP = Math.max(0, playerHP - n);
+  updateStatsHUD();
+  if (playerHP <= 0) showInfo('💀 נפלת! מתחיל מחדש...', '#ff2222', 3000);
+}
+function healPlayer(n) { playerHP = Math.min(playerMaxHP, playerHP + n); updateStatsHUD(); }
 
 // Tabs — also lazy-build on tab switch
 document.querySelectorAll('.lTab').forEach(tab => {
@@ -3907,19 +5152,15 @@ function expandWorld(oldSZ, newSZ) {
 
 // ── DISTANCE CULLING ──────────────────────────────────
 // Always cull blocks beyond RENDER_DIST (horizontal XZ plane) every 6 frames.
-// Visibility-toggling (not scene.remove) keeps it cheap.
-// The linear fog (near/far) hides the hard cut-off edge.
+// With InstancedMesh + invisible fog, per-instance distance culling is no
+// longer beneficial (draw-call count is constant and tiny). We still cull
+// interactive meshes (doors/windows) since those are regular Object3D's.
 let cullTick = 0;
 function cullDistantBlocks() {
   if (++cullTick % 6 !== 0) return; // ≈10 updates/sec at 60 fps
   const px = player.pos.x, pz = player.pos.z;
-  const cullFar = RENDER_DIST + 3;   // cull slightly beyond fog's hard edge
+  const cullFar = RENDER_DIST + 3;
   const dSq = cullFar * cullFar;
-  world.forEach(mesh => {
-    const dx = mesh.position.x - px;
-    const dz = mesh.position.z - pz;
-    mesh.visible = (dx*dx + dz*dz) <= dSq;
-  });
   new Set(interactWorld.values()).forEach(obj => {
     const dx = obj.position.x - px;
     const dz = obj.position.z - pz;
@@ -3927,84 +5168,13 @@ function cullDistantBlocks() {
   });
 }
 
-// ── FAR LOD — terrain-shaped tiles with biome colors ──
-const LOD_SZ   = 4;                 // one tile covers 4×4 blocks
-const farTiles = new Map();          // "cx|cz" → THREE.Mesh
-let   lodTick  = 0;
-
-// Biome color lookup for LOD tiles
-function lodBiomeColor(x, z) {
-  const h = terrainH(x, z);
-  if (h >= 28) return 0xDDDDEE; // snow
-  if (h >= 22) return 0x888888; // mountain stone
-  const biome = getBiome(x, z);
-  if (biome === 'desert') return 0xD4B066;
-  if (biome === 'jungle') return 0x2d7a2d;
-  if (h <= 5) return 0x2277BB; // water
-  return 0x3d8b37; // plains grass
-}
-
-function buildFarTile(cx, cz) {
-  const key = `${cx}|${cz}`;
-  if (farTiles.has(key)) return farTiles.get(key);
-  const x0 = cx * LOD_SZ, z0 = cz * LOD_SZ;
-  if (x0 < 0 || z0 < 0 || x0 >= worldSZ || z0 >= worldSZ) return null;
-
-  // Create subdivided plane for terrain shape
-  const geo = new THREE.PlaneGeometry(LOD_SZ, LOD_SZ, LOD_SZ, LOD_SZ);
-  geo.rotateX(-Math.PI / 2);
-
-  // Set vertex heights and colors from terrain
-  const colors = [];
-  const posAttr = geo.attributes.position;
-  for (let i = 0; i < posAttr.count; i++) {
-    const vx = posAttr.getX(i) + x0 + LOD_SZ / 2;
-    const vz = posAttr.getZ(i) + z0 + LOD_SZ / 2;
-    const h = terrainH(Math.round(vx), Math.round(vz));
-    posAttr.setY(i, h + 0.3);
-    const c = new THREE.Color(lodBiomeColor(Math.round(vx), Math.round(vz)));
-    colors.push(c.r, c.g, c.b);
-  }
-  geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-  geo.computeVertexNormals();
-
-  const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.set(x0 + LOD_SZ / 2, 0, z0 + LOD_SZ / 2);
-  mesh.visible = false;
-  mesh.renderOrder = -1;
-  scene.add(mesh);
-  farTiles.set(key, mesh);
-  return mesh;
-}
-
-function updateFarLOD(px, pz) {
-  if (++lodTick % 30 !== 0) return;
-  const near2 = RENDER_DIST * RENDER_DIST;
-  const far2  = FAR_DIST    * FAR_DIST;
-  const minCX = Math.floor((px - FAR_DIST) / LOD_SZ);
-  const maxCX = Math.ceil ((px + FAR_DIST) / LOD_SZ);
-  const minCZ = Math.floor((pz - FAR_DIST) / LOD_SZ);
-  const maxCZ = Math.ceil ((pz + FAR_DIST) / LOD_SZ);
-  for (let cx = minCX; cx <= maxCX; cx++) {
-    for (let cz = minCZ; cz <= maxCZ; cz++) {
-      const tx = cx * LOD_SZ + LOD_SZ / 2 - px;
-      const tz = cz * LOD_SZ + LOD_SZ / 2 - pz;
-      const d2 = tx * tx + tz * tz;
-      const tile = buildFarTile(cx, cz);
-      if (tile) tile.visible = (d2 >= near2 && d2 < far2);
-    }
-  }
-  // Hide stale tiles outside the annular band
-  farTiles.forEach((tile, key) => {
-    if (!tile.visible) return;
-    const [cx, cz] = key.split('|').map(Number);
-    const tx = cx * LOD_SZ + LOD_SZ / 2 - px;
-    const tz = cz * LOD_SZ + LOD_SZ / 2 - pz;
-    const d2 = tx * tx + tz * tz;
-    if (d2 < near2 || d2 >= far2) tile.visible = false;
-  });
-}
+// ── FAR LOD (disabled) ────────────────────────────────
+// The smooth low-poly terrain tiles that used to fill the distant horizon
+// looked fake and didn't match the voxel aesthetic. The system is kept as
+// no-ops so the game loop's updateFarLOD() call still works, but nothing is
+// ever built or drawn. Beyond RENDER_DIST the player now just sees sky.
+const farTiles = new Map();
+function updateFarLOD(/* px, pz */) { /* intentionally empty */ }
 
 // ── WATER FLOW PHYSICS ────────────────────────────────
 const waterFlowQ = [];   // [{x,y,z,dist}] — בלוקי מים שממתינים להתפשטות
@@ -4042,26 +5212,36 @@ function updateWaterFlow() {
 }
 
 // ── ANIMATED WATER/LAVA ───────────────────────────────
+// With InstancedMesh, all water blocks share one material (and all lava
+// blocks share one material), so we animate the material directly instead
+// of iterating every block. Per-block position variation is sacrificed but
+// the rippling effect remains and it's far cheaper.
 let tick = 0;
 function animateBlocks() {
   tick++;
-  if (tick % 20 !== 0) return; // update every 20 frames
-  // Only iterate water+lava blocks (animBlocks) — not the entire world Map
-  animBlocks.forEach(key => {
-    const mesh = world.get(key);
-    if (!mesh) return; // stale key guard
-    const id = mesh.userData.id;
-    if (id === 'water') {
-      const t = (tick * .04);
-      const c = 0x1565C0 + Math.floor(Math.sin(t + mesh.position.x*.3) * 0x050A0F);
-      if (Array.isArray(mesh.material)) mesh.material[2].color.setHex(c);
+  // Water UV scroll runs every frame for smooth flow
+  const waterIM = imeshByID['water'];
+  if (waterIM && Array.isArray(waterIM.material)) {
+    const wMap = waterIM.material[2].map;
+    if (wMap) {
+      wMap.offset.x = (tick * 0.0008) % 1;
+      wMap.offset.y = (tick * 0.0004) % 1;
     }
-    if (id === 'lava') {
-      const t = (tick * .03);
-      const r = 0xFF, g = Math.floor(50 + Math.sin(t + mesh.position.x*.4)*40);
-      if (Array.isArray(mesh.material)) mesh.material[2].color.setRGB(r/255, g/255, 0);
-    }
-  });
+  }
+  if (tick % 20 !== 0) return; // color tint + lava update every 20 frames
+  if (animBlocks.size === 0) return;
+
+  if (waterIM && Array.isArray(waterIM.material)) {
+    const t = tick * 0.04;
+    const c = 0x1565C0 + Math.floor(Math.sin(t) * 0x050A0F);
+    waterIM.material[2].color.setHex(c); // face 2 = top
+  }
+  const lavaIM = imeshByID['lava'];
+  if (lavaIM && Array.isArray(lavaIM.material)) {
+    const t = tick * 0.03;
+    const g = Math.floor(50 + Math.sin(t) * 40);
+    lavaIM.material[2].color.setRGB(1, g / 255, 0);
+  }
 }
 
 // ── GHOST EDGE MESHES — seamless toroidal wrap ────────
@@ -4091,17 +5271,18 @@ function updateGhostEdges(px, pz) {
 
   if (offsets.length === 0) return;
 
-  world.forEach(mesh => {
-    if (!mesh.visible) return;
-    const bx = mesh.position.x - 0.5;
-    const bz = mesh.position.z - 0.5;
+  // Iterate the world info map; materials come from the appropriate InstancedMesh.
+  world.forEach(info => {
+    const bx = info.x, bz = info.z;
     for (const [ox, oz] of offsets) {
       // Only copy blocks from the edge strip relevant to this offset
       const inX = ox !== 0 ? (ox > 0 ? bx > sz - T : bx < T) : true;
       const inZ = oz !== 0 ? (oz > 0 ? bz > sz - T : bz < T) : true;
       if (!inX || !inZ) continue;
-      const ghost = new THREE.Mesh(BGEOM, mesh.material); // shared geo+mat = free
-      ghost.position.set(mesh.position.x + ox, mesh.position.y, mesh.position.z + oz);
+      const im = imeshByID[info.id];
+      if (!im) continue;
+      const ghost = new THREE.Mesh(BGEOM, im.material); // shared geo+mat = ~free
+      ghost.position.set(info.x + 0.5 + ox, info.y + 0.5, info.z + 0.5 + oz);
       scene.add(ghost);
       ghostMeshes.push(ghost);
     }
@@ -4110,8 +5291,48 @@ function updateGhostEdges(px, pz) {
 
 // ── אפקט מתחת למים ────────────────────────────────────
 let _wasUnderwater = false;
+let _wasInWater    = false;     // player feet/waist in water — drives splash trigger
 let _uwFish = [];       // יצורי מים שנוצרו אוטומטית
 let _uwCorals = [];     // מבני אלמוגים זמניים
+
+// ── SPLASH EFFECT ─────────────────────────────────────
+// Spawns a ring of small blue cubes that shoot upward from the impact point
+// and fall back down. Particles reuse the deathParticles pipeline so they're
+// automatically updated and removed by updateDeathParticles().
+function spawnWaterSplash(x, y, z, intensity) {
+  intensity = intensity || 1;
+  const count = 10 + Math.floor(intensity * 8);
+  const palette = [0x64B5F6, 0x42A5F5, 0x90CAF9, 0xBBDEFB, 0xFFFFFF];
+  for (let i = 0; i < count; i++) {
+    const sz = 0.08 + Math.random() * 0.12;
+    const color = palette[Math.floor(Math.random() * palette.length)];
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(sz, sz, sz),
+      new THREE.MeshLambertMaterial({
+        color, transparent: true, opacity: 0.9,
+      })
+    );
+    // Spawn in a small ring around the splash point
+    const ang = (i / count) * Math.PI * 2 + Math.random() * 0.3;
+    const rad = 0.25 + Math.random() * 0.35;
+    mesh.position.set(
+      x + Math.cos(ang) * rad,
+      y + 0.05 + Math.random() * 0.15,
+      z + Math.sin(ang) * rad
+    );
+    // Mostly upward with outward spread; scaled by intensity
+    const vel = new THREE.Vector3(
+      Math.cos(ang) * (1.2 + Math.random() * 1.6) * intensity,
+      2.5 + Math.random() * 2.5 * intensity,
+      Math.sin(ang) * (1.2 + Math.random() * 1.6) * intensity
+    );
+    scene.add(mesh);
+    deathParticles.push({ mesh, vel, life: 0.9 });
+  }
+  // Splash sound — quick broadband burst
+  playTone(180 + Math.random() * 60, 0.08, 'triangle');
+  playTone(420 + Math.random() * 80, 0.10, 'sine');
+}
 
 function _buildCoral() {
   const g = new THREE.Group();
@@ -4191,14 +5412,16 @@ function _despawnUnderwaterLife() {
 
 function _enterUnderwater() {
   document.getElementById('underwaterOverlay').style.display = 'block';
-  if (scene.background) scene.background.setHex(0x00254A);
-  scene.fog.color.setHex(0x00254A);
+  // Brighter, clearer blue so the player still sees the world around them
+  if (scene.background) scene.background.setHex(0x1a6aa8);
+  scene.fog.color.setHex(0x1a6aa8);
   if (skyDome) skyDome.visible = false;
   if (sunSphere) sunSphere.visible = false;
   if (moonSphere) moonSphere.visible = false;
   gameClouds.forEach(c => { c.visible = false; });
-  scene.fog.near = 2;
-  scene.fog.far  = 16;
+  // Looser fog → much more visibility underwater
+  scene.fog.near = 6;
+  scene.fog.far  = 40;
   _spawnUnderwaterLife();
 }
 
@@ -4210,8 +5433,9 @@ function _exitUnderwater() {
   if (sunSphere) sunSphere.visible = true;
   if (moonSphere) moonSphere.visible = true;
   gameClouds.forEach(c => { c.visible = true; });
-  scene.fog.near = RENDER_DIST * 0.85;
-  scene.fog.far  = FAR_DIST;
+  // Restore invisible default horizon (no fog)
+  scene.fog.near = 9000;
+  scene.fog.far  = 10000;
   _despawnUnderwaterLife();
 }
 
@@ -4232,8 +5456,10 @@ function animate(t) {
     updateGhostEdges(player.pos.x, player.pos.z);
     updateCreatures(dt);
     updateDeathParticles(dt);
+    updateArrows(dt);
     updateWaterFlow();
     updateRemotePlayers();
+    if (currentGameMode === 'game') updateGameMode(dt);
     // Dionysus rainbow effect
     if (selectedGod?.id === 'dionysus' && dionysusActive) {
       renderer.domElement.style.filter = `hue-rotate(${(t/50)%360}deg) saturate(1.8)`;
@@ -4244,6 +5470,14 @@ function animate(t) {
       _wasUnderwater = _headUW;
       if (_headUW) _enterUnderwater(); else _exitUnderwater();
     }
+    // ── Splash trigger: player's feet/waist transition from dry → wet ──
+    const _nowInWater = playerInWater();
+    if (_nowInWater && !_wasInWater) {
+      // Impact intensity from the downward velocity (capped)
+      const impact = Math.min(1.5, 0.6 + Math.max(0, -player.vel.y) * 0.25);
+      spawnWaterSplash(player.pos.x, player.pos.y + 0.05, player.pos.z, impact);
+    }
+    _wasInWater = _nowInWater;
   }
   renderer.render(scene, camera);
 }
@@ -4373,96 +5607,140 @@ function createGodBody(god) {
   const hairDark   = _hexDarken(style.hair, 0.72);
   const boot       = '#2C1A0E';
 
+  // ── Armor colour scheme (baked into body materials) ──
+  const _ARMOR_COLORS = {
+    stone:   { plate:'#808080', trim:'#606060', accent:'#9E9E9E' },
+    gold:    { plate:'#DAA520', trim:'#B8860B', accent:'#FFD700' },
+    diamond: { plate:'#4FC3F7', trim:'#0288D1', accent:'#B3E5FC' },
+    royal:   { plate:'#6A1B9A', trim:'#4A148C', accent:'#FFD700' },
+    dark:    { plate:'#212121', trim:'#111111', accent:'#B71C1C' },
+    angel:   { plate:'#F5F5F5', trim:'#E0E0E0', accent:'#FFD700' },
+  };
+  const armorId = playerCostume.armor;
+  const ac = armorId ? (_ARMOR_COLORS[armorId] || _ARMOR_COLORS.stone) : null;
+  // If we have armor, use it for torso/arms/legs instead of cloth/pants
+  const torsoColor    = ac ? ac.plate : cloth;
+  const torsoDark     = ac ? ac.trim  : clothDark;
+  const legColor      = ac ? _hexDarken(ac.plate, 0.85) : style.pants;
+  const legColorDark  = ac ? _hexDarken(ac.trim, 0.85)  : pantsDark;
+  const armColor      = ac ? ac.plate : cloth;
+  const armColorDark  = ac ? ac.trim  : clothDark;
+  const accentColor   = ac ? ac.accent : _hexDarken(cloth, 0.5);
+
   const group = new THREE.Group();
+  const mk = (geo, col) => new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: col }));
 
   // ── HEAD ──────────────────────────────────────────────────
-  // Front face (+z local = player's face direction after rotation.y=π+yaw)
-  // Material order for BoxGeometry: [+x, -x, +y, -y, +z, -z]
   const faceMat = _pixMat8(ctx => {
-    // Skin base
     ctx.fillStyle = style.skin; ctx.fillRect(0, 0, 8, 8);
-    // Hair fringe across top
     ctx.fillStyle = style.hair;
     ctx.fillRect(0, 0, 8, 1);
     ctx.fillRect(0, 1, 2, 1); ctx.fillRect(6, 1, 2, 1);
-    // Eyes (dark iris + tiny white highlight)
     ctx.fillStyle = '#1A0A00'; ctx.fillRect(1, 3, 2, 2); ctx.fillRect(5, 3, 2, 2);
     ctx.fillStyle = '#FFFFFF'; ctx.fillRect(2, 3, 1, 1); ctx.fillRect(6, 3, 1, 1);
-    // Nose
     ctx.fillStyle = skinDark; ctx.fillRect(3, 5, 2, 1);
-    // Mouth
     ctx.fillStyle = '#A04030'; ctx.fillRect(2, 6, 4, 1);
     ctx.fillStyle = '#1A0A00'; ctx.fillRect(2, 6, 1, 1); ctx.fillRect(5, 6, 1, 1);
   });
-
   const hairSideMat = _pixMat8(ctx => {
     ctx.fillStyle = style.hair; ctx.fillRect(0, 0, 8, 8);
     ctx.fillStyle = hairDark;
     for (let x = 0; x < 8; x += 2) ctx.fillRect(x, 0, 1, 3);
-    ctx.fillStyle = style.skin; ctx.fillRect(0, 3, 8, 5); // ear / neck side visible
-    ctx.fillStyle = hairDark;   ctx.fillRect(0, 3, 8, 1); // shadow line
+    ctx.fillStyle = style.skin; ctx.fillRect(0, 3, 8, 5);
+    ctx.fillStyle = hairDark;   ctx.fillRect(0, 3, 8, 1);
   });
-
   const hairTopMat = _pixMat8(ctx => {
     ctx.fillStyle = style.hair; ctx.fillRect(0, 0, 8, 8);
     ctx.fillStyle = hairDark;
     for (let y = 0; y < 8; y += 2) ctx.fillRect(0, y, 8, 1);
   });
-
   const hairBackMat = _pixMat8(ctx => {
     ctx.fillStyle = style.hair; ctx.fillRect(0, 0, 8, 8);
     ctx.fillStyle = hairDark;
     for (let x = 0; x < 8; x++) ctx.fillRect(x, x % 3, 1, 1);
   });
-
   const head = new THREE.Mesh(
     new THREE.BoxGeometry(0.5, 0.5, 0.5),
     [hairSideMat, hairSideMat, hairTopMat,
-     new THREE.MeshLambertMaterial({ color: style.skin }), // neck-bottom
+     new THREE.MeshLambertMaterial({ color: style.skin }),
      faceMat, hairBackMat]
   );
   head.position.y = 1.55;
   group.add(head);
-  group.userData.headMesh = head; // reference so we can hide it in first-person
+  group.userData.headMesh = head;
 
-  // ── TORSO ─────────────────────────────────────────────────
+  // ── TORSO (uses armor color if equipped) ────────────────
   const shirtFront = _pixMat8(ctx => {
-    ctx.fillStyle = cloth; ctx.fillRect(0, 0, 8, 8);
-    // Collar
-    ctx.fillStyle = clothDark; ctx.fillRect(2, 0, 4, 1);
-    // Button row
-    ctx.fillStyle = _hexDarken(cloth, 0.5);
-    for (let y = 2; y < 7; y += 2) ctx.fillRect(3, y, 2, 1);
+    ctx.fillStyle = torsoColor; ctx.fillRect(0, 0, 8, 8);
+    ctx.fillStyle = torsoDark; ctx.fillRect(2, 0, 4, 1);
+    // Armor pattern: horizontal plates
+    if (ac) {
+      ctx.fillStyle = torsoDark;
+      for (let y = 1; y < 8; y += 2) ctx.fillRect(0, y, 8, 1);
+      // Center emblem
+      ctx.fillStyle = accentColor; ctx.fillRect(3, 2, 2, 2);
+    } else {
+      ctx.fillStyle = accentColor;
+      for (let y = 2; y < 7; y += 2) ctx.fillRect(3, y, 2, 1);
+    }
   });
   const shirtSide = _pixMat8(ctx => {
-    ctx.fillStyle = clothDark; ctx.fillRect(0, 0, 8, 8);
-    ctx.fillStyle = _hexDarken(cloth, 0.55);
+    ctx.fillStyle = torsoDark; ctx.fillRect(0, 0, 8, 8);
+    ctx.fillStyle = _hexDarken(torsoColor, 0.55);
     for (let y = 0; y < 8; y += 3) ctx.fillRect(0, y, 8, 1);
   });
   const torso = new THREE.Mesh(
     new THREE.BoxGeometry(0.44, 0.70, 0.24),
     [shirtSide, shirtSide,
-     new THREE.MeshLambertMaterial({ color: clothDark }),
-     new THREE.MeshLambertMaterial({ color: clothDark }),
+     new THREE.MeshLambertMaterial({ color: torsoDark }),
+     new THREE.MeshLambertMaterial({ color: torsoDark }),
      shirtFront, shirtSide]
   );
   torso.position.y = 0.92;
   group.add(torso);
 
-  // ── ARMS ──────────────────────────────────────────────────
+  // ── Shoulder pads (only with armor) ─────────────────────
+  if (ac) {
+    const shoulderL = mk(new THREE.BoxGeometry(0.28, 0.14, 0.28), ac.plate);
+    shoulderL.position.set(0.34, 1.25, 0); group.add(shoulderL);
+    const shoulderR = mk(new THREE.BoxGeometry(0.28, 0.14, 0.28), ac.plate);
+    shoulderR.position.set(-0.34, 1.25, 0); group.add(shoulderR);
+    // Shoulder spikes/accents
+    const spikeL = mk(new THREE.BoxGeometry(0.10, 0.10, 0.10), ac.accent);
+    spikeL.position.set(0.34, 1.35, 0); group.add(spikeL);
+    const spikeR = mk(new THREE.BoxGeometry(0.10, 0.10, 0.10), ac.accent);
+    spikeR.position.set(-0.34, 1.35, 0); group.add(spikeR);
+    // Belt
+    const belt = mk(new THREE.BoxGeometry(0.50, 0.08, 0.30), ac.trim);
+    belt.position.set(0, 0.58, 0); group.add(belt);
+    const buckle = mk(new THREE.BoxGeometry(0.10, 0.10, 0.06), ac.accent);
+    buckle.position.set(0, 0.58, 0.15); group.add(buckle);
+  }
+
+  // ── ARMS (armor colored if equipped) ────────────────────
   const sleeveMat = _pixMat8(ctx => {
-    ctx.fillStyle = cloth; ctx.fillRect(0, 0, 8, 3);   // sleeve
-    ctx.fillStyle = style.skin; ctx.fillRect(0, 3, 8, 5); // forearm skin
-    ctx.fillStyle = skinDark;
-    for (let x = 0; x < 8; x += 2) ctx.fillRect(x, 4, 1, 1); // arm detail
+    ctx.fillStyle = armColor; ctx.fillRect(0, 0, 8, 4);
+    if (ac) {
+      ctx.fillStyle = armColorDark;
+      for (let y = 0; y < 4; y += 2) ctx.fillRect(0, y, 8, 1);
+      ctx.fillStyle = armColor; ctx.fillRect(0, 4, 8, 4);
+    } else {
+      ctx.fillStyle = style.skin; ctx.fillRect(0, 3, 8, 5);
+      ctx.fillStyle = skinDark;
+      for (let x = 0; x < 8; x += 2) ctx.fillRect(x, 4, 1, 1);
+    }
   });
   const armSideMat = _pixMat8(ctx => {
-    ctx.fillStyle = clothDark; ctx.fillRect(0, 0, 8, 3);
-    ctx.fillStyle = skinDark;  ctx.fillRect(0, 3, 8, 5);
+    ctx.fillStyle = armColorDark; ctx.fillRect(0, 0, 8, 4);
+    if (ac) {
+      ctx.fillStyle = armColor; ctx.fillRect(0, 4, 8, 4);
+    } else {
+      ctx.fillStyle = skinDark; ctx.fillRect(0, 3, 8, 5);
+    }
   });
   const armMats = [armSideMat, armSideMat,
-    new THREE.MeshLambertMaterial({ color: cloth }),
-    new THREE.MeshLambertMaterial({ color: style.skin }),
+    new THREE.MeshLambertMaterial({ color: armColor }),
+    new THREE.MeshLambertMaterial({ color: ac ? armColor : style.skin }),
     sleeveMat, armSideMat];
 
   const rArm = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.60, 0.19), armMats);
@@ -4473,20 +5751,30 @@ function createGodBody(god) {
   lArm.position.set(-0.315, 0.92, 0);
   group.add(lArm);
 
-  // ── LEGS ──────────────────────────────────────────────────
+  // ── LEGS (armor colored if equipped) ────────────────────
   const legFront = _pixMat8(ctx => {
-    ctx.fillStyle = style.pants; ctx.fillRect(0, 0, 8, 6);
-    ctx.fillStyle = pantsDark;
+    ctx.fillStyle = legColor; ctx.fillRect(0, 0, 8, 6);
+    ctx.fillStyle = legColorDark;
     for (let y = 0; y < 6; y += 3) ctx.fillRect(0, y, 8, 1);
-    ctx.fillStyle = boot; ctx.fillRect(0, 6, 8, 2); // boot
+    if (ac) {
+      // Armored boots
+      ctx.fillStyle = _hexDarken(ac.trim, 0.7); ctx.fillRect(0, 6, 8, 2);
+    } else {
+      ctx.fillStyle = boot; ctx.fillRect(0, 6, 8, 2);
+    }
   });
   const legBack = _pixMat8(ctx => {
-    ctx.fillStyle = pantsDark; ctx.fillRect(0, 0, 8, 6);
-    ctx.fillStyle = _hexDarken(boot, 0.7); ctx.fillRect(0, 6, 8, 2);
+    ctx.fillStyle = legColorDark; ctx.fillRect(0, 0, 8, 6);
+    if (ac) {
+      ctx.fillStyle = _hexDarken(ac.trim, 0.5); ctx.fillRect(0, 6, 8, 2);
+    } else {
+      ctx.fillStyle = _hexDarken(boot, 0.7); ctx.fillRect(0, 6, 8, 2);
+    }
   });
+  const bootColor = ac ? _hexDarken(ac.trim, 0.7) : boot;
   const legMats = [legBack, legBack,
-    new THREE.MeshLambertMaterial({ color: style.pants }),
-    new THREE.MeshLambertMaterial({ color: boot }),
+    new THREE.MeshLambertMaterial({ color: legColor }),
+    new THREE.MeshLambertMaterial({ color: bootColor }),
     legFront, legBack];
 
   const rLeg = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.66, 0.20), legMats);
@@ -4496,6 +5784,159 @@ function createGodBody(god) {
   const lLeg = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.66, 0.20), legMats);
   lLeg.position.set(-0.115, 0.33, 0);
   group.add(lLeg);
+
+  // ── GOD-SPECIFIC HELMET / ACCESSORIES ───────────────────
+  const godId = god.id;
+  if (godId === 'zeus') {
+    // Golden crown with lightning spikes
+    const crown = mk(new THREE.BoxGeometry(0.56, 0.08, 0.56), 0xFFD700);
+    crown.position.set(0, 1.84, 0); group.add(crown);
+    for (let i = 0; i < 5; i++) {
+      const spike = mk(new THREE.BoxGeometry(0.06, 0.18, 0.06), 0xFFD700);
+      const a = (i / 5) * Math.PI * 2;
+      spike.position.set(Math.cos(a)*0.22, 2.0, Math.sin(a)*0.22); group.add(spike);
+    }
+    const gemTop = mk(new THREE.BoxGeometry(0.08, 0.08, 0.08), 0xFFFF00);
+    gemTop.position.set(0, 2.1, 0); group.add(gemTop);
+  } else if (godId === 'poseidon') {
+    // Sea crown with coral spikes
+    const crown = mk(new THREE.BoxGeometry(0.56, 0.10, 0.56), 0x0277BD);
+    crown.position.set(0, 1.84, 0); group.add(crown);
+    const s1 = mk(new THREE.BoxGeometry(0.08, 0.20, 0.08), 0x00BCD4);
+    s1.position.set(0, 1.98, 0.22); group.add(s1);
+    const s2 = mk(new THREE.BoxGeometry(0.08, 0.16, 0.08), 0x00ACC1);
+    s2.position.set(0.20, 1.96, 0.10); group.add(s2);
+    const s3 = mk(new THREE.BoxGeometry(0.08, 0.16, 0.08), 0x00ACC1);
+    s3.position.set(-0.20, 1.96, 0.10); group.add(s3);
+    const pearl = mk(new THREE.BoxGeometry(0.06, 0.06, 0.06), 0xE0F7FA);
+    pearl.position.set(0, 2.1, 0.22); group.add(pearl);
+  } else if (godId === 'hades') {
+    // Dark horned helmet covering the head
+    const helm = mk(new THREE.BoxGeometry(0.56, 0.30, 0.56), 0x1A1A1A);
+    helm.position.set(0, 1.72, 0); group.add(helm);
+    const visor = mk(new THREE.BoxGeometry(0.52, 0.06, 0.06), 0x0D0D0D);
+    visor.position.set(0, 1.60, 0.28); group.add(visor);
+    // Large horns
+    const hornL = mk(new THREE.BoxGeometry(0.08, 0.35, 0.08), 0x333333);
+    hornL.position.set(0.24, 2.05, 0); hornL.rotation.z = -0.35; group.add(hornL);
+    const hornR = mk(new THREE.BoxGeometry(0.08, 0.35, 0.08), 0x333333);
+    hornR.position.set(-0.24, 2.05, 0); hornR.rotation.z = 0.35; group.add(hornR);
+    // Horn tips
+    const tipL = mk(new THREE.BoxGeometry(0.05, 0.14, 0.05), 0x555555);
+    tipL.position.set(0.34, 2.30, 0); tipL.rotation.z = -0.5; group.add(tipL);
+    const tipR = mk(new THREE.BoxGeometry(0.05, 0.14, 0.05), 0x555555);
+    tipR.position.set(-0.34, 2.30, 0); tipR.rotation.z = 0.5; group.add(tipR);
+    // Red eye slits
+    const eyeL = mk(new THREE.BoxGeometry(0.06, 0.03, 0.04), 0xFF0000);
+    eyeL.position.set(0.10, 1.62, 0.29); group.add(eyeL);
+    const eyeR = mk(new THREE.BoxGeometry(0.06, 0.03, 0.04), 0xFF0000);
+    eyeR.position.set(-0.10, 1.62, 0.29); group.add(eyeR);
+  } else if (godId === 'ares') {
+    // Spartan war helmet with large crest
+    const helm = mk(new THREE.BoxGeometry(0.56, 0.26, 0.56), 0x8B0000);
+    helm.position.set(0, 1.74, 0); group.add(helm);
+    const crest = mk(new THREE.BoxGeometry(0.08, 0.35, 0.50), 0xFF0000);
+    crest.position.set(0, 2.04, 0); group.add(crest);
+    // Face guard
+    const guardL = mk(new THREE.BoxGeometry(0.06, 0.20, 0.06), 0x6B0000);
+    guardL.position.set(0.22, 1.55, 0.22); group.add(guardL);
+    const guardR = mk(new THREE.BoxGeometry(0.06, 0.20, 0.06), 0x6B0000);
+    guardR.position.set(-0.22, 1.55, 0.22); group.add(guardR);
+  } else if (godId === 'athena') {
+    // Wisdom helm with owl crest
+    const helm = mk(new THREE.BoxGeometry(0.56, 0.22, 0.56), 0x4A148C);
+    helm.position.set(0, 1.76, 0); group.add(helm);
+    const crest = mk(new THREE.BoxGeometry(0.06, 0.20, 0.30), 0x7B1FA2);
+    crest.position.set(0, 1.97, 0); group.add(crest);
+    // Owl eye emblems on front
+    const owlL = mk(new THREE.BoxGeometry(0.08, 0.08, 0.06), 0xFFD700);
+    owlL.position.set(0.12, 1.76, 0.28); group.add(owlL);
+    const owlR = mk(new THREE.BoxGeometry(0.08, 0.08, 0.06), 0xFFD700);
+    owlR.position.set(-0.12, 1.76, 0.28); group.add(owlR);
+    const owlBeak = mk(new THREE.BoxGeometry(0.04, 0.06, 0.06), 0xFFA000);
+    owlBeak.position.set(0, 1.72, 0.30); group.add(owlBeak);
+  } else if (godId === 'artemis') {
+    // Hunter's hood with ears/leaf
+    const hood = mk(new THREE.BoxGeometry(0.56, 0.16, 0.56), 0x2E7D32);
+    hood.position.set(0, 1.78, 0); group.add(hood);
+    const backHood = mk(new THREE.BoxGeometry(0.40, 0.30, 0.14), 0x1B5E20);
+    backHood.position.set(0, 1.60, -0.30); group.add(backHood);
+    const leaf1 = mk(new THREE.BoxGeometry(0.05, 0.18, 0.10), 0x4CAF50);
+    leaf1.position.set(0.22, 1.94, 0); leaf1.rotation.z = -0.4; group.add(leaf1);
+    const leaf2 = mk(new THREE.BoxGeometry(0.05, 0.14, 0.08), 0x66BB6A);
+    leaf2.position.set(-0.18, 1.90, 0.10); leaf2.rotation.z = 0.3; group.add(leaf2);
+  } else if (godId === 'hermes') {
+    // Winged helmet
+    const helm = mk(new THREE.BoxGeometry(0.54, 0.14, 0.54), 0xE0E0E0);
+    helm.position.set(0, 1.78, 0); group.add(helm);
+    // Wings (larger, more visible)
+    const wL1 = mk(new THREE.BoxGeometry(0.24, 0.16, 0.08), 0xFFFFFF);
+    wL1.position.set(0.38, 1.84, 0); wL1.rotation.z = 0.4; group.add(wL1);
+    const wL2 = mk(new THREE.BoxGeometry(0.16, 0.10, 0.06), 0xEEEEEE);
+    wL2.position.set(0.52, 1.94, 0); wL2.rotation.z = 0.6; group.add(wL2);
+    const wR1 = mk(new THREE.BoxGeometry(0.24, 0.16, 0.08), 0xFFFFFF);
+    wR1.position.set(-0.38, 1.84, 0); wR1.rotation.z = -0.4; group.add(wR1);
+    const wR2 = mk(new THREE.BoxGeometry(0.16, 0.10, 0.06), 0xEEEEEE);
+    wR2.position.set(-0.52, 1.94, 0); wR2.rotation.z = -0.6; group.add(wR2);
+  } else if (godId === 'hephaestus') {
+    // Smith's helmet with visor and fire glow
+    const helm = mk(new THREE.BoxGeometry(0.56, 0.22, 0.56), 0x4E342E);
+    helm.position.set(0, 1.76, 0); group.add(helm);
+    const visor = mk(new THREE.BoxGeometry(0.50, 0.10, 0.08), 0x3E2723);
+    visor.position.set(0, 1.62, 0.28); group.add(visor);
+    const glow = mk(new THREE.BoxGeometry(0.40, 0.04, 0.04), 0xFF6F00);
+    glow.position.set(0, 1.64, 0.30); group.add(glow);
+  } else if (godId === 'aphrodite') {
+    // Flower crown
+    const crown = mk(new THREE.BoxGeometry(0.54, 0.06, 0.54), 0xFFD700);
+    crown.position.set(0, 1.82, 0); group.add(crown);
+    const colors = [0xFF69B4, 0xFF1493, 0xFFB6C1, 0xFF69B4, 0xFF1493];
+    for (let i = 0; i < 5; i++) {
+      const flower = mk(new THREE.BoxGeometry(0.08, 0.10, 0.08), colors[i]);
+      const a = (i / 5) * Math.PI * 2;
+      flower.position.set(Math.cos(a)*0.24, 1.90, Math.sin(a)*0.24); group.add(flower);
+    }
+  } else if (godId === 'dionysus') {
+    // Grape vine crown
+    const vine = mk(new THREE.BoxGeometry(0.54, 0.06, 0.54), 0x2E7D32);
+    vine.position.set(0, 1.82, 0); group.add(vine);
+    const grapes = [[-0.18,0], [0,0.20], [0.18,0], [-0.10,-0.18], [0.10,-0.18]];
+    grapes.forEach(([x,z]) => {
+      const g = mk(new THREE.BoxGeometry(0.07, 0.07, 0.07), 0x6A1B9A);
+      g.position.set(x, 1.88, z); group.add(g);
+    });
+  } else if (godId === 'demeter') {
+    // Wheat crown
+    const crown = mk(new THREE.BoxGeometry(0.54, 0.06, 0.54), 0x8D6E63);
+    crown.position.set(0, 1.82, 0); group.add(crown);
+    for (let i = 0; i < 4; i++) {
+      const wheat = mk(new THREE.BoxGeometry(0.04, 0.22, 0.04), 0xFFD54F);
+      const a = (i / 4) * Math.PI * 2;
+      wheat.position.set(Math.cos(a)*0.22, 1.98, Math.sin(a)*0.22);
+      wheat.rotation.z = Math.cos(a) * 0.3;
+      group.add(wheat);
+    }
+  } else if (godId === 'hera') {
+    // Royal tiara
+    const tiara = mk(new THREE.BoxGeometry(0.54, 0.08, 0.54), 0xFFD700);
+    tiara.position.set(0, 1.84, 0); group.add(tiara);
+    const topGem = mk(new THREE.BoxGeometry(0.10, 0.14, 0.10), 0xE040FB);
+    topGem.position.set(0, 1.96, 0.18); group.add(topGem);
+    const sideL = mk(new THREE.BoxGeometry(0.06, 0.10, 0.06), 0xCE93D8);
+    sideL.position.set(0.20, 1.92, 0.10); group.add(sideL);
+    const sideR = mk(new THREE.BoxGeometry(0.06, 0.10, 0.06), 0xCE93D8);
+    sideR.position.set(-0.20, 1.92, 0.10); group.add(sideR);
+  } else if (godId === 'hecate') {
+    // Mystic hood with moon emblem
+    const hood = mk(new THREE.BoxGeometry(0.56, 0.20, 0.56), 0x1A0033);
+    hood.position.set(0, 1.76, 0); group.add(hood);
+    const moon = mk(new THREE.BoxGeometry(0.10, 0.10, 0.06), 0xCFD8DC);
+    moon.position.set(0, 1.88, 0.28); group.add(moon);
+    const star1 = mk(new THREE.BoxGeometry(0.05, 0.05, 0.04), 0xFFFF00);
+    star1.position.set(0.16, 1.90, 0.26); group.add(star1);
+    const star2 = mk(new THREE.BoxGeometry(0.05, 0.05, 0.04), 0xFFFF00);
+    star2.position.set(-0.16, 1.90, 0.26); group.add(star2);
+  }
 
   // ── NAME LABEL ────────────────────────────────────────────
   const lblCanvas = document.createElement('canvas');
@@ -4514,9 +5955,9 @@ function createGodBody(god) {
   label.scale.set(1.9, 0.36, 1);
   label.position.y = 2.2;
   group.add(label);
-  group.userData.labelSprite = label; // reference so we can hide it in first-person
+  group.userData.labelSprite = label;
 
-  // Animation targets — stored so updatePlayer() can swing them each frame
+  // Animation targets
   group.userData.rArm  = rArm;
   group.userData.lArm  = lArm;
   group.userData.rLeg  = rLeg;
@@ -4524,6 +5965,7 @@ function createGodBody(god) {
   group.userData.torso = torso;
 
   group.visible = false; // hidden until a mode sets it visible
+  enableShadows(group);
   scene.add(group);
   playerBody = group;
 }
@@ -4536,11 +5978,18 @@ function createFPHands(god) {
   const style = GOD_STYLES[god.id] || { skin:'#F5CBA7', pants:'#1A237E' };
   const cloth = god.color || '#4488ff';
 
+  // If armor is equipped, use armor color for sleeve/gauntlet
+  const _FP_ARMOR = {
+    stone:'#808080', gold:'#DAA520', diamond:'#4FC3F7',
+    royal:'#6A1B9A', dark:'#212121', angel:'#F5F5F5'
+  };
+  const armorCol = playerCostume.armor ? (_FP_ARMOR[playerCostume.armor] || null) : null;
+
   // Materials rendered on top of everything (depthTest off)
   const mkMat = color => new THREE.MeshLambertMaterial({ color, depthTest: false, depthWrite: false });
-  const skinMat   = mkMat(style.skin);
-  const sleeveMat = mkMat(cloth);
-  const darkSkin  = mkMat(_hexDarken(style.skin, 0.80));
+  const skinMat   = armorCol ? mkMat(armorCol) : mkMat(style.skin);
+  const sleeveMat = armorCol ? mkMat(_hexDarken(armorCol, 0.8)) : mkMat(cloth);
+  const darkSkin  = armorCol ? mkMat(_hexDarken(armorCol, 0.6)) : mkMat(_hexDarken(style.skin, 0.80));
 
   const group = new THREE.Group();
 
@@ -4580,8 +6029,8 @@ function createFPHands(god) {
   group.add(rArm, lArm);
 
   // Ensure the whole group renders over world geometry
-  group.renderOrder = 999;
-  group.traverse(o => { if (o.isMesh) o.renderOrder = 999; });
+  group.renderOrder = 9999;
+  group.traverse(o => { if (o.isMesh) { o.renderOrder = 9999; o.material.depthTest = false; o.material.depthWrite = false; } });
 
   camera.add(group);
   fpHands = group;
@@ -4754,7 +6203,7 @@ function updateFPWeapon() {
   }
 
   wg.traverse(o => {
-    if (o.isMesh) { o.renderOrder = 999; o.material.depthTest = false; o.material.depthWrite = false; }
+    if (o.isMesh) { o.renderOrder = 9999; o.material.depthTest = false; o.material.depthWrite = false; }
   });
   rArm.add(wg);
 }
@@ -4880,6 +6329,7 @@ function addRemotePlayer({ playerId, username, color, pos }) {
   if (remotePlayers.has(playerId)) return;
   const group = createRemotePlayerMesh(username, color);
   group.position.set(pos.x, pos.y, pos.z);
+  enableShadows(group, { cast: false });
   scene.add(group);
   remotePlayers.set(playerId, {
     group,
@@ -5008,8 +6458,9 @@ function wsBroadcastMove() {
 // ── World load / save ──────────────────────────────────
 function serializeWorld() {
   const blocks = [];
-  world.forEach(mesh => {
-    blocks.push({ x: mesh.userData.x, y: mesh.userData.y, z: mesh.userData.z, id: mesh.userData.id });
+  // world values are now plain info objects {id,x,y,z,instanceId}
+  world.forEach(info => {
+    blocks.push({ x: info.x, y: info.y, z: info.z, id: info.id });
   });
   // שמור דלתות וחלונות (interactWorld) — רק ה-anchor של כל דלת, עם כיוון
   const savedAnchors = new Set();
@@ -5031,14 +6482,35 @@ function loadWorldBlocks(blocks) {
 }
 
 function _clearWorld() {
-  world.forEach(mesh => scene.remove(mesh));
+  // Reset every InstancedMesh: drop count to 0 and clear slot-to-key registry.
+  // We keep the imeshes themselves so capacity doesn't have to re-grow from scratch.
+  for (const id in imeshByID) {
+    const im = imeshByID[id];
+    im.count = 0;
+    im.userData.slotKey.length = 0;
+    im.userData.slotKey.length = im.userData.capacity;
+    im.instanceMatrix.needsUpdate = true;
+  }
   world.clear();
-  animBlocks.clear(); // keep in sync with world Map
+  animBlocks.clear();
   creatures.forEach(c => scene.remove(c.group));
   creatures.length = 0;
   interactWorld.forEach(m => scene.remove(m));
   interactWorld.clear();
   animInteract.clear();
+  // Clear LOD tiles (they use creative-mode terrain, wrong for game mode)
+  farTiles.forEach(m => scene.remove(m));
+  farTiles.clear();
+  // Clear game mode entities
+  if (typeof villagers !== 'undefined') {
+    villagers.forEach(v => scene.remove(v.group));
+    villagers.length = 0;
+  }
+  if (typeof gmMonsters !== 'undefined') gmMonsters.length = 0;
+  if (typeof acidProjectiles !== 'undefined') {
+    acidProjectiles.forEach(a => { scene.remove(a.mesh); scene.remove(a.trail); });
+    acidProjectiles.length = 0;
+  }
 }
 
 function _spawnCreatureBlocks(creatureSpawns) {
@@ -5143,6 +6615,1187 @@ function startAutoSave() {
   autoSaveTimer = setInterval(() => saveWorldNow(true), 15000); // every 15 s (silent)
 }
 
+// ═══════════════════════════════════════════════════════════════
+// ── GAME MODE SYSTEM ──────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+let currentGameMode = 'canvas'; // 'canvas' or 'game'
+let gmState = null; // game mode state
+
+function showModeSelect() {
+  ['weaponSelectScreen','godSelectScreen'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  document.getElementById('modeSelectScreen').style.display = 'flex';
+}
+
+// ── Game World Generator ─────────────────────────────────────
+function genGameWorld(sz) {
+  _clearWorld();
+  worldSZ = sz;
+  const mid = Math.floor(sz / 2);
+  const SEA = 5;
+
+  // Helper: distance from point
+  function dist(x, z, cx, cz) { return Math.sqrt((x-cx)**2 + (z-cz)**2); }
+
+  // ── Define landscape zones (relative to center) ──
+  // Village at center, surrounded by varied terrain
+  const villageR   = 12;   // village radius
+  const riverX     = mid + 18; // river runs north-south at this X
+  const lakeCenter = { x: mid - 20, z: mid + 15 };
+  const lakeR      = 10;
+  const mtCenter   = { x: mid + 22, z: mid - 18 };
+  const mtR        = 14;
+  const forestCenter = { x: mid - 22, z: mid - 20 };
+  const forestR    = 12;
+  const wheatCenter = { x: mid + 10, z: mid + 20 };
+  const wheatR     = 10;
+  const desertCenter = { x: mid - 22, z: mid + 30 };
+  const desertR    = 12;
+
+  for (let x = 0; x < sz; x++) {
+    for (let z = 0; z < sz; z++) {
+      const dVillage = dist(x, z, mid, mid);
+      const dLake    = dist(x, z, lakeCenter.x, lakeCenter.z);
+      const dMt      = dist(x, z, mtCenter.x, mtCenter.z);
+      const dForest  = dist(x, z, forestCenter.x, forestCenter.z);
+      const dWheat   = dist(x, z, wheatCenter.x, wheatCenter.z);
+      const dDesert  = dist(x, z, desertCenter.x, desertCenter.z);
+      const dRiver   = Math.abs(x - riverX);
+      // River meander
+      const riverMeander = Math.sin(z * 0.15) * 3 + Math.sin(z * 0.07) * 2;
+      const dRiverActual = Math.abs(x - (riverX + riverMeander));
+
+      let top = 7; // base height
+      let surface = 'grass';
+      let sub = 'dirt';
+      let isWater = false;
+      let isRiver = false;
+
+      // ── Mountains (snowy peaks) ──
+      if (dMt < mtR) {
+        const falloff = 1 - dMt / mtR;
+        const peak = falloff * falloff * 18 + 7;
+        const noise = Math.sin(x*0.3)*Math.cos(z*0.25)*2 + Math.sin(x*0.7+z*0.5)*1;
+        top = Math.round(peak + noise);
+        if (top > 18) { surface = 'snow'; sub = 'stone'; }
+        else if (top > 12) { surface = 'stone'; sub = 'stone'; }
+        else { surface = 'grass'; sub = 'dirt'; }
+      }
+      // ── Lake ──
+      else if (dLake < lakeR) {
+        const edge = lakeR - dLake;
+        if (edge > 2) {
+          top = 4; isWater = true;
+        } else {
+          top = 5 + Math.round(edge);
+          surface = 'sand'; sub = 'sand';
+        }
+      }
+      // ── River channel ──
+      else if (dRiverActual < 3) {
+        if (dRiverActual < 2) {
+          top = 4; isRiver = true;
+        } else {
+          top = 6; surface = 'sand'; sub = 'sand';
+        }
+      }
+      // ── Desert ──
+      else if (dDesert < desertR) {
+        const noise = Math.sin(x*0.2)*Math.cos(z*0.18)*1.5;
+        top = Math.round(7 + noise);
+        surface = 'sand'; sub = 'sand';
+      }
+      // ── Forest ──
+      else if (dForest < forestR) {
+        const noise = Math.sin(x*0.15)*Math.cos(z*0.12)*2;
+        top = Math.round(8 + noise);
+        surface = 'grass'; sub = 'dirt';
+      }
+      // ── Wheat fields ──
+      else if (dWheat < wheatR) {
+        top = 7;
+        surface = 'grass'; sub = 'dirt';
+      }
+      // ── Village area (flat) ──
+      else if (dVillage < villageR + 5) {
+        top = 7;
+        if (dVillage < villageR) {
+          // Village paths (cross pattern)
+          const relX = x - mid, relZ = z - mid;
+          if ((Math.abs(relX) < 2 || Math.abs(relZ) < 2) && dVillage > 3) {
+            surface = 'stone'; sub = 'dirt';
+          }
+        }
+      }
+      // ── General rolling terrain ──
+      else {
+        const noise = Math.sin(x*0.06)*Math.cos(z*0.055)*3 + Math.sin(x*0.12+1)*Math.cos(z*0.11)*1.5;
+        top = Math.round(7 + noise);
+      }
+
+      // Place blocks
+      setBlock(x, top, z, surface);
+      setBlock(x, top-1, z, sub);
+      setBlock(x, top-2, z, sub);
+      for (let y = top - 3; y >= 0; y--) setBlock(x, y, z, 'stone');
+
+      // Water fill for lake and river
+      if (isWater || isRiver) {
+        for (let wl = top + 1; wl <= SEA; wl++) setBlock(x, wl, z, 'water');
+      }
+
+      // ── Trees in forest (only if far enough from village so leaves don't overhang) ──
+      if (dForest < forestR - 2 && dVillage > villageR + 6 && Math.random() < 0.1 && top > 5) {
+        const th = 4 + Math.floor(Math.random() * 3);
+        for (let ty = top+1; ty <= top+th; ty++) setBlock(x, ty, z, 'wood');
+        for (let dx=-2; dx<=2; dx++)
+          for (let dz=-2; dz<=2; dz++) {
+            // Don't place leaves over village area
+            const lx = x+dx, lz = z+dz;
+            const dLV = dist(lx, lz, mid, mid);
+            if (dLV < villageR + 3) continue;
+            for (let dy=top+Math.ceil(th*0.5); dy<=top+th+2; dy++)
+              if (dx*dx+dz*dz <= 5 && !hasBlock(lx, dy, lz))
+                setBlock(lx, dy, lz, 'leaves');
+          }
+      }
+
+      // ── Wheat crops ──
+      if (dWheat < wheatR - 2 && top === 7 && Math.random() < 0.7) {
+        // Use gold blocks as wheat (yellow)
+        if ((x + z) % 2 === 0) setBlock(x, top+1, z, 'gold');
+      }
+
+      // ── Scattered trees on plains ──
+      if (dVillage > villageR + 7 && dForest > forestR && dLake > lakeR &&
+          dMt > mtR && dDesert > desertR && dWheat > wheatR && dRiverActual > 4 &&
+          Math.random() < 0.015 && top > 5) {
+        const th = 3 + Math.floor(Math.random() * 2);
+        for (let ty = top+1; ty <= top+th; ty++) setBlock(x, ty, z, 'wood');
+        for (let dx=-2; dx<=2; dx++)
+          for (let dz=-2; dz<=2; dz++) {
+            const lx = x+dx, lz = z+dz;
+            const dLV = dist(lx, lz, mid, mid);
+            if (dLV < villageR + 3) continue;
+            for (let dy=top+Math.ceil(th*0.5); dy<=top+th+1; dy++)
+              if (dx*dx+dz*dz <= 4 && !hasBlock(lx, dy, lz))
+                setBlock(lx, dy, lz, 'leaves');
+          }
+      }
+    }
+  }
+
+  // ── Clear any stray leaves/wood above village airspace ──
+  for (let x = mid - villageR - 3; x <= mid + villageR + 3; x++) {
+    for (let z = mid - villageR - 3; z <= mid + villageR + 3; z++) {
+      const dV = dist(x, z, mid, mid);
+      if (dV < villageR + 3) {
+        // Remove leaves above village height (keep buildings below y=15)
+        for (let y = 15; y <= 25; y++) {
+          const k = wk(x, y, z);
+          const block = world.get(k);
+          if (block === 'leaves' || block === 'wood') {
+            setBlock(x, y, z, null);
+          }
+        }
+      }
+    }
+  }
+
+  // ── Build village structures ──
+  buildGameVillage(mid, 7, mid);
+  _initVillageData(mid, mid);
+}
+
+// ── Village builder ──────────────────────────────────────────
+function buildGameVillage(cx, baseY, cz) {
+  const by = baseY;
+
+  // ── Village well at center ──
+  for (let dx = -1; dx <= 1; dx++)
+    for (let dz = -1; dz <= 1; dz++) {
+      setBlock(cx+dx, by+1, cz+dz, 'stone');
+      if (dx === 0 && dz === 0) {
+        setBlock(cx, by+1, cz, 'water');
+      } else {
+        setBlock(cx+dx, by+2, cz+dz, 'stone');
+      }
+    }
+  // Well posts
+  setBlock(cx-1, by+3, cz-1, 'wood'); setBlock(cx+1, by+3, cz-1, 'wood');
+  setBlock(cx-1, by+3, cz+1, 'wood'); setBlock(cx+1, by+3, cz+1, 'wood');
+  for (let dx = -1; dx <= 1; dx++)
+    for (let dz = -1; dz <= 1; dz++)
+      setBlock(cx+dx, by+4, cz+dz, 'wood');
+
+  // ── Houses around the center ──
+  const housePositions = [
+    { x: cx-7, z: cz-7 }, { x: cx+5, z: cz-7 },
+    { x: cx-7, z: cz+5 }, { x: cx+5, z: cz+5 },
+    { x: cx-8, z: cz-1 }, { x: cx+6, z: cz-1 },
+    { x: cx-2, z: cz-9 }, { x: cx-2, z: cz+7 },
+  ];
+  housePositions.forEach(h => buildVillageHouse(h.x, by, h.z));
+
+  // ── Market stalls ──
+  for (let i = 0; i < 3; i++) {
+    const sx = cx + 3, sz = cz - 4 + i * 4;
+    // Table
+    setBlock(sx, by+1, sz, 'wood');
+    setBlock(sx+1, by+1, sz, 'wood');
+    // Awning
+    for (let dx = 0; dx <= 1; dx++)
+      for (let dz = -1; dz <= 1; dz++)
+        setBlock(sx+dx, by+3, sz+dz, 'brick');
+    // Posts
+    setBlock(sx, by+2, sz-1, 'wood'); setBlock(sx+1, by+2, sz+1, 'wood');
+  }
+
+  // ── Torches / lanterns around village ──
+  const torchSpots = [
+    {x:cx-3,z:cz-3},{x:cx+3,z:cz-3},{x:cx-3,z:cz+3},{x:cx+3,z:cz+3},
+    {x:cx,z:cz-6},{x:cx,z:cz+6},{x:cx-6,z:cz},{x:cx+6,z:cz},
+  ];
+  torchSpots.forEach(t => {
+    setBlock(t.x, by+1, t.z, 'wood');
+    setBlock(t.x, by+2, t.z, 'gold');
+  });
+}
+
+function buildVillageHouse(hx, by, hz) {
+  const W = 5, D = 5, H = 4;
+  // Floor
+  for (let dx = 0; dx < W; dx++)
+    for (let dz = 0; dz < D; dz++)
+      setBlock(hx+dx, by, hz+dz, 'wood');
+  // Walls
+  for (let y = 1; y <= H; y++) {
+    for (let dx = 0; dx < W; dx++) {
+      setBlock(hx+dx, by+y, hz, 'brick');
+      setBlock(hx+dx, by+y, hz+D-1, 'brick');
+    }
+    for (let dz = 0; dz < D; dz++) {
+      setBlock(hx, by+y, hz+dz, 'brick');
+      setBlock(hx+W-1, by+y, hz+dz, 'brick');
+    }
+  }
+  // Door (remove wall blocks)
+  setBlock(hx+2, by+1, hz, null);
+  setBlock(hx+2, by+2, hz, null);
+  // Windows
+  setBlock(hx+1, by+2, hz, 'glass');
+  setBlock(hx+3, by+2, hz, 'glass');
+  setBlock(hx, by+2, hz+2, 'glass');
+  setBlock(hx+W-1, by+2, hz+2, 'glass');
+  // Roof (pyramid)
+  for (let r = 0; r <= 2; r++) {
+    for (let dx = r; dx < W-r; dx++)
+      for (let dz = r; dz < D-r; dz++)
+        setBlock(hx+dx, by+H+1+r, hz+dz, 'wood');
+  }
+}
+
+// ── Villager system ──────────────────────────────────────────
+const villagers = [];
+const VILLAGER_COLORS = [0xDEB887, 0xD2691E, 0xF4A460, 0xFFDEAD, 0xCD853F, 0xA0522D];
+let _villageData = null; // stores house/market/well positions for AI
+
+function _initVillageData(cx, cz) {
+  const by = 7;
+  _villageData = {
+    cx, cz, baseY: by,
+    houses: [
+      { x: cx-7, z: cz-7 }, { x: cx+5, z: cz-7 },
+      { x: cx-7, z: cz+5 }, { x: cx+5, z: cz+5 },
+      { x: cx-8, z: cz-1 }, { x: cx+6, z: cz-1 },
+      { x: cx-2, z: cz-9 }, { x: cx-2, z: cz+7 },
+    ].map(h => ({
+      // door is at hx+2, by+1, hz (front wall)
+      doorX: h.x + 2.5, doorZ: h.z - 0.5,
+      insideX: h.x + 2.5, insideZ: h.z + 2.5,
+      ...h
+    })),
+    market: [
+      { x: cx + 3.5, z: cz - 4.5 },
+      { x: cx + 3.5, z: cz - 0.5 },
+      { x: cx + 3.5, z: cz + 3.5 },
+    ],
+    well: { x: cx + 0.5, z: cz + 0.5 },
+    // walkable paths (cross pattern + around houses)
+    isWalkable: (wx, wz) => {
+      const dx = wx - cx, dz = wz - cz;
+      // village radius
+      if (Math.abs(dx) > 13 || Math.abs(dz) > 13) return false;
+      return true;
+    }
+  };
+}
+
+// ── Ground height that stays on village base level (y=7) ──
+function _villagerGroundY(wx, wz) {
+  const bx = Math.floor(wx), bz = Math.floor(wz);
+  const baseY = _villageData ? _villageData.baseY : 7;
+  // Only walk on ground level (baseY) or one above (doorstep)
+  // Never climb higher than baseY+1 to avoid rooftops
+  for (let y = baseY + 1; y >= baseY; y--) {
+    if (hasBlock(bx, y, bz)) return y + 1;
+  }
+  // fallback: just use base terrain
+  for (let y = baseY; y >= 0; y--) {
+    if (hasBlock(bx, y, bz)) return y + 1;
+  }
+  return baseY + 1;
+}
+
+// ── Check if position is blocked (wall/solid above ground) ──
+function _villagerBlocked(wx, wz) {
+  const bx = Math.floor(wx), bz = Math.floor(wz);
+  const baseY = _villageData ? _villageData.baseY : 7;
+  // Check if there's a solid block at walking height (head/body level)
+  if (hasBlock(bx, baseY + 1, bz) || hasBlock(bx, baseY + 2, bz)) {
+    // Allow doors (check if it's an interactive door block)
+    const k1 = wk(bx, baseY + 1, bz), k2 = wk(bx, baseY + 2, bz);
+    const ib1 = interactWorld.get(k1), ib2 = interactWorld.get(k2);
+    if (ib1 || ib2) return false; // doors are passable
+    return true;
+  }
+  return false;
+}
+
+function spawnVillager(x, y, z) {
+  const group = new THREE.Group();
+  const skinColor = VILLAGER_COLORS[Math.floor(Math.random() * VILLAGER_COLORS.length)];
+  const clothColors = [0x8B4513, 0x228B22, 0x4169E1, 0x8B0000, 0x2F4F4F, 0x9932CC];
+  const clothColor = clothColors[Math.floor(Math.random() * clothColors.length)];
+
+  // Body
+  const bodyMat = new THREE.MeshLambertMaterial({ color: clothColor });
+  bodyMat._origColor = clothColor;
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.35), bodyMat);
+  body.position.y = 0.65;
+  group.add(body);
+
+  // Head
+  const headMat = new THREE.MeshLambertMaterial({ color: skinColor });
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.35), headMat);
+  head.position.y = 1.2;
+  group.add(head);
+
+  // Eyes
+  const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+  const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.02), eyeMat);
+  eyeL.position.set(-0.08, 1.25, 0.18);
+  group.add(eyeL);
+  const eyeR = eyeL.clone();
+  eyeR.position.x = 0.08;
+  group.add(eyeR);
+
+  // Arms
+  const armMat = new THREE.MeshLambertMaterial({ color: clothColor });
+  const armL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.5, 0.18), armMat);
+  armL.position.set(-0.35, 0.6, 0);
+  group.add(armL);
+  const armR = armL.clone();
+  armR.position.x = 0.35;
+  group.add(armR);
+
+  // Legs
+  const legMat = new THREE.MeshLambertMaterial({ color: 0x3C280D });
+  const legL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.6, 0.2), legMat);
+  legL.position.set(-0.12, 0.15, 0);
+  group.add(legL);
+  const legR = legL.clone();
+  legR.position.x = 0.12;
+  group.add(legR);
+
+  // Exclamation mark for when in danger (hidden by default)
+  const excl = new THREE.Mesh(
+    new THREE.BoxGeometry(0.08, 0.2, 0.08),
+    new THREE.MeshBasicMaterial({ color: 0xff0000 })
+  );
+  excl.position.set(0, 1.6, 0);
+  excl.visible = false;
+  excl.name = 'exclMark';
+  group.add(excl);
+
+  group.position.set(x + 0.5, y, z + 0.5);
+  // Villagers have many sub-meshes (body, head, eyes, arms, legs, excl marker);
+  // receive-only keeps shadow pass cheap in game mode.
+  enableShadows(group, { cast: false });
+  scene.add(group);
+
+  // Assign random home house
+  const houseIdx = Math.floor(Math.random() * 8);
+  const roles = ['farmer', 'trader', 'guard', 'worker'];
+  const role = roles[Math.floor(Math.random() * roles.length)];
+
+  const v = {
+    group, baseY: y,
+    vx: 0, vz: 0,
+    state: 'idle', stateTimer: 2 + Math.random() * 3,
+    alive: true, hp: 5,
+    legL, legR, armL, armR, body,
+    homeHouse: houseIdx, role,
+    targetX: null, targetZ: null, // current navigation target
+    speed: 1.0 + Math.random() * 0.5,
+    fleeTimer: 0, // time remaining in flee state
+    fleeFromX: 0, fleeFromZ: 0,
+    savedByGod: false, // set when god kills monster threatening them
+    gratitudeTimer: 0,
+  };
+  villagers.push(v);
+  return v;
+}
+
+function _pickVillagerTarget(v) {
+  if (!_villageData) return;
+  const vd = _villageData;
+  const r = Math.random();
+
+  if (v.role === 'trader') {
+    // Traders go between market stalls
+    if (r < 0.5) {
+      const stall = vd.market[Math.floor(Math.random() * vd.market.length)];
+      v.targetX = stall.x; v.targetZ = stall.z;
+    } else if (r < 0.8) {
+      // Go to well
+      v.targetX = vd.well.x + (Math.random()-0.5)*2;
+      v.targetZ = vd.well.z + (Math.random()-0.5)*2;
+    } else {
+      // Go home
+      const home = vd.houses[v.homeHouse % vd.houses.length];
+      v.targetX = home.doorX; v.targetZ = home.doorZ;
+    }
+  } else if (v.role === 'farmer') {
+    // Farmers wander near fields or go home
+    if (r < 0.4) {
+      // Walk near wheat fields area
+      v.targetX = vd.cx + 10 + (Math.random()-0.5)*8;
+      v.targetZ = vd.cz + 20 + (Math.random()-0.5)*8;
+    } else if (r < 0.7) {
+      // Go to well
+      v.targetX = vd.well.x + (Math.random()-0.5)*3;
+      v.targetZ = vd.well.z + (Math.random()-0.5)*3;
+    } else {
+      const home = vd.houses[v.homeHouse % vd.houses.length];
+      v.targetX = home.doorX; v.targetZ = home.doorZ;
+    }
+  } else if (v.role === 'guard') {
+    // Guards patrol the village perimeter
+    const angle = Math.random() * Math.PI * 2;
+    const patrolR = 8 + Math.random() * 4;
+    v.targetX = vd.cx + Math.cos(angle) * patrolR;
+    v.targetZ = vd.cz + Math.sin(angle) * patrolR;
+  } else {
+    // Workers visit houses, well, market
+    if (r < 0.3) {
+      const home = vd.houses[Math.floor(Math.random() * vd.houses.length)];
+      v.targetX = home.doorX; v.targetZ = home.doorZ;
+    } else if (r < 0.6) {
+      v.targetX = vd.well.x + (Math.random()-0.5)*3;
+      v.targetZ = vd.well.z + (Math.random()-0.5)*3;
+    } else {
+      const stall = vd.market[Math.floor(Math.random() * vd.market.length)];
+      v.targetX = stall.x + (Math.random()-0.5)*2;
+      v.targetZ = stall.z + (Math.random()-0.5)*2;
+    }
+  }
+}
+
+function _nearestMonsterDist(vx, vz) {
+  let minD = Infinity;
+  let mx = 0, mz = 0;
+  gmMonsters.forEach(m => {
+    if (m.hp <= 0) return;
+    const dx = m.group.position.x - vx;
+    const dz = m.group.position.z - vz;
+    const d = Math.sqrt(dx*dx + dz*dz);
+    if (d < minD) { minD = d; mx = m.group.position.x; mz = m.group.position.z; }
+  });
+  return { dist: minD, mx, mz };
+}
+
+function updateVillagers(dt) {
+  villagers.forEach(v => {
+    if (!v.alive) return;
+
+    const px = v.group.position.x, pz = v.group.position.z;
+
+    // ── Check for nearby monsters → flee ──
+    if (gmMonsters.length > 0) {
+      const { dist: monsterDist, mx, mz } = _nearestMonsterDist(px, pz);
+      if (monsterDist < 10) {
+        // Panic! Flee away from monster
+        v.state = 'flee';
+        v.fleeTimer = 1.5 + Math.random();
+        v.fleeFromX = mx; v.fleeFromZ = mz;
+        // Show exclamation
+        const excl = v.group.getObjectByName('exclMark');
+        if (excl) excl.visible = true;
+
+        // Flee direction: away from monster
+        const fdx = px - mx, fdz = pz - mz;
+        const fd = Math.sqrt(fdx*fdx + fdz*fdz) || 1;
+        v.vx = (fdx / fd) * v.speed * 2.5;
+        v.vz = (fdz / fd) * v.speed * 2.5;
+
+        // If very close, try to hide inside nearest house
+        if (monsterDist < 5 && _villageData) {
+          let nearestHouse = null, nearDist = Infinity;
+          _villageData.houses.forEach(h => {
+            const hd = Math.sqrt((h.insideX - px)**2 + (h.insideZ - pz)**2);
+            if (hd < nearDist) { nearDist = hd; nearestHouse = h; }
+          });
+          if (nearestHouse) {
+            v.targetX = nearestHouse.doorX;
+            v.targetZ = nearestHouse.doorZ;
+          }
+        }
+      } else {
+        // No danger nearby
+        const excl = v.group.getObjectByName('exclMark');
+        if (excl) excl.visible = false;
+        if (v.state === 'flee') {
+          v.fleeTimer -= dt;
+          if (v.fleeTimer <= 0) {
+            v.state = 'idle';
+            v.stateTimer = 1;
+          }
+        }
+      }
+    }
+
+    // ── Gratitude animation (bob after being saved) ──
+    if (v.gratitudeTimer > 0) {
+      v.gratitudeTimer -= dt;
+      v.group.position.y += Math.sin(performance.now() * 0.01) * 0.01;
+    }
+
+    // ── Normal state machine (when not fleeing) ──
+    if (v.state !== 'flee') {
+      v.stateTimer -= dt;
+      if (v.stateTimer <= 0) {
+        const r = Math.random();
+        if (r < 0.4) {
+          v.state = 'walk_to';
+          v.stateTimer = 4 + Math.random() * 6;
+          _pickVillagerTarget(v);
+        } else if (r < 0.7) {
+          v.state = 'idle';
+          v.stateTimer = 3 + Math.random() * 5;
+          v.vx = 0; v.vz = 0;
+        } else {
+          // Go home
+          v.state = 'walk_to';
+          v.stateTimer = 3 + Math.random() * 3;
+          if (_villageData) {
+            const home = _villageData.houses[v.homeHouse % _villageData.houses.length];
+            v.targetX = home.doorX; v.targetZ = home.doorZ;
+          }
+        }
+      }
+    }
+
+    // ── Movement ──
+    const isMoving = v.state === 'walk_to' || v.state === 'flee';
+    if (isMoving) {
+      let moveSpeed = v.state === 'flee' ? v.speed * 2.5 : v.speed;
+
+      if (v.state === 'walk_to' && v.targetX !== null) {
+        const dx = v.targetX - px, dz = v.targetZ - pz;
+        const d = Math.sqrt(dx*dx + dz*dz);
+        if (d < 0.5) {
+          // Arrived at target
+          v.state = 'idle';
+          v.stateTimer = 2 + Math.random() * 4;
+          v.vx = 0; v.vz = 0;
+          v.targetX = null; v.targetZ = null;
+        } else {
+          v.vx = (dx / d) * moveSpeed;
+          v.vz = (dz / d) * moveSpeed;
+        }
+      }
+
+      let nx = px + v.vx * dt;
+      let nz = pz + v.vz * dt;
+
+      // Collision check — avoid walls
+      if (_villagerBlocked(nx, nz)) {
+        // Try to slide along walls
+        if (!_villagerBlocked(nx, pz)) { nz = pz; }
+        else if (!_villagerBlocked(px, nz)) { nx = px; }
+        else { nx = px; nz = pz; v.vx *= -0.5; v.vz *= -0.5; }
+      }
+
+      // Keep within village bounds
+      const mid = worldSZ / 2;
+      nx = Math.max(mid - 18, Math.min(mid + 18, nx));
+      nz = Math.max(mid - 18, Math.min(mid + 18, nz));
+
+      v.group.position.x = nx;
+      v.group.position.z = nz;
+
+      // Face direction
+      if (Math.abs(v.vx) > 0.1 || Math.abs(v.vz) > 0.1) {
+        const targetYaw = Math.atan2(v.vx, v.vz);
+        // Smooth rotation
+        let diff = targetYaw - v.group.rotation.y;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        v.group.rotation.y += diff * Math.min(1, dt * 8);
+      }
+
+      // Leg + arm animation
+      const t = performance.now() * 0.007;
+      const amp = v.state === 'flee' ? 0.7 : 0.5;
+      v.legL.rotation.x = Math.sin(t) * amp;
+      v.legR.rotation.x = -Math.sin(t) * amp;
+      v.armL.rotation.x = -Math.sin(t) * amp * 0.6;
+      v.armR.rotation.x = Math.sin(t) * amp * 0.6;
+    } else {
+      v.legL.rotation.x = 0;
+      v.legR.rotation.x = 0;
+      v.armL.rotation.x = 0;
+      v.armR.rotation.x = 0;
+    }
+
+    // ── Stay on ground level only (never climb roofs) ──
+    v.group.position.y = _villagerGroundY(v.group.position.x, v.group.position.z);
+  });
+}
+
+function killVillager(v) {
+  v.alive = false;
+  scene.remove(v.group);
+  // Particles
+  for (let i = 0; i < 6; i++) {
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(0.15, 0.15, 0.15),
+      new THREE.MeshLambertMaterial({ color: 0xff4444, transparent: true })
+    );
+    mesh.position.copy(v.group.position);
+    mesh.position.y += 0.5;
+    scene.add(mesh);
+    deathParticles.push({
+      mesh,
+      vel: new THREE.Vector3((Math.random()-0.5)*4, 3+Math.random()*3, (Math.random()-0.5)*4),
+      life: 1.0
+    });
+  }
+}
+
+// ── Monster system for game mode ─────────────────────────────
+const gmMonsters = [];
+const acidProjectiles = []; // hydra acid spit
+
+function spawnGMMonster(type, x, z) {
+  const def = CREATURE_DEFS.find(d => d.id === type);
+  if (!def) return;
+  const c = spawnCreature(type, new THREE.Vector3(x, 10, z), true);
+  if (c) {
+    // Scale monsters 5x larger in game mode — imposing and terrifying
+    const monsterScale = 5.0;
+    c.group.scale.set(monsterScale, monsterScale, monsterScale);
+    c._gmScale = monsterScale;
+    c._isGMMonster = true;
+    c._gmTarget = null;
+    c._gmAttackTimer = 0;
+    c._gmSpitTimer = 0; // for hydra acid
+    c._gmTargetVillager = null;
+    c._gmChaseTimer = 0;
+    gmMonsters.push(c);
+  }
+  return c;
+}
+
+// ── Game mode state & logic ──────────────────────────────────
+const GM_STAGES = [
+  {
+    name: 'הגן על הכפר',
+    waves: [
+      { enemies: [{type:'chimera', count:3}], delay: 5 },
+      { enemies: [{type:'cerberus', count:4}], delay: 30 },
+      { enemies: [{type:'minotaur', count:3}, {type:'chimera', count:2}], delay: 60 },
+      { enemies: [{type:'cyclops', count:2}, {type:'cerberus', count:3}], delay: 90 },
+      { enemies: [{type:'dragon', count:2}, {type:'minotaur', count:3}], delay: 120 },
+    ],
+    reward: { believers: 20, power: 30 }
+  },
+  {
+    name: 'מתקפת הטיטאנים',
+    waves: [
+      { enemies: [{type:'cyclops', count:4}], delay: 5 },
+      { enemies: [{type:'cyclops2', count:3}, {type:'hydra', count:2}], delay: 40 },
+      { enemies: [{type:'dragon', count:3}, {type:'chimera', count:3}], delay: 80 },
+      { enemies: [{type:'cyclops2', count:3}, {type:'dragon', count:2}, {type:'minotaur', count:3}], delay: 120 },
+    ],
+    reward: { believers: 40, power: 50 }
+  },
+  {
+    name: 'חורבן האולימפוס',
+    waves: [
+      { enemies: [{type:'dragon', count:4}, {type:'hydra', count:3}], delay: 5 },
+      { enemies: [{type:'cyclops2', count:4}, {type:'chimera', count:4}], delay: 50 },
+      { enemies: [{type:'dragon', count:5}, {type:'cyclops2', count:3}, {type:'minotaur', count:4}], delay: 100 },
+    ],
+    reward: { believers: 60, power: 80 }
+  }
+];
+
+function initGameModeState() {
+  return {
+    power: 100,
+    maxPower: 100,
+    believers: 0,
+    stage: 0,
+    wave: 0,
+    waveTimer: 0,
+    waveActive: false,
+    waveSpawned: false,
+    stageComplete: false,
+    gameOver: false,
+    gameWon: false,
+    monsterAttackInterval: 2.5,
+    totalKills: 0,
+  };
+}
+
+function updateGameModeHUD() {
+  if (!gmState) return;
+  const pf = document.getElementById('gmPowerFill');
+  const pv = document.getElementById('gmPowerVal');
+  const bv = document.getElementById('gmBelieversVal');
+  const st = document.getElementById('gmStageText');
+  const wt = document.getElementById('gmWaveText');
+  const ec = document.getElementById('gmEnemyCount');
+  const vc = document.getElementById('gmVillagerVal');
+
+  if (pf) pf.style.width = Math.max(0, (gmState.power / gmState.maxPower) * 100) + '%';
+  if (pv) pv.textContent = Math.round(gmState.power);
+  if (bv) bv.textContent = gmState.believers;
+  if (st) {
+    const stage = GM_STAGES[gmState.stage];
+    st.textContent = stage ? `שלב ${gmState.stage+1} — ${stage.name}` : 'ניצחון!';
+  }
+  if (wt) {
+    const stage = GM_STAGES[gmState.stage];
+    const totalWaves = stage ? stage.waves.length : 0;
+    wt.textContent = `גל ${Math.min(gmState.wave+1, totalWaves)}/${totalWaves}`;
+  }
+  if (ec) ec.textContent = '👹 ' + gmMonsters.filter(m => m.hp > 0).length;
+  if (vc) vc.textContent = villagers.filter(v => v.alive).length;
+
+  // Power bar color
+  if (pf) {
+    const pct = gmState.power / gmState.maxPower;
+    if (pct > 0.5) pf.style.background = 'linear-gradient(to right, #ff8800, #ffd700)';
+    else if (pct > 0.25) pf.style.background = 'linear-gradient(to right, #ff6600, #ff9900)';
+    else pf.style.background = 'linear-gradient(to right, #cc2222, #ff4444)';
+  }
+}
+
+function updateGameMode(dt) {
+  if (!gmState || gmState.gameOver || gmState.gameWon) return;
+
+  const stage = GM_STAGES[gmState.stage];
+  if (!stage) { // All stages complete
+    gmState.gameWon = true;
+    showInfo('🏆 ניצחון! הוכחת שאתה אל אמיתי! 🏆', '#ffd700', 10000);
+    return;
+  }
+
+  updateVillagers(dt);
+
+  // ── Wave timer ──
+  gmState.waveTimer += dt;
+  const currentWave = stage.waves[gmState.wave];
+  if (currentWave && !gmState.waveSpawned && gmState.waveTimer >= currentWave.delay) {
+    // Spawn wave
+    gmState.waveSpawned = true;
+    gmState.waveActive = true;
+    const mid = worldSZ / 2;
+    showInfo(`⚠️ גל ${gmState.wave+1} מתקרב!`, '#ff4444', 3000);
+    playTone(200, 0.5, 'sawtooth');
+
+    currentWave.enemies.forEach(eg => {
+      for (let i = 0; i < eg.count; i++) {
+        // Spawn from edges
+        const side = Math.floor(Math.random() * 4);
+        let sx, sz;
+        if (side === 0) { sx = 2 + Math.random()*5; sz = Math.random() * worldSZ; }
+        else if (side === 1) { sx = worldSZ - 7 + Math.random()*5; sz = Math.random() * worldSZ; }
+        else if (side === 2) { sx = Math.random() * worldSZ; sz = 2 + Math.random()*5; }
+        else { sx = Math.random() * worldSZ; sz = worldSZ - 7 + Math.random()*5; }
+        spawnGMMonster(eg.type, sx, sz);
+      }
+    });
+  }
+
+  // ── Monster AI: move toward village, chase villagers, attack ──
+  const mid = worldSZ / 2;
+  gmMonsters.forEach(m => {
+    if (m.hp <= 0) return;
+    const mx = m.group.position.x, mz = m.group.position.z;
+
+    // Find nearest alive villager
+    let closestV = null, closestVD = Infinity;
+    villagers.forEach(v => {
+      if (!v.alive) return;
+      const vd = Math.sqrt((v.group.position.x - mx)**2 + (v.group.position.z - mz)**2);
+      if (vd < closestVD) { closestVD = vd; closestV = v; }
+    });
+
+    // Decide target: chase nearest villager if close, otherwise march to village center
+    let targetX = mid, targetZ = mid;
+    if (closestV && closestVD < 15) {
+      // Chase the villager!
+      targetX = closestV.group.position.x;
+      targetZ = closestV.group.position.z;
+      m._gmTargetVillager = closestV;
+    } else {
+      m._gmTargetVillager = null;
+    }
+
+    const dx = targetX - mx, dz = targetZ - mz;
+    const d = Math.sqrt(dx*dx + dz*dz);
+    if (d > 1.5) {
+      const speed = closestV && closestVD < 15 ? 3.0 : 2.0; // faster when chasing
+      m.vx = (dx / d) * speed;
+      m.vz = (dz / d) * speed;
+      m.state = 'wander';
+      m.stateTimer = 1;
+    }
+
+    // ── Hydra acid spit ──
+    if (m.def && m.def.id === 'hydra') {
+      m._gmSpitTimer = (m._gmSpitTimer || 0) + dt;
+      if (m._gmSpitTimer >= 3.0 && closestV && closestVD < 18) {
+        m._gmSpitTimer = 0;
+        _spawnAcidSpit(mx, m.group.position.y + 2, mz,
+                       closestV.group.position.x, closestV.group.position.y + 0.5,
+                       closestV.group.position.z);
+      }
+    }
+
+    // ── Melee attacks ──
+    m._gmAttackTimer = (m._gmAttackTimer || 0) + dt;
+    if (m._gmAttackTimer >= gmState.monsterAttackInterval) {
+      // Attack villager in melee range
+      if (closestV && closestVD < 2.5) {
+        m._gmAttackTimer = 0;
+        _monsterHitVillager(closestV, m);
+      }
+      // Attack player if nearby
+      const playerDist = Math.sqrt((player.pos.x - mx)**2 + (player.pos.z - mz)**2);
+      if (playerDist < 3.5) {
+        m._gmAttackTimer = 0;
+        const dmg = 5 + Math.floor(Math.random() * 5);
+        damagePlayer(dmg);
+        gmState.power -= 2;
+      }
+    }
+  });
+
+  // ── Update acid projectiles ──
+  _updateAcidProjectiles(dt);
+
+  // ── Clean up dead monsters + believer rewards ──
+  for (let i = gmMonsters.length - 1; i >= 0; i--) {
+    const m = gmMonsters[i];
+    if (m.hp <= 0) {
+      gmState.totalKills++;
+      // Reward: more believers if monster was threatening villagers
+      const nearVillager = m._gmTargetVillager && m._gmTargetVillager.alive;
+      const baseReward = nearVillager ? 5 : 2;
+      gmState.believers += baseReward;
+      gmState.power = Math.min(gmState.maxPower, gmState.power + 3);
+      // Mark nearby villagers as "saved"
+      if (nearVillager) {
+        const tv = m._gmTargetVillager;
+        tv.savedByGod = true;
+        tv.gratitudeTimer = 2.0;
+        showInfo(`🙏 כפרי ניצל! +${baseReward} מאמינים`, '#44ff44', 2000);
+      }
+      gmMonsters.splice(i, 1);
+    }
+  }
+
+  // ── Check wave completion ──
+  if (gmState.waveSpawned && gmMonsters.filter(m => m.hp > 0).length === 0) {
+    gmState.waveSpawned = false;
+    gmState.waveActive = false;
+    gmState.wave++;
+
+    // Bonus believers for surviving villagers
+    const aliveV = villagers.filter(v => v.alive).length;
+    if (aliveV > 0) {
+      const bonus = aliveV * 2;
+      gmState.believers += bonus;
+      showInfo(`🏘️ +${bonus} מאמינים מ-${aliveV} כפריים שנשארו בחיים!`, '#88cc66', 3000);
+    }
+
+    if (gmState.wave >= stage.waves.length) {
+      gmState.believers += stage.reward.believers;
+      gmState.power = Math.min(gmState.maxPower, gmState.power + stage.reward.power);
+      gmState.stage++;
+      gmState.wave = 0;
+      gmState.waveTimer = 0;
+      if (gmState.stage < GM_STAGES.length) {
+        showInfo(`🎉 שלב ${gmState.stage} הושלם! מתכונן לשלב הבא...`, '#ffd700', 5000);
+        playTone(523, 0.4, 'sine');
+        setTimeout(() => playTone(659, 0.4, 'sine'), 200);
+        setTimeout(() => playTone(784, 0.5, 'sine'), 400);
+      }
+    } else {
+      showInfo(`✅ גל ${gmState.wave} הוכנע! הגל הבא מתקרב...`, '#44ff44', 3000);
+    }
+  }
+
+  // ── Power drain ──
+  if (villagers.filter(v => v.alive).length === 0 && gmState.waveActive) {
+    gmState.power -= dt * 5;
+  }
+
+  // ── Game over check ──
+  if (gmState.power <= 0 || playerHP <= 0) {
+    gmState.gameOver = true;
+    gmState.power = 0;
+    showInfo('💀 האל שלך נפל... הפכת לבן תמותה. המשחק נגמר!', '#ff0000', 15000);
+    playTone(100, 1, 'sawtooth');
+  }
+
+  updateGameModeHUD();
+}
+
+// ── Monster hits villager ──
+function _monsterHitVillager(v, monster) {
+  if (!v.alive) return;
+  v.hp--;
+  // Flash villager red
+  v.body.material.color.setHex(0xff0000);
+  setTimeout(() => { if (v.alive) v.body.material.color.setHex(v.body.material._origColor || 0x888888); }, 200);
+  if (!v.body.material._origColor) v.body.material._origColor = v.body.material.color.getHex();
+
+  if (v.hp <= 0) {
+    killVillager(v);
+    showInfo('💀 כפרי נהרג על ידי ' + (monster.def?.n || 'מפלצת') + '!', '#ff2222', 2500);
+    gmState.power -= 5;
+  } else {
+    playTone(300, 0.1, 'sawtooth');
+  }
+}
+
+// ── Hydra acid spit projectile ──
+function _spawnAcidSpit(fx, fy, fz, tx, ty, tz) {
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(0.3, 0.3, 0.3),
+    new THREE.MeshLambertMaterial({ color: 0x00ff00, transparent: true, opacity: 0.8 })
+  );
+  mesh.position.set(fx, fy, fz);
+  scene.add(mesh);
+
+  // Trail particles
+  const trail = new THREE.Mesh(
+    new THREE.BoxGeometry(0.15, 0.15, 0.15),
+    new THREE.MeshBasicMaterial({ color: 0x88ff00, transparent: true, opacity: 0.5 })
+  );
+  trail.position.copy(mesh.position);
+  scene.add(trail);
+
+  const dx = tx - fx, dy = ty - fy, dz = tz - fz;
+  const d = Math.sqrt(dx*dx + dy*dy + dz*dz) || 1;
+  const speed = 12;
+
+  acidProjectiles.push({
+    mesh, trail,
+    vx: (dx/d) * speed, vy: (dy/d) * speed + 3, vz: (dz/d) * speed,
+    life: 3.0, damage: 2
+  });
+
+  playTone(150, 0.15, 'sawtooth');
+}
+
+function _updateAcidProjectiles(dt) {
+  for (let i = acidProjectiles.length - 1; i >= 0; i--) {
+    const a = acidProjectiles[i];
+    a.life -= dt;
+    a.mesh.position.x += a.vx * dt;
+    a.mesh.position.y += a.vy * dt;
+    a.mesh.position.z += a.vz * dt;
+    a.vy -= 8 * dt; // gravity
+
+    // Update trail
+    a.trail.position.lerp(a.mesh.position, 0.3);
+    a.trail.material.opacity = Math.max(0, a.life * 0.3);
+
+    // Rotation for visual effect
+    a.mesh.rotation.x += dt * 5;
+    a.mesh.rotation.z += dt * 3;
+
+    if (a.life <= 0) {
+      scene.remove(a.mesh); scene.remove(a.trail);
+      acidProjectiles.splice(i, 1);
+      continue;
+    }
+
+    // Check hit on ground (splat)
+    const gx = Math.floor(a.mesh.position.x), gz = Math.floor(a.mesh.position.z);
+    const gy = Math.floor(a.mesh.position.y);
+    if (gy >= 0 && hasBlock(gx, gy, gz)) {
+      // Acid splash damage to nearby villagers
+      villagers.forEach(v => {
+        if (!v.alive) return;
+        const vd = Math.sqrt(
+          (v.group.position.x - a.mesh.position.x)**2 +
+          (v.group.position.z - a.mesh.position.z)**2
+        );
+        if (vd < 2.5) {
+          v.hp -= a.damage;
+          v.body.material.color.setHex(0x00ff00); // flash green (acid)
+          setTimeout(() => { if (v.alive) v.body.material.color.setHex(v.body.material._origColor || 0x888888); }, 300);
+          if (v.hp <= 0) {
+            killVillager(v);
+            showInfo('☠️ כפרי נפגע מחומצת הידרה!', '#00ff00', 2500);
+            gmState.power -= 5;
+          }
+        }
+      });
+
+      // Hit player?
+      const pd = Math.sqrt(
+        (player.pos.x - a.mesh.position.x)**2 +
+        (player.pos.z - a.mesh.position.z)**2
+      );
+      if (pd < 2.0) {
+        damagePlayer(8);
+        showInfo('🤢 נפגעת מחומצה!', '#00ff00', 1500);
+      }
+
+      // Spawn green splat particles
+      for (let j = 0; j < 4; j++) {
+        const p = new THREE.Mesh(
+          new THREE.BoxGeometry(0.1, 0.1, 0.1),
+          new THREE.MeshLambertMaterial({ color: 0x00ff00, transparent: true })
+        );
+        p.position.copy(a.mesh.position);
+        scene.add(p);
+        deathParticles.push({
+          mesh: p,
+          vel: new THREE.Vector3((Math.random()-0.5)*3, 2+Math.random()*2, (Math.random()-0.5)*3),
+          life: 0.8
+        });
+      }
+
+      scene.remove(a.mesh); scene.remove(a.trail);
+      acidProjectiles.splice(i, 1);
+    }
+  }
+}
+
+// ── Enter Game Mode ──────────────────────────────────────────
+async function enterGameMode() {
+  // Create a virtual world data for game mode
+  const gmWorldSZ = 64;
+  const fakeWorldData = {
+    id: 'game_mode_' + Date.now(),
+    name: '⚔️ מוד המשחק — ' + (selectedGod?.name || 'אל'),
+    size: gmWorldSZ,
+    ownerId: currentUser?.id || 'local',
+    inviteCode: '',
+    blocks: [] // will generate
+  };
+  currentWorld = fakeWorldData;
+  isOwner = false;
+  worldSZ = gmWorldSZ;
+
+  // Hide all screens
+  ['loginScreen','worldSelectScreen','createWorldScreen',
+   'godSelectScreen','weaponSelectScreen','modeSelectScreen'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+
+  // Show loading
+  document.getElementById('overlay').style.display = 'flex';
+  document.getElementById('overlayMsg').textContent = 'יוצר עולם משחק...';
+  const loadBar = document.getElementById('loadBar');
+  const loadBarFill = document.getElementById('loadBarFill');
+  loadBar.style.display = 'block';
+  loadBarFill.style.width = '10%';
+
+  await new Promise(r => setTimeout(r, 100));
+
+  // Generate the world
+  _clearWorld();
+  loadBarFill.style.width = '30%';
+  await new Promise(r => setTimeout(r, 50));
+
+  genGameWorld(gmWorldSZ);
+  loadBarFill.style.width = '70%';
+  await new Promise(r => setTimeout(r, 50));
+
+  // Spawn player at village center
+  const mid = Math.floor(gmWorldSZ / 2);
+  player.pos.set(mid + 0.5, 10, mid + 0.5);
+
+  // Camera
+  camera.position.set(player.pos.x, player.pos.y + EYE, player.pos.z);
+  camera.rotation.order = 'YXZ';
+  camera.rotation.y = player.yaw;
+  camera.rotation.x = player.pitch;
+
+  // Sky
+  if (skyDome) { scene.remove(skyDome); skyDome = null; }
+  if (sunSphere) { scene.remove(sunSphere); sunSphere = null; }
+  if (moonSphere) { scene.remove(moonSphere); moonSphere = null; }
+  gameClouds.forEach(c => scene.remove(c));
+  gameClouds.length = 0;
+  setupSky();
+
+  applyGodPassive();
+  loadBarFill.style.width = '85%';
+
+  // Spawn villagers
+  villagers.forEach(v => scene.remove(v.group));
+  villagers.length = 0;
+  for (let i = 0; i < 12; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const r = 3 + Math.random() * 8;
+    const vx = Math.floor(mid + Math.cos(angle) * r);
+    const vz = Math.floor(mid + Math.sin(angle) * r);
+    spawnVillager(vx, 8, vz);
+  }
+
+  loadBarFill.style.width = '100%';
+
+  // Init game state
+  gmState = initGameModeState();
+  gmMonsters.length = 0;
+
+  // Show game mode HUD, hide canvas-specific buttons
+  document.getElementById('gameModeHUD').style.display = 'flex';
+  document.getElementById('statsBar').style.display = 'flex';
+  document.getElementById('exitGameBtn').style.display = 'block';
+  document.getElementById('menuToggleBtn').style.display = 'block';
+  document.getElementById('saveBtn').style.display = 'none';
+  document.getElementById('inviteBtn').style.display = 'none';
+
+  playerHP = 100; playerMaxHP = 100;
+  playerBelievers = 0; playerGold = 0; playerDivinity = 0;
+  updateStatsHUD();
+  updateGameModeHUD();
+
+  document.getElementById('hud').textContent = `⚔️ ${fakeWorldData.name}`;
+  updateCostumeHUD();
+
+  // Show overlay to start
+  loadBar.style.display = 'none';
+  document.getElementById('overlayMsg').textContent = 'לחץ בכל מקום כדי להתחיל לשחק';
+  document.getElementById('overlay').style.display = 'flex';
+
+  showInfo('⚔️ מוד המשחק! הגן על הכפר ממפלצות. הרוג אויבים כדי לצבור מאמינים וכוח!', '#ffd700', 8000);
+}
+
 // ── Enter game ─────────────────────────────────────────
 async function enterGame(worldData, inviteCode) {
   currentWorld = worldData;
@@ -5151,18 +7804,43 @@ async function enterGame(worldData, inviteCode) {
 
   // Hide all selection screens
   ['loginScreen','worldSelectScreen','createWorldScreen',
-   'godSelectScreen','weaponSelectScreen'].forEach(id => {
+   'godSelectScreen','weaponSelectScreen','modeSelectScreen'].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = 'none';
   });
 
   // Load terrain (async for large worlds — shows progress bar)
   await loadWorldBlocks(worldData.blocks);
 
-  // Spawn player above center
+  // Spawn player on the highest land column closest to the map center.
+  // For Cyclades worlds the center is often ocean, so we spiral out until
+  // we find a non-water top block above sea level.
   const mid = Math.floor(worldSZ / 2);
-  for (let y = 30; y >= 0; y--) {
-    if (hasBlock(mid, y, mid)) { player.pos.set(mid + 0.5, y + 1, mid + 0.5); break; }
+  const SEA_LEVEL = 6;
+  function topBlockAt(sx, sz) {
+    for (let y = 40; y >= 1; y--) {
+      const info = world.get(`${sx}|${y}|${sz}`);
+      if (info && info.id !== 'water') return y;
+    }
+    return -1;
   }
+  let spawnX = mid, spawnZ = mid, spawnY = -1;
+  outer:
+  for (let radius = 0; radius < worldSZ / 2; radius++) {
+    for (let dx = -radius; dx <= radius; dx++) {
+      for (let dz = -radius; dz <= radius; dz++) {
+        if (Math.max(Math.abs(dx), Math.abs(dz)) !== radius && radius > 0) continue;
+        const sx = mid + dx, sz = mid + dz;
+        if (sx < 0 || sz < 0 || sx >= worldSZ || sz >= worldSZ) continue;
+        const ty = topBlockAt(sx, sz);
+        if (ty > SEA_LEVEL) {
+          spawnX = sx; spawnZ = sz; spawnY = ty + 1;
+          break outer;
+        }
+      }
+    }
+  }
+  if (spawnY < 0) spawnY = SEA_LEVEL + 2; // fallback — spawn above sea
+  player.pos.set(spawnX + 0.5, spawnY, spawnZ + 0.5);
 
   // Camera
   camera.position.set(player.pos.x, player.pos.y + EYE, player.pos.z);
@@ -5189,7 +7867,15 @@ async function enterGame(worldData, inviteCode) {
   }
   document.getElementById('exitGameBtn').style.display = 'block';
   document.getElementById('onlinePlayers').style.display = 'block';
+  document.getElementById('menuToggleBtn').style.display = 'block';
+  document.getElementById('statsBar').style.display = 'flex';
+  document.getElementById('gameModeHUD').style.display = 'none';
   updateOnlinePlayersHUD();
+
+  // Reset game stats
+  playerHP = 100; playerMaxHP = 100;
+  playerBelievers = 0; playerGold = 0; playerDivinity = 0;
+  updateStatsHUD();
 
   // Update HUD title (with costume emojis if equipped)
   document.getElementById('hud').textContent = `⚡ ${worldData.name}`;
@@ -5221,7 +7907,7 @@ function showGodSelect(worldData, inviteCode) {
   const cb = document.getElementById('godConfirmBtn');
   cb.disabled = true; cb.textContent = 'המשך ⚡';
   // Hide other screens
-  ['loginScreen','worldSelectScreen','createWorldScreen','weaponSelectScreen'].forEach(id => {
+  ['loginScreen','worldSelectScreen','createWorldScreen','weaponSelectScreen','modeSelectScreen'].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = 'none';
   });
   // Build grid if needed then show
@@ -5246,7 +7932,8 @@ function applyGodPassive() {
   ray.far = 6;
   const ambient = scene.children.find(c => c.isAmbientLight);
   if (ambient) ambient.intensity = 0.9;
-  scene.fog.near = RENDER_DIST * 0.85; scene.fog.far = FAR_DIST;
+  // Default: fog pushed far off (invisible horizon)
+  scene.fog.near = 9000; scene.fog.far = 10000;
   renderer.domElement.style.filter = '';
 
   if (!selectedGod) { updateGodBadge(); return; }
@@ -5254,9 +7941,8 @@ function applyGodPassive() {
   // Apollo / Artemis — extended ray
   if (selectedGod.rayMult) ray.far = 6 * selectedGod.rayMult;
 
-  // Hades — night vision: clear fog so player can see beyond the LOD zone
+  // Hades — ambient boost only (fog stays invisible; night vision is the default anyway)
   if (selectedGod.id === 'hades') {
-    scene.fog.near = 60; scene.fog.far = 120;
     if (ambient) ambient.intensity = 2.2;
   }
 
@@ -5265,6 +7951,7 @@ function applyGodPassive() {
   createFPHands(selectedGod);  // build / replace first-person hand view
   createFPBody(selectedGod);   // build / replace first-person body overlay (legs)
   updateBodyWeapon();           // re-attach weapon to newly built body
+  updateFPWeapon();             // re-attach weapon to FP hands
 
   // ── Auto-apply god's matching costume armor ──
   const _godCostumeMap = {
@@ -5309,14 +7996,26 @@ async function exitGame() {
   if (locked) { try { document.exitPointerLock(); } catch {} }
   gameStarted = false;
   overlay.style.display = 'none';
-  // Clear Three.js scene objects
-  world.forEach(mesh => scene.remove(mesh)); world.clear();
+  // Clear Three.js scene objects — reuses the same zeroing as _clearWorld
+  for (const id in imeshByID) {
+    const im = imeshByID[id];
+    im.count = 0;
+    im.userData.slotKey.length = 0;
+    im.userData.slotKey.length = im.userData.capacity;
+    im.instanceMatrix.needsUpdate = true;
+  }
+  world.clear(); animBlocks.clear();
   creatures.forEach(c => scene.remove(c.group)); creatures.length = 0;
   remotePlayers.forEach(rp => scene.remove(rp.group)); remotePlayers.clear();
   // Hide in-game HUD
-  ['saveBtn','inviteBtn','exitGameBtn','onlinePlayers','godBadge'].forEach(id => {
+  ['saveBtn','inviteBtn','exitGameBtn','onlinePlayers','godBadge','gameModeHUD'].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = 'none';
   });
+  // Clean up game mode
+  villagers.forEach(v => scene.remove(v.group)); villagers.length = 0;
+  gmMonsters.length = 0; gmState = null; currentGameMode = 'canvas';
+  acidProjectiles.forEach(a => { scene.remove(a.mesh); scene.remove(a.trail); });
+  acidProjectiles.length = 0; _villageData = null;
   // Reset selection state
   selectedGogCostume = null; selectedGogCreature = null;
   // Clean up sky
@@ -5329,7 +8028,9 @@ async function exitGame() {
   camera.fov = 75; camera.updateProjectionMatrix();
   renderer.domElement.style.filter = '';
   ray.far = 6;
-  scene.fog.near = RENDER_DIST * 0.85; scene.fog.far = FAR_DIST;
+  // (fog removed — nothing to reset here)
+  _wasUnderwater = false; _wasInWater = false;
+  document.getElementById('underwaterOverlay').style.display = 'none';
   const ambient = scene.children.find(c => c.isAmbientLight);
   if (ambient) ambient.intensity = 0.9;
   // Clean up local player body + first-person hands and reset camera mode
@@ -5450,24 +8151,15 @@ function initAuth() {
     document.getElementById('newWorldName').focus();
   });
 
-  // ── World type cards ──
-  document.querySelectorAll('.wtCard').forEach(card => {
-    card.addEventListener('click', () => {
-      document.querySelectorAll('.wtCard').forEach(c => c.classList.remove('sel'));
-      card.classList.add('sel');
-    });
-  });
-
   // ── Create world confirm ──
+  // Every new world is now a fixed-size Cyclades island archipelago.
   document.getElementById('createWorldConfirm').addEventListener('click', async () => {
     const name = document.getElementById('newWorldName').value.trim();
     if (!name) { document.getElementById('createWorldErr').textContent = 'הזן שם לעולם'; return; }
-    const type = document.querySelector('.wtCard.sel')?.dataset.type || 'block';
-    const size = document.getElementById('newWorldSize').value;
     document.getElementById('createWorldErr').textContent = '⏳ יוצר עולם…';
     document.getElementById('createWorldConfirm').disabled = true;
     try {
-      const worldData = await api('POST', '/api/worlds', { name, type, size: Number(size) });
+      const worldData = await api('POST', '/api/worlds', { name, type: 'cyclades' });
       document.getElementById('createWorldConfirm').disabled = false;
       showGodSelect(worldData, '');
     } catch (e) {
@@ -5505,18 +8197,41 @@ function initAuth() {
   // ── Weapon select screen buttons ──
   document.getElementById('weaponConfirmBtn').addEventListener('click', () => {
     if (!_pendingWorldData) return;
-    // Apply selected weapon to playerCostume then enter game
+    // Apply selected weapon to playerCostume
     if (selectedGogWeapon) {
-      const match = WEAPON_DEFS.find(w => w.id === selectedGogWeapon.id)
+      const _gogWeaponMap = {
+        bolt:'staff', trident:'trident', axedual:'axe', huntbow:'bow',
+        aegis:'sword', hammer:'axe', caduceus:'staff', gladius:'sword'
+      };
+      const mappedId = _gogWeaponMap[selectedGogWeapon.id];
+      const match = WEAPON_DEFS.find(w => w.id === mappedId)
+                 || WEAPON_DEFS.find(w => w.id === selectedGogWeapon.id)
                  || WEAPON_DEFS.find(w => selectedGogWeapon.emoji.includes(w.e))
                  || WEAPON_DEFS[0];
       if (match) playerCostume.weapon = match.id;
+      playerCostume._gogWeaponDamage = selectedGogWeapon.damage;
     }
-    enterGame(_pendingWorldData, _pendingInviteCode);
+    showModeSelect();
   });
   document.getElementById('weaponBackBtn').addEventListener('click', () => {
     document.getElementById('weaponSelectScreen').style.display = 'none';
     showGodSelect(_pendingWorldData, _pendingInviteCode);
+  });
+
+  // ── Mode select screen buttons ──
+  document.getElementById('modeBackBtn').addEventListener('click', () => {
+    document.getElementById('modeSelectScreen').style.display = 'none';
+    showWeaponSelect();
+  });
+  document.getElementById('modeCanvas').addEventListener('click', () => {
+    currentGameMode = 'canvas';
+    document.getElementById('modeSelectScreen').style.display = 'none';
+    enterGame(_pendingWorldData, _pendingInviteCode);
+  });
+  document.getElementById('modeGame').addEventListener('click', () => {
+    currentGameMode = 'game';
+    document.getElementById('modeSelectScreen').style.display = 'none';
+    enterGameMode();
   });
 
   // ── Exit game button ──
