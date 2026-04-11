@@ -253,18 +253,22 @@ function cyAddMarina(blocks, H, sz, isl, rng) {
   const ex = px + dirX * 7;
   const ez = pz + dirZ * 7;
   if (ex >= 0 && ez >= 0 && ex < sz && ez < sz && H[idxOf(ex, ez)] === 0) {
-    cyAddBoat(blocks, ex, ez, 'small');
+    cyAddBoat(blocks, ex, ez, 'small', sz);
   }
   // Bigger ship further out
   const bx = px + dirX * 10;
   const bz = pz + dirZ * 10;
   if (bx >= 0 && bz >= 0 && bx < sz && bz < sz && H[idxOf(bx, bz)] === 0) {
-    cyAddBoat(blocks, bx, bz, 'large');
+    cyAddBoat(blocks, bx, bz, 'large', sz);
   }
 }
 
 // ── Boat — wood hull + sail on a mast ──
-function cyAddBoat(blocks, x, z, size) {
+function cyAddBoat(blocks, x, z, size, sz) {
+  // Reject boats whose footprint would fall outside the world bounds.
+  const width = (size === 'small') ? 3 : 4;
+  const depth = (size === 'small') ? 2 : 3;
+  if (sz && (x < 0 || z < 0 || x + width > sz || z + depth > sz)) return;
   const add = (wx, wy, wz, id) => blocks.push({ x: wx, y: wy, z: wz, id });
   const y = CY_SEA_LEVEL;
   if (size === 'small') {
@@ -299,7 +303,7 @@ function cyAddFishingBoats(blocks, H, sz, isl, rng, count) {
     const bz = Math.round(isl.cz + Math.sin(ang) * dist);
     if (bx < 0 || bz < 0 || bx + 3 >= sz || bz + 3 >= sz) continue;
     if (H[idxOf(bx, bz)] !== 0) continue; // must be in water
-    cyAddBoat(blocks, bx, bz, rng() > 0.6 ? 'large' : 'small');
+    cyAddBoat(blocks, bx, bz, rng() > 0.6 ? 'large' : 'small', sz);
   }
 }
 
@@ -344,27 +348,26 @@ function generateCyclades(sz) {
   const blocks = [];
   const add = (x, y, z, id) => blocks.push({ x, y, z, id });
 
-  const rng = cyRng(12345); // deterministic master seed
+  // ── One main detailed island in the center + distant smaller islands ──
+  // The main island gets the full feature set (village, windmill, well,
+  // stream, marina, boats). Distant islands are smaller and get minimal
+  // decoration so they look like silhouettes on the horizon but still feel
+  // like real land you can swim to.
+  const cx = sz / 2;
+  const cz = sz / 2;
+  const islands = [
+    // Main island — large, rich, centered
+    { cx, cz, radius: 46, height: 24, seed: 11, isMain: true },
 
-  // ── Scatter islands of varied size across the world ──
-  const islands = [];
-  const clusters = [
-    { cx: 0.25, cz: 0.28, radius: 22, height: 22, seed: 11 }, // big NW
-    { cx: 0.72, cz: 0.25, radius: 15, height: 14, seed: 23 }, // mid NE
-    { cx: 0.18, cz: 0.72, radius: 13, height: 11, seed: 37 }, // small SW
-    { cx: 0.55, cz: 0.50, radius: 19, height: 18, seed: 47 }, // center
-    { cx: 0.85, cz: 0.60, radius: 11, height: 10, seed: 53 }, // small E
-    { cx: 0.40, cz: 0.85, radius: 17, height: 16, seed: 67 }, // S
+    // Distant islands — scattered on the outskirts of the map.
+    // Positioned at roughly 55-75 units from center so they appear on the
+    // horizon from the main island's shore.
+    { cx: cx + Math.cos(0.25 * Math.PI * 2) * 65, cz: cz + Math.sin(0.25 * Math.PI * 2) * 65, radius: 11, height: 12, seed: 23 },
+    { cx: cx + Math.cos(0.45 * Math.PI * 2) * 58, cz: cz + Math.sin(0.45 * Math.PI * 2) * 58, radius:  9, height: 10, seed: 37 },
+    { cx: cx + Math.cos(0.65 * Math.PI * 2) * 70, cz: cz + Math.sin(0.65 * Math.PI * 2) * 70, radius: 14, height: 14, seed: 47 },
+    { cx: cx + Math.cos(0.82 * Math.PI * 2) * 60, cz: cz + Math.sin(0.82 * Math.PI * 2) * 60, radius:  8, height:  9, seed: 53 },
+    { cx: cx + Math.cos(0.05 * Math.PI * 2) * 68, cz: cz + Math.sin(0.05 * Math.PI * 2) * 68, radius: 10, height: 11, seed: 67 },
   ];
-  for (const c of clusters) {
-    islands.push({
-      cx:     c.cx * sz,
-      cz:     c.cz * sz,
-      radius: c.radius,
-      height: c.height,
-      seed:   c.seed,
-    });
-  }
 
   const H = cyBuildHeights(sz, islands);
 
@@ -382,7 +385,7 @@ function generateCyclades(sz) {
         let surface;
         if (h <= CY_SEA_LEVEL + 2)      surface = 'sand';   // beach
         else if (h <= CY_SEA_LEVEL + 7) surface = 'grass';  // mid
-        else if (h >= 18)               surface = 'stone';  // rocky peak
+        else if (h >= 20)               surface = 'stone';  // rocky peak
         else                             surface = 'grass';
         // Stone fill from seabed up
         for (let y = 0; y < h - 1; y++) add(x, y, z, 'stone');
@@ -396,12 +399,20 @@ function generateCyclades(sz) {
   // ── Per-island features ──
   for (const isl of islands) {
     const rIsl = cyRng(isl.seed * 31);
-    cyAddStream(blocks, H, sz, isl, rIsl);
-    cyAddVillage(blocks, H, sz, isl, rIsl);
-    cyAddWindmill(blocks, H, sz, isl, rIsl);
-    cyAddWell(blocks, H, sz, isl, rIsl);
-    cyAddMarina(blocks, H, sz, isl, rIsl);
-    cyAddFishingBoats(blocks, H, sz, isl, rIsl, 3);
+    if (isl.isMain) {
+      // Main island — full feature set
+      cyAddStream(blocks, H, sz, isl, rIsl);
+      cyAddVillage(blocks, H, sz, isl, rIsl);
+      cyAddWindmill(blocks, H, sz, isl, rIsl);
+      cyAddWell(blocks, H, sz, isl, rIsl);
+      cyAddMarina(blocks, H, sz, isl, rIsl);
+      cyAddFishingBoats(blocks, H, sz, isl, rIsl, 4);
+    } else {
+      // Distant island — just a marina + maybe a windmill, minimal detail
+      cyAddMarina(blocks, H, sz, isl, rIsl);
+      if (rIsl() > 0.5) cyAddWindmill(blocks, H, sz, isl, rIsl);
+      cyAddFishingBoats(blocks, H, sz, isl, rIsl, 1);
+    }
   }
 
   return blocks;
@@ -539,11 +550,12 @@ router.post('/', requireAuth, (req, res) => {
   const validTypes = ['cyclades', 'adventure', 'flat', 'block'];
   const wtype = validTypes.includes(type) ? type : 'cyclades';
 
-  // Cyclades worlds have a fixed 128×128 size; legacy types keep their
-  // request-provided sizes for backwards compatibility with old saves.
+  // Cyclades worlds have a fixed 160×160 size: one main island + distant
+  // islands on the horizon. Legacy types keep their request-provided sizes
+  // for backwards compatibility with old saves.
   let sz;
   if (wtype === 'cyclades') {
-    sz = 128;
+    sz = 160;
   } else {
     const validSizes = [26, 64, 100];
     sz = validSizes.includes(Number(req.body?.size)) ? Number(req.body.size) : 26;
