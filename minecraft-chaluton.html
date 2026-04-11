@@ -971,6 +971,104 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
   position: absolute; inset: 0;
   background: radial-gradient(ellipse at center, transparent 55%, rgba(10, 50, 110, 0.35) 100%);
 }
+
+/* ═══ MINI-MAP ══════════════════════════════════════════════ */
+#miniMap {
+  position: fixed; bottom: 80px; right: 14px;
+  width: 130px; height: 130px;
+  border: 2px solid #b8860b;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 0 0 3px #1a1200, 0 0 12px rgba(0,0,0,.7);
+  display: none;
+  z-index: 12;
+}
+#miniMapCanvas { width: 130px; height: 130px; display: block; image-rendering: pixelated; }
+
+/* ═══ GOD POWER COOLDOWN HUD ════════════════════════════════ */
+#godPowerCooldown {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  display: none; flex-direction: column; align-items: center; gap: 3px;
+  z-index: 12;
+}
+#godPowerKey {
+  width: 44px; height: 44px;
+  background: rgba(10,8,4,.88);
+  border: 2px solid #b8860b;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Press Start 2P', monospace;
+  font-size: .7rem; color: #ffd700;
+  box-shadow: 0 0 8px rgba(0,0,0,.6);
+  position: relative; overflow: hidden;
+}
+#godPowerKey .cdOverlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,.72);
+  transform-origin: bottom;
+  transform: scaleY(0);
+  transition: transform .1s linear;
+  pointer-events: none;
+}
+#godPowerKey .cdIcon { position: relative; z-index: 1; font-size: 1.2rem; }
+#godPowerCdText {
+  color: #ffd700; font-size: 8px;
+  font-family: 'Press Start 2P', monospace;
+  text-shadow: 1px 1px 0 #000;
+  min-height: 10px;
+}
+
+/* ═══ VICTORY / GAME-OVER SCREEN ════════════════════════════ */
+#victoryScreen, #gameOverScreen {
+  position: fixed; inset: 0; z-index: 50;
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.82);
+  font-family: 'Press Start 2P', monospace;
+  animation: fadeInScreen .6s ease-out;
+}
+@keyframes fadeInScreen {
+  from { opacity: 0; transform: scale(.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.endScreenBox {
+  background: rgba(10,8,4,.95);
+  border: 3px solid #b8860b;
+  border-radius: 10px;
+  padding: 32px 40px;
+  max-width: 480px; width: 90%;
+  box-shadow: 0 0 0 5px #1a1200, 0 0 40px rgba(255,215,0,.25);
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+}
+.endScreenTitle {
+  font-size: 1.4rem; color: #ffd700;
+  text-shadow: 3px 3px 0 #000, 0 0 20px rgba(255,215,0,.5);
+  line-height: 1.4;
+}
+#gameOverScreen .endScreenTitle { color: #ff4444; text-shadow: 3px 3px 0 #000, 0 0 20px rgba(255,0,0,.4); }
+.endScreenStats {
+  width: 100%; display: flex; flex-direction: column; gap: 8px;
+  border-top: 1px solid #5a4a20; border-bottom: 1px solid #5a4a20;
+  padding: 12px 0;
+}
+.endStatRow {
+  display: flex; justify-content: space-between; align-items: center;
+  color: #c8a840; font-size: .48rem;
+}
+.endStatRow .val { color: #fff; }
+.endScreenBtn {
+  background: linear-gradient(to bottom, #b8860b, #8b6508);
+  border: 2px solid #ffd700; border-radius: 5px;
+  color: #fff; font-family: 'Press Start 2P', monospace;
+  font-size: .55rem; padding: 10px 22px; cursor: pointer;
+  box-shadow: 0 4px 0 #5a3a00, 0 0 12px rgba(255,215,0,.3);
+  transition: all .12s;
+}
+.endScreenBtn:hover {
+  background: linear-gradient(to bottom, #ffd700, #b8860b);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #5a3a00, 0 0 20px rgba(255,215,0,.5);
+}
 </style>
 </head>
 <body>
@@ -1218,6 +1316,40 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
     Esc = השהה
   </small>
 </div>
+<!-- ── MINI-MAP ──────────────────────────────────────── -->
+<div id="miniMap">
+  <canvas id="miniMapCanvas" width="130" height="130"></canvas>
+</div>
+
+<!-- ── GOD POWER COOLDOWN ────────────────────────────── -->
+<div id="godPowerCooldown">
+  <div id="godPowerKey">
+    <div class="cdOverlay" id="cdOverlay"></div>
+    <span class="cdIcon" id="cdIcon">R</span>
+  </div>
+  <div id="godPowerCdText"></div>
+</div>
+
+<!-- ── VICTORY SCREEN ────────────────────────────────── -->
+<div id="victoryScreen">
+  <div class="endScreenBox">
+    <div class="endScreenTitle">🏆 ניצחון! 🏆<br><span style="font-size:.7rem;color:#c8a840">הוכחת שאתה אל אמיתי!</span></div>
+    <div class="endScreenStats" id="victoryStats"></div>
+    <button class="endScreenBtn" id="victoryRestartBtn">▶ שחק שוב</button>
+    <button class="endScreenBtn" style="background:linear-gradient(to bottom,#444,#222);border-color:#888;margin-top:-8px" id="victoryExitBtn">🏠 חזרה לתפריט</button>
+  </div>
+</div>
+
+<!-- ── GAME OVER SCREEN ───────────────────────────────── -->
+<div id="gameOverScreen">
+  <div class="endScreenBox">
+    <div class="endScreenTitle">💀 נפלת...<br><span style="font-size:.7rem;color:#ff8888">הפכת לבן תמותה</span></div>
+    <div class="endScreenStats" id="gameOverStats"></div>
+    <button class="endScreenBtn" id="gameOverRestartBtn">▶ נסה שוב</button>
+    <button class="endScreenBtn" style="background:linear-gradient(to bottom,#444,#222);border-color:#888;margin-top:-8px" id="gameOverExitBtn">🏠 חזרה לתפריט</button>
+  </div>
+</div>
+
 <div id="crosshair"></div>
 <div id="hud">⚡ משחקי האלים — Game of GODS</div>
 <div id="info">בחר בלוק מהסרגל למטה</div>
@@ -2679,9 +2811,19 @@ window.addEventListener('keydown', e => {
     const i = PALETTE.indexOf(selBlock);
     selectBlock(PALETTE[(i + 1) % PALETTE.length]);
   }
-  // R → God special power
+  // R → God special power (with cooldown)
   if (e.code === 'KeyR' && locked && !e.repeat && selectedGod?.keyR) {
-    selectedGod.keyR();
+    if (godPowerCooldownRemaining > 0) {
+      showInfo(`⏳ הכוח בטעינה... ${Math.ceil(godPowerCooldownRemaining)}s`, selectedGod.color || '#FFD700', 1000);
+    } else {
+      // In game mode: use combat power vs monsters; in canvas mode: use build power
+      if (currentGameMode === 'game') {
+        _godRPowerVsMonsters();
+      } else {
+        selectedGod.keyR();
+      }
+      _startGodCooldown();
+    }
   }
 
   // V → cycle camera mode (first-person → back → front → bird's-eye → …)
@@ -4549,6 +4691,50 @@ let selectedGod     = null;
 let godZoomActive   = false;
 let apolloSkyIdx    = 0;
 let dionysusActive  = false;
+
+// ── God power cooldown system ──────────────────────────
+// Cooldown durations (seconds) per god id
+const GOD_COOLDOWNS = {
+  zeus: 8, hermes: 3, apollo: 6, athena: 5,
+  aphrodite: 10, poseidon: 10, hephaestus: 7,
+  ares: 6, artemis: 4, demeter: 8, dionysus: 5, hades: 6
+};
+let godPowerCooldownRemaining = 0; // seconds left
+let godPowerCooldownMax       = 0; // total cooldown for current god
+
+function _startGodCooldown() {
+  if (!selectedGod) return;
+  const cd = GOD_COOLDOWNS[selectedGod.id] || 5;
+  godPowerCooldownRemaining = cd;
+  godPowerCooldownMax       = cd;
+  _updateCooldownHUD();
+}
+
+function _tickGodCooldown(dt) {
+  if (godPowerCooldownRemaining <= 0) return;
+  godPowerCooldownRemaining = Math.max(0, godPowerCooldownRemaining - dt);
+  _updateCooldownHUD();
+}
+
+function _updateCooldownHUD() {
+  const el   = document.getElementById('godPowerCooldown');
+  const ov   = document.getElementById('cdOverlay');
+  const txt  = document.getElementById('godPowerCdText');
+  const icon = document.getElementById('cdIcon');
+  if (!el) return;
+  if (!selectedGod) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  if (icon) icon.textContent = selectedGod.emoji || 'R';
+  if (ov) {
+    const pct = godPowerCooldownMax > 0 ? godPowerCooldownRemaining / godPowerCooldownMax : 0;
+    ov.style.transform = `scaleY(${pct})`;
+  }
+  if (txt) {
+    txt.textContent = godPowerCooldownRemaining > 0
+      ? Math.ceil(godPowerCooldownRemaining) + 's'
+      : '';
+  }
+}
 let _pendingWorldData   = null;
 let _pendingInviteCode  = '';
 let camMode    = 0;       // 0=first-person, 1=back, 2=front, 3=bird's-eye
@@ -5460,6 +5646,10 @@ function animate(t) {
     updateWaterFlow();
     updateRemotePlayers();
     if (currentGameMode === 'game') updateGameMode(dt);
+    // Tick god power cooldown
+    _tickGodCooldown(dt);
+    // Update minimap (game mode only)
+    if (currentGameMode === 'game') _updateMiniMap();
     // Dionysus rainbow effect
     if (selectedGod?.id === 'dionysus' && dionysusActive) {
       renderer.domElement.style.filter = `hue-rotate(${(t/50)%360}deg) saturate(1.8)`;
@@ -7304,6 +7494,10 @@ function spawnGMMonster(type, x, z) {
     c._gmSpitTimer = 0; // for hydra acid
     c._gmTargetVillager = null;
     c._gmChaseTimer = 0;
+    c.maxHp = c.hp;  // save max HP for Hades power
+    c.stunned = 0;   // seconds remaining stunned
+    c.charmed = 0;   // seconds remaining charmed (fight for player)
+    c.berserk = 0;   // seconds remaining berserk (attack each other)
     gmMonsters.push(c);
   }
   return c;
@@ -7358,6 +7552,7 @@ function initGameModeState() {
     gameWon: false,
     monsterAttackInterval: 2.5,
     totalKills: 0,
+    startTime: Date.now(),   // for elapsed time tracking
   };
 }
 
@@ -7401,7 +7596,7 @@ function updateGameMode(dt) {
   const stage = GM_STAGES[gmState.stage];
   if (!stage) { // All stages complete
     gmState.gameWon = true;
-    showInfo('🏆 ניצחון! הוכחת שאתה אל אמיתי! 🏆', '#ffd700', 10000);
+    _showVictoryScreen();
     return;
   }
 
@@ -7437,6 +7632,22 @@ function updateGameMode(dt) {
   gmMonsters.forEach(m => {
     if (m.hp <= 0) return;
     const mx = m.group.position.x, mz = m.group.position.z;
+
+    // Tick status effects
+    if (m.stunned  > 0) { m.stunned  = Math.max(0, m.stunned  - dt); return; } // skip AI while stunned
+    if (m.charmed  > 0) { m.charmed  = Math.max(0, m.charmed  - dt); return; } // charmed: skip AI (friendly)
+    if (m.berserk  > 0) {
+      m.berserk = Math.max(0, m.berserk - dt);
+      // Berserk: attack nearest other monster
+      let nearM = null, nearMD = Infinity;
+      gmMonsters.forEach(m2 => {
+        if (m2 === m || m2.hp <= 0) return;
+        const d2 = Math.sqrt((m2.group.position.x-mx)**2 + (m2.group.position.z-mz)**2);
+        if (d2 < nearMD) { nearMD = d2; nearM = m2; }
+      });
+      if (nearM && nearMD < 3) { nearM.hp -= 5; }
+      return;
+    }
 
     // Find nearest alive villager
     let closestV = null, closestVD = Infinity;
@@ -7561,8 +7772,8 @@ function updateGameMode(dt) {
   if (gmState.power <= 0 || playerHP <= 0) {
     gmState.gameOver = true;
     gmState.power = 0;
-    showInfo('💀 האל שלך נפל... הפכת לבן תמותה. המשחק נגמר!', '#ff0000', 15000);
     playTone(100, 1, 'sawtooth');
+    _showGameOverScreen();
   }
 
   updateGameModeHUD();
@@ -7584,6 +7795,336 @@ function _monsterHitVillager(v, monster) {
   } else {
     playTone(300, 0.1, 'sawtooth');
   }
+}
+
+// ── Victory / Game-Over screens ────────────────────────────
+function _fmtTime(ms) {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  return m > 0 ? `${m}m ${s % 60}s` : `${s}s`;
+}
+
+function _buildStatRows(rows) {
+  return rows.map(([label, val]) =>
+    `<div class="endStatRow"><span>${label}</span><span class="val">${val}</span></div>`
+  ).join('');
+}
+
+function _showVictoryScreen() {
+  const el = document.getElementById('victoryScreen');
+  if (!el) return;
+  const elapsed = gmState?.startTime ? Date.now() - gmState.startTime : 0;
+  const stats = document.getElementById('victoryStats');
+  if (stats) {
+    stats.innerHTML = _buildStatRows([
+      ['🏆 שלבים שהושלמו', GM_STAGES.length + '/' + GM_STAGES.length],
+      ['👹 מפלצות שהוכנעו', gmState?.totalKills ?? 0],
+      ['🙏 מאמינים שנצברו', gmState?.believers ?? 0],
+      ['⚡ כוח שנותר', Math.round(gmState?.power ?? 0) + '%'],
+      ['⏱️ זמן משחק', _fmtTime(elapsed)],
+      ['🏘️ כפריים ששרדו', villagers.filter(v => v.alive).length],
+    ]);
+  }
+  el.style.display = 'flex';
+  // Fanfare
+  [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => playTone(f, 0.3, 'sine'), i * 180));
+}
+
+function _showGameOverScreen() {
+  const el = document.getElementById('gameOverScreen');
+  if (!el) return;
+  const elapsed = gmState?.startTime ? Date.now() - gmState.startTime : 0;
+  const stats = document.getElementById('gameOverStats');
+  if (stats) {
+    stats.innerHTML = _buildStatRows([
+      ['⚔️ שלב שהגעת אליו', (gmState?.stage ?? 0) + 1 + '/' + GM_STAGES.length],
+      ['👹 מפלצות שהוכנעו', gmState?.totalKills ?? 0],
+      ['🙏 מאמינים שנצברו', gmState?.believers ?? 0],
+      ['⏱️ זמן שרידה', _fmtTime(elapsed)],
+    ]);
+  }
+  el.style.display = 'flex';
+}
+
+function _restartGameMode() {
+  ['victoryScreen','gameOverScreen'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+  enterGameMode();
+}
+
+function _exitToMenu() {
+  ['victoryScreen','gameOverScreen'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+  exitGame();
+}
+
+// ── God R-power vs GM monsters ──────────────────────────────
+// Each god has a unique area-of-effect or targeted attack
+function _godRPowerVsMonsters() {
+  if (!selectedGod || !gmMonsters || currentGameMode !== 'game') return;
+  const px = player.pos.x, py = player.pos.y, pz = player.pos.z;
+
+  const godId = selectedGod.id;
+  let affected = 0;
+
+  if (godId === 'zeus') {
+    // Lightning bolt — damages all monsters in radius 12
+    gmMonsters.forEach(m => {
+      if (m.hp <= 0) return;
+      const dx = m.mesh.position.x - px, dz = m.mesh.position.z - pz;
+      if (Math.sqrt(dx*dx + dz*dz) < 12) {
+        m.hp -= 40;
+        _flashMonster(m, 0xffff00);
+        affected++;
+      }
+    });
+    showInfo('⚡ ברק של זאוס! פגע ב-' + affected + ' מפלצות', '#FFD700', 2000);
+    playTone(120, 0.4, 'sawtooth');
+  } else if (godId === 'poseidon') {
+    // Tidal wave — pushes all monsters back and damages
+    gmMonsters.forEach(m => {
+      if (m.hp <= 0) return;
+      const dx = m.mesh.position.x - px, dz = m.mesh.position.z - pz;
+      const dist = Math.sqrt(dx*dx + dz*dz);
+      if (dist < 15) {
+        m.hp -= 25;
+        // Push back
+        const nx = dx/dist, nz = dz/dist;
+        m.mesh.position.x += nx * 5;
+        m.mesh.position.z += nz * 5;
+        _flashMonster(m, 0x0088ff);
+        affected++;
+      }
+    });
+    showInfo('🌊 גל ענק של פוסידון! דחף ' + affected + ' מפלצות', '#00BFFF', 2000);
+    playTone(80, 0.5, 'sine');
+  } else if (godId === 'ares') {
+    // Berserker rage — massive damage to nearest 3 monsters
+    const sorted = gmMonsters.filter(m => m.hp > 0).map(m => {
+      const dx = m.mesh.position.x - px, dz = m.mesh.position.z - pz;
+      return { m, dist: Math.sqrt(dx*dx + dz*dz) };
+    }).sort((a,b) => a.dist - b.dist).slice(0, 3);
+    sorted.forEach(({m}) => { m.hp -= 60; _flashMonster(m, 0xff2200); affected++; });
+    showInfo('⚔️ זעם ארס! מחק ' + affected + ' מפלצות קרובות', '#FF4444', 2000);
+    playTone(150, 0.4, 'sawtooth');
+  } else if (godId === 'apollo') {
+    // Sun burst — damages all in radius 10, heals player slightly
+    gmMonsters.forEach(m => {
+      if (m.hp <= 0) return;
+      const dx = m.mesh.position.x - px, dz = m.mesh.position.z - pz;
+      if (Math.sqrt(dx*dx + dz*dz) < 10) {
+        m.hp -= 30;
+        _flashMonster(m, 0xffee00);
+        affected++;
+      }
+    });
+    playerHP = Math.min(playerMaxHP, playerHP + 20);
+    updateStatsHUD();
+    showInfo('☀️ פרץ שמש של אפולו! ריפא אותך וחרך ' + affected + ' מפלצות', '#FFC107', 2000);
+    playTone(880, 0.3, 'sine');
+  } else if (godId === 'athena') {
+    // Wisdom shield — stuns all nearby monsters for 3 seconds
+    gmMonsters.forEach(m => {
+      if (m.hp <= 0) return;
+      const dx = m.mesh.position.x - px, dz = m.mesh.position.z - pz;
+      if (Math.sqrt(dx*dx + dz*dz) < 14) {
+        m.stunned = (m.stunned || 0) + 3;
+        _flashMonster(m, 0xaaaaff);
+        affected++;
+      }
+    });
+    showInfo('🦉 חוכמת אתנה! שיתקה ' + affected + ' מפלצות', '#7986CB', 2000);
+    playTone(660, 0.3, 'sine');
+  } else if (godId === 'artemis') {
+    // Arrow volley — snipes 5 farthest monsters
+    const sorted = gmMonsters.filter(m => m.hp > 0).map(m => {
+      const dx = m.mesh.position.x - px, dz = m.mesh.position.z - pz;
+      return { m, dist: Math.sqrt(dx*dx + dz*dz) };
+    }).sort((a,b) => b.dist - a.dist).slice(0, 5);
+    sorted.forEach(({m}) => { m.hp -= 35; _flashMonster(m, 0x88ff44); affected++; });
+    showInfo('🏹 מטח חיצים של ארטמיס! פגע ב-' + affected + ' מפלצות', '#8BC34A', 2000);
+    playTone(440, 0.2, 'square');
+  } else if (godId === 'hephaestus') {
+    // Volcanic eruption — massive damage in small radius
+    gmMonsters.forEach(m => {
+      if (m.hp <= 0) return;
+      const dx = m.mesh.position.x - px, dz = m.mesh.position.z - pz;
+      if (Math.sqrt(dx*dx + dz*dz) < 8) {
+        m.hp -= 80;
+        _flashMonster(m, 0xff6600);
+        affected++;
+      }
+    });
+    showInfo('🔥 התפרצות הפסטוס! שרף ' + affected + ' מפלצות בטווח קרוב', '#FF5722', 2000);
+    playTone(100, 0.5, 'sawtooth');
+  } else if (godId === 'aphrodite') {
+    // Charm — converts nearby monsters to fight for you briefly
+    gmMonsters.forEach(m => {
+      if (m.hp <= 0) return;
+      const dx = m.mesh.position.x - px, dz = m.mesh.position.z - pz;
+      if (Math.sqrt(dx*dx + dz*dz) < 10) {
+        m.charmed = (m.charmed || 0) + 5;
+        _flashMonster(m, 0xff88cc);
+        affected++;
+      }
+    });
+    showInfo('💕 קסם אפרודיטה! קסמה ל-' + affected + ' מפלצות', '#F48FB1', 2000);
+    playTone(660, 0.3, 'sine');
+  } else if (godId === 'hermes') {
+    // Speed dash — teleport forward and stun nearest monster
+    const fwd = new THREE.Vector3(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
+    player.pos.x += fwd.x * 10;
+    player.pos.z += fwd.z * 10;
+    camera.position.copy(player.pos).add(new THREE.Vector3(0, 1.65, 0));
+    // Stun nearest
+    let nearest = null, nearDist = Infinity;
+    gmMonsters.forEach(m => {
+      if (m.hp <= 0) return;
+      const dx = m.mesh.position.x - player.pos.x, dz = m.mesh.position.z - player.pos.z;
+      const d = Math.sqrt(dx*dx + dz*dz);
+      if (d < nearDist) { nearDist = d; nearest = m; }
+    });
+    if (nearest && nearDist < 6) { nearest.stunned = (nearest.stunned || 0) + 2; _flashMonster(nearest, 0xffffff); affected = 1; }
+    showInfo('💨 מהירות הרמס! קפץ קדימה' + (affected ? ' ושיתק מפלצת' : ''), '#80DEEA', 2000);
+    playTone(880, 0.15, 'sine');
+  } else if (godId === 'demeter') {
+    // Nature's wrath — roots all monsters in radius 12
+    gmMonsters.forEach(m => {
+      if (m.hp <= 0) return;
+      const dx = m.mesh.position.x - px, dz = m.mesh.position.z - pz;
+      if (Math.sqrt(dx*dx + dz*dz) < 12) {
+        m.stunned = (m.stunned || 0) + 4;
+        m.hp -= 15;
+        _flashMonster(m, 0x66bb6a);
+        affected++;
+      }
+    });
+    showInfo('🌿 זעם דמטר! שורשים כלאו ' + affected + ' מפלצות', '#4CAF50', 2000);
+    playTone(330, 0.3, 'sine');
+  } else if (godId === 'dionysus') {
+    // Madness — all monsters attack each other for 4 seconds
+    gmMonsters.forEach(m => {
+      if (m.hp <= 0) return;
+      m.berserk = (m.berserk || 0) + 4;
+      _flashMonster(m, 0xce93d8);
+      affected++;
+    });
+    showInfo('🍇 שיגעון דיוניסוס! ' + affected + ' מפלצות תוקפות אחת את השנייה', '#CE93D8', 2000);
+    playTone(220, 0.3, 'triangle');
+  } else if (godId === 'hades') {
+    // Soul drain — kills all monsters below 30% HP, damages others
+    gmMonsters.forEach(m => {
+      if (m.hp <= 0) return;
+      const dx = m.mesh.position.x - px, dz = m.mesh.position.z - pz;
+      if (Math.sqrt(dx*dx + dz*dz) < 16) {
+        if (m.hp < m.maxHp * 0.3) {
+          m.hp = 0; // instant kill
+        } else {
+          m.hp -= 20;
+        }
+        _flashMonster(m, 0x78909c);
+        affected++;
+      }
+    });
+    showInfo('💀 גזירת האדס! קצר נשמות ב-' + affected + ' מפלצות', '#78909C', 2000);
+    playTone(60, 0.5, 'sawtooth');
+  }
+
+  // Clean up dead monsters
+  gmMonsters.forEach(m => {
+    if (m.hp <= 0 && !m._dying) {
+      m._dying = true;
+      scene.remove(m.mesh);
+      gmState.totalKills++;
+      gmState.believers = (gmState.believers || 0) + (m.def?.reward || 1);
+      playerBelievers += (m.def?.reward || 1);
+      updateStatsHUD();
+    }
+  });
+}
+
+function _flashMonster(m, hexColor) {
+  if (!m.mesh) return;
+  const origColor = m.mesh.material?.color?.getHex?.() ?? 0xffffff;
+  if (m.mesh.material) m.mesh.material.color.setHex(hexColor);
+  setTimeout(() => {
+    if (m.mesh?.material) m.mesh.material.color.setHex(origColor);
+  }, 250);
+}
+
+// ── Mini-Map ────────────────────────────────────────────────
+const _mmSize = 130;
+const _mmRadius = _mmSize / 2;
+const _mmScale = _mmSize / 64; // 64 = world size
+
+function _updateMiniMap() {
+  const canvas = document.getElementById('miniMapCanvas');
+  if (!canvas || !gmState) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, _mmSize, _mmSize);
+
+  // Background
+  ctx.fillStyle = '#0a1a0a';
+  ctx.beginPath();
+  ctx.arc(_mmRadius, _mmRadius, _mmRadius, 0, Math.PI * 2);
+  ctx.fill();
+
+  const wSZ = worldSZ || 64;
+  const scale = _mmSize / wSZ;
+
+  // Village center
+  if (_villageData) {
+    const vx = _villageData.cx * scale;
+    const vz = _villageData.cz * scale;
+    ctx.fillStyle = 'rgba(255,200,50,0.5)';
+    ctx.beginPath();
+    ctx.arc(vx, vz, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // Village icon
+    ctx.fillStyle = '#ffd700';
+    ctx.font = '8px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('🏘', vx, vz + 3);
+  }
+
+  // Monsters (red dots)
+  ctx.fillStyle = '#ff3333';
+  gmMonsters.forEach(m => {
+    if (m.hp <= 0) return;
+    const mx = m.mesh.position.x * scale;
+    const mz = m.mesh.position.z * scale;
+    ctx.beginPath();
+    ctx.arc(mx, mz, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Player (white arrow)
+  const px = player.pos.x * scale;
+  const pz = player.pos.z * scale;
+  ctx.save();
+  ctx.translate(px, pz);
+  ctx.rotate(player.yaw + Math.PI);
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.moveTo(0, -5);
+  ctx.lineTo(-3, 4);
+  ctx.lineTo(0, 2);
+  ctx.lineTo(3, 4);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  // Circular clip mask border
+  ctx.strokeStyle = '#b8860b';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(_mmRadius, _mmRadius, _mmRadius - 1, 0, Math.PI * 2);
+  ctx.stroke();
 }
 
 // ── Hydra acid spit projectile ──
@@ -7779,6 +8320,12 @@ async function enterGameMode() {
   document.getElementById('menuToggleBtn').style.display = 'block';
   document.getElementById('saveBtn').style.display = 'none';
   document.getElementById('inviteBtn').style.display = 'none';
+  // Show minimap
+  const mmEl = document.getElementById('miniMap');
+  if (mmEl) mmEl.style.display = 'block';
+  // Reset cooldown
+  godPowerCooldownRemaining = 0; godPowerCooldownMax = 0;
+  _updateCooldownHUD();
 
   playerHP = 100; playerMaxHP = 100;
   playerBelievers = 0; playerGold = 0; playerDivinity = 0;
@@ -8023,6 +8570,16 @@ async function exitGame() {
   if (sunSphere)  { scene.remove(sunSphere);  sunSphere  = null; }
   if (moonSphere) { scene.remove(moonSphere); moonSphere = null; }
   gameClouds.forEach(c => scene.remove(c)); gameClouds.length = 0;
+  // Hide minimap and reset cooldown
+  const _mmEl = document.getElementById('miniMap');
+  if (_mmEl) _mmEl.style.display = 'none';
+  const _cdEl = document.getElementById('godPowerCooldown');
+  if (_cdEl) _cdEl.style.display = 'none';
+  godPowerCooldownRemaining = 0; godPowerCooldownMax = 0;
+  // Hide end screens
+  ['victoryScreen','gameOverScreen'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
   // Reset god/zoom/fog/filter
   godZoomActive = false; dionysusActive = false;
   camera.fov = 75; camera.updateProjectionMatrix();
@@ -8246,6 +8803,12 @@ function initAuth() {
       showInfo(`🔗 הקישור הועתק! שתף אותו עם חברים:\n${url}`, '#00E5FF', 4000);
     });
   });
+
+  // ── Victory / Game-Over screen buttons ──
+  document.getElementById('victoryRestartBtn').addEventListener('click', _restartGameMode);
+  document.getElementById('victoryExitBtn').addEventListener('click', _exitToMenu);
+  document.getElementById('gameOverRestartBtn').addEventListener('click', _restartGameMode);
+  document.getElementById('gameOverExitBtn').addEventListener('click', _exitToMenu);
 
   // ── Show initial screen ──
   document.getElementById('loginScreen').style.display = 'flex';
