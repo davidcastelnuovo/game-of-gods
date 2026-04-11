@@ -2127,6 +2127,103 @@ function getPixelMats(id) {
     const f=mkWF(), e=mkWE();
     m6=[e,e,e,e,f,f];
 
+  } else if (id === 'whitewash') {
+    const top = makePixelMat((ctx, sz) => {
+      const pal = ['#F5F0E8','#EDE8DC','#F0EBE0','#FAF7F2','#E8E2D8'];
+      for (let y=0;y<sz;y++) for (let x=0;x<sz;x++) {
+        ctx.fillStyle = pal[Math.floor(pnoise(x,y,70)*pal.length)];
+        ctx.fillRect(x,y,1,1);
+      }
+    });
+    m6 = [top,top,top,top,top,top];
+
+  } else if (id === 'blue_dome') {
+    const m = makePixelMat((ctx, sz) => {
+      const pal = ['#1A6BB5','#1560A8','#1255A0','#0D4F8B','#1870BE'];
+      for (let y=0;y<sz;y++) for (let x=0;x<sz;x++) {
+        ctx.fillStyle = pal[Math.floor(pnoise(x,y,71)*pal.length)];
+        ctx.fillRect(x,y,1,1);
+      }
+    });
+    m6 = [m,m,m,m,m,m];
+
+  } else if (id === 'cobble_aegean') {
+    const m = makePixelMat((ctx, sz) => {
+      const pal = ['#8A9BAE','#7A8B9E','#6B7A8D','#9AABBE','#5F6E7E'];
+      for (let y=0;y<sz;y++) for (let x=0;x<sz;x++) {
+        const crack = pnoise(x,y,72);
+        ctx.fillStyle = crack > 0.85 ? '#4A5A6A' : pal[Math.floor(pnoise(x,y,73)*pal.length)];
+        ctx.fillRect(x,y,1,1);
+      }
+    });
+    m6 = [m,m,m,m,m,m];
+
+  } else if (id === 'terracotta') {
+    const m = makePixelMat((ctx, sz) => {
+      const pal = ['#C4714A','#B86040','#A85A35','#D07850','#C06845'];
+      for (let y=0;y<sz;y++) for (let x=0;x<sz;x++) {
+        ctx.fillStyle = pal[Math.floor(pnoise(x,y,74)*pal.length)];
+        ctx.fillRect(x,y,1,1);
+      }
+    });
+    m6 = [m,m,m,m,m,m];
+
+  } else if (id === 'marble') {
+    const m = makePixelMat((ctx, sz) => {
+      const pal = ['#E8E0D5','#DDD5C8','#F0E8DC','#CFC4B5','#E0D8CC'];
+      for (let y=0;y<sz;y++) for (let x=0;x<sz;x++) {
+        const vein = pnoise(x,y,75);
+        ctx.fillStyle = vein > 0.82 ? '#C0B8A8' : pal[Math.floor(pnoise(x,y,76)*pal.length)];
+        ctx.fillRect(x,y,1,1);
+      }
+    });
+    m6 = [m,m,m,m,m,m];
+
+  } else if (id === 'volcanic') {
+    const m = makePixelMat((ctx, sz) => {
+      const pal = ['#3D3535','#2A2222','#1A1212','#4A4040','#302828'];
+      for (let y=0;y<sz;y++) for (let x=0;x<sz;x++) {
+        const crack = pnoise(x,y,77);
+        ctx.fillStyle = crack > 0.88 ? '#FF4500' : pal[Math.floor(pnoise(x,y,78)*pal.length)];
+        ctx.fillRect(x,y,1,1);
+      }
+    });
+    m6 = [m,m,m,m,m,m];
+
+  } else if (id === 'bougainvillea') {
+    const m = makePixelMat((ctx, sz) => {
+      const pal = ['#FF006E','#E0005A','#FF3385','#C9184A','#FF1A75'];
+      for (let y=0;y<sz;y++) for (let x=0;x<sz;x++) {
+        ctx.fillStyle = pal[Math.floor(pnoise(x,y,79)*pal.length)];
+        ctx.fillRect(x,y,1,1);
+      }
+    });
+    const mMat = new THREE.MeshLambertMaterial({color:0xFF006E, transparent:true, opacity:0.85});
+    m6 = [mMat,mMat,mMat,mMat,mMat,mMat];
+
+  } else if (id === 'sea_shallow') {
+    // Turquoise shallow water — shared material, transparent
+    const wm = new THREE.MeshLambertMaterial({color:0x48CAE4, transparent:true, opacity:0.58, side:THREE.DoubleSide});
+    m6 = [wm,wm,wm,wm,wm,wm];
+
+  } else if (id === 'sea_deep') {
+    const wm = new THREE.MeshLambertMaterial({color:0x023E8A, transparent:true, opacity:0.80, side:THREE.DoubleSide});
+    m6 = [wm,wm,wm,wm,wm,wm];
+
+  } else if (id === 'blue_door') {
+    const m = makePixelMat((ctx, sz) => {
+      const pal = ['#1A6BB5','#1560A8','#0D4F8B','#1870BE'];
+      for (let y=0;y<sz;y++) for (let x=0;x<sz;x++) {
+        ctx.fillStyle = pal[Math.floor(pnoise(x,y,80)*pal.length)];
+        ctx.fillRect(x,y,1,1);
+      }
+    });
+    m6 = [m,m,m,m,m,m];
+
+  } else if (id === 'blue_window') {
+    const wm = new THREE.MeshLambertMaterial({color:0x48CAE4, transparent:true, opacity:0.55, side:THREE.DoubleSide});
+    m6 = [wm,wm,wm,wm,wm,wm];
+
   } else {
     // Fallback to original solid-colour system for unknown ids
     const d = BD[id];
@@ -2160,7 +2257,7 @@ const _tmpMat4  = new THREE.Matrix4();
 const _hiddenM4 = new THREE.Matrix4().makeScale(0, 0, 0); // for momentarily freed slots
 
 function _makeIMesh(id, capacity) {
-  const geom = (id === 'water') ? WATER_GEOM : BGEOM;
+  const geom = (id === 'water' || id === 'sea_shallow' || id === 'sea_deep') ? WATER_GEOM : BGEOM;
   const im = new THREE.InstancedMesh(geom, mats(id), capacity);
   im.count = 0;
   im.frustumCulled = false; // whole-world imeshes — rely on GPU frustum per-instance via shader
