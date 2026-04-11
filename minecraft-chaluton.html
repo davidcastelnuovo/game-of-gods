@@ -1599,7 +1599,7 @@ let RENDER_DIST = 20;  // near detail distance (F key to cycle: 12/20/30/40)
 let FAR_DIST    = RENDER_DIST * 4; // far LOD distance — extended for dramatic views
 // Fog kept but pushed far off by default → clean horizon.
 // Still available for underwater tint / apollo / hades / poseidon god effects.
-scene.fog = new THREE.Fog(0x87CEEB, 9000, 10000);
+scene.fog = new THREE.Fog(0x87CEEB, 60, 160); // Horizon fog — near=60, far=160
 
 const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.05, 400);
 scene.add(camera); // נדרש כדי שאובייקטים שמחוברים למצלמה (fpHands, נשק) יצטיירו
@@ -2663,6 +2663,7 @@ function genTerrain() {
 // ── PLAYER ────────────────────────────────────────────
 const PW=0.3, PH=1.8, EYE=1.6;
 const GRAVITY=-26, JUMP_V=10, SPEED=5.5, FLY_SPEED=10;
+const SEA_LEVEL = 6; // global sea level in block units
 const WATER_GRAVITY=-5, SWIM_SPEED=4, SWIM_SPEED_MULT=0.55; // מים: כבידה עדינה, שחייה, האטה
 
 const player = {
@@ -2797,13 +2798,18 @@ function updatePlayer(dt) {
     }
   }
 
-  // Toroidal wrap — stepping off one edge puts you on the opposite side
-  if (p.x < 0)        p.x += worldSZ;
-  if (p.x >= worldSZ) p.x -= worldSZ;
-  if (p.z < 0)        p.z += worldSZ;
-  if (p.z >= worldSZ) p.z -= worldSZ;
-  // Vertical fall-out: respawn at centre (no wrap vertically)
-  if (p.y < -5) { p.set(worldSZ / 2, 16, worldSZ / 2); player.vel.set(0, 0, 0); }
+  // Open-sea boundary — when player exits the island grid they enter open sea.
+  // The sea plane is infinite so we just clamp Y and let them sail freely.
+  // Virtual world position (_worldX, _worldZ) is updated by _updateVirtualPosition().
+  // We do NOT wrap X/Z — the player can walk off the edge into the sea.
+  // Instead, clamp to a large buffer so they don’t fall into the void.
+  const SEA_BUFFER = 200;
+  if (p.x < -SEA_BUFFER) p.x = -SEA_BUFFER;
+  if (p.x > worldSZ + SEA_BUFFER) p.x = worldSZ + SEA_BUFFER;
+  if (p.z < -SEA_BUFFER) p.z = -SEA_BUFFER;
+  if (p.z > worldSZ + SEA_BUFFER) p.z = worldSZ + SEA_BUFFER;
+  // Vertical fall-out: respawn at sea level
+  if (p.y < -5) { p.set(worldSZ / 2, SEA_LEVEL + 2, worldSZ / 2); player.vel.set(0, 0, 0); }
 
   // ── Body position (always follow player, visibility depends on mode) ──
   if (playerBody) {
@@ -3119,9 +3125,9 @@ window.addEventListener('keydown', e => {
     const next = dists[(dists.indexOf(RENDER_DIST) + 1) % dists.length];
     RENDER_DIST = next;
     FAR_DIST    = RENDER_DIST * 4;
-    // Fog kept invisible — horizon is clean regardless of render distance
-    scene.fog.near = 9000;
-    scene.fog.far  = 10000;
+    // Keep horizon fog active
+    scene.fog.near = HORIZON_FOG_NEAR;
+    scene.fog.far  = HORIZON_FOG_FAR;
     cullTick = 0; // force immediate re-cull (LOD system removed)
     showInfo(`🌄 מרחק תצוגה: ${RENDER_DIST}`, '#87CEEB', 2000);
   }
@@ -5926,9 +5932,9 @@ function _exitUnderwater() {
   if (sunSphere) sunSphere.visible = true;
   if (moonSphere) moonSphere.visible = true;
   gameClouds.forEach(c => { c.visible = true; });
-  // Restore invisible default horizon (no fog)
-  scene.fog.near = 9000;
-  scene.fog.far  = 10000;
+  // Restore horizon fog
+  scene.fog.near = HORIZON_FOG_NEAR;
+  scene.fog.far  = HORIZON_FOG_FAR;
   _despawnUnderwaterLife();
 }
 
@@ -7155,8 +7161,7 @@ async function genGameWorld(sz) {
   const villageCX = mid;
   const villageCZ = mid + 8;
 
-  // Sea level = y 4. Shallow sea = y 3-4. Deep sea = y 1-2.
-  const SEA_LEVEL = 4;
+  // Sea level uses global SEA_LEVEL = 6
 
   for (let x = 0; x < sz; x++) {
     if (x % 8 === 0) await new Promise(r => setTimeout(r, 0)); // yield to UI thread
@@ -8479,8 +8484,11 @@ function _createInfiniteSeaPlane() {
     opacity: 0.82,
   });
   _infiniteSeaPlane = new THREE.Mesh(geo, mat);
-  _infiniteSeaPlane.position.y = SEA_LEVEL - 0.6; // just below sea level blocks
+  // Position at sea level (SEA_LEVEL=6 in block coords, each block = 1 unit)
+  // The sea plane sits at y=6.0 so it's flush with the water surface
+  _infiniteSeaPlane.position.y = (typeof SEA_LEVEL !== 'undefined' ? SEA_LEVEL : 6) + 0.05;
   _infiniteSeaPlane.receiveShadow = false;
+  _infiniteSeaPlane.renderOrder = -1; // render behind blocks
   _infiniteSeaPlane.name = 'infiniteSeaPlane';
   scene.add(_infiniteSeaPlane);
 }
@@ -9581,7 +9589,6 @@ async function enterGame(worldData, inviteCode) {
   // For Cyclades worlds the center is often ocean, so we spiral out until
   // we find a non-water top block above sea level.
   const mid = Math.floor(worldSZ / 2);
-  const SEA_LEVEL = 6;
   function topBlockAt(sx, sz) {
     for (let y = 40; y >= 1; y--) {
       const info = world.get(`${sx}|${y}|${sz}`);
