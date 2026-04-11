@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>משחקי האלים ⚡ Game of GODS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800;900&family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Heebo:wght@300;400;500;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace; }
@@ -227,46 +227,40 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
   font-family: 'Nunito', Arial, sans-serif;
   padding: 16px; overflow-y: auto;
 
-  /* ── Deep castle stone wall ── */
-  background-color: #12100c;
+  /* ── Cyclades sunset sky + sea ── */
+  background-color: #0a2a4a;
   background-image:
-    /* Torch glow — left */
-    radial-gradient(ellipse 28% 55% at 4% 28%, rgba(255,130,20,.22) 0%, transparent 70%),
-    /* Torch glow — right */
-    radial-gradient(ellipse 28% 55% at 96% 28%, rgba(255,130,20,.22) 0%, transparent 70%),
-    /* Top dark arch shadow */
-    radial-gradient(ellipse 80% 35% at 50% 0%, rgba(0,0,0,.75) 0%, transparent 70%),
-    /* Bottom dark shadow */
-    radial-gradient(ellipse 90% 30% at 50% 100%, rgba(0,0,0,.80) 0%, transparent 70%),
-    /* Side vignettes */
-    radial-gradient(ellipse 20% 100% at 0% 50%, rgba(0,0,0,.55) 0%, transparent 70%),
-    radial-gradient(ellipse 20% 100% at 100% 50%, rgba(0,0,0,.55) 0%, transparent 70%),
-    /* Stone mortar — horizontal rows */
-    repeating-linear-gradient(0deg,   transparent 0px, transparent 38px, rgba(0,0,0,.80) 38px, rgba(0,0,0,.80) 42px),
-    /* Stone mortar — vertical cols (offset every other row via 145deg) */
-    repeating-linear-gradient(90deg,  transparent 0px, transparent 62px, rgba(0,0,0,.60) 62px, rgba(0,0,0,.60) 66px),
-    /* Subtle brick surface texture */
-    repeating-linear-gradient(170deg, rgba(255,255,255,.018) 0px, rgba(255,255,255,.018) 1px, transparent 1px, transparent 20px);
+    /* Bougainvillea glow left */
+    radial-gradient(ellipse 22% 40% at 3% 60%, rgba(255,0,110,.18) 0%, transparent 70%),
+    /* Bougainvillea glow right */
+    radial-gradient(ellipse 22% 40% at 97% 60%, rgba(255,0,110,.18) 0%, transparent 70%),
+    /* Sunset horizon glow */
+    radial-gradient(ellipse 70% 40% at 50% 72%, rgba(255,140,60,.30) 0%, transparent 70%),
+    /* Sky gradient: deep blue top → orange-pink horizon */
+    linear-gradient(to bottom,
+      #03045e 0%,
+      #0077b6 25%,
+      #00b4d8 50%,
+      #f4a261 70%,
+      #e76f51 80%,
+      #264653 100%
+    ),
+    /* Sea shimmer lines */
+    repeating-linear-gradient(180deg, transparent 0px, transparent 8px, rgba(255,255,255,.025) 8px, rgba(255,255,255,.025) 9px);
 }
 
 .gamePanel::before, .gamePanel::after { display: none; }
 
-/* ── Dark stone card container ── */
+/* ── Cyclades whitewash card container ── */
 .rbCard {
-  background: rgba(18,14,8,0.96);
-  background-image:
-    repeating-linear-gradient(0deg,   transparent 0px, transparent 28px, rgba(0,0,0,.45) 28px, rgba(0,0,0,.45) 31px),
-    repeating-linear-gradient(90deg,  transparent 0px, transparent 44px, rgba(0,0,0,.35) 44px, rgba(0,0,0,.35) 47px);
-  border-radius: 3px;
+  background: rgba(245,240,232,0.97);
+  border-radius: 12px;
   box-shadow:
-    0 0 0 3px #1a1200,
-    0 0 0 5px #b8860b,
-    0 0 0 7px #ffd700,
-    0 0 0 9px #b8860b,
-    0 0 0 11px #1a1200,
-    0 0 40px rgba(255,160,20,.12),
-    0 12px 40px rgba(0,0,0,0.92),
-    inset 0 1px 0 rgba(255,200,80,.06);
+    0 0 0 3px #e8e0d5,
+    0 0 0 6px #1a6bb5,
+    0 0 0 9px #e8e0d5,
+    0 0 50px rgba(0,100,180,.25),
+    0 20px 60px rgba(0,0,0,0.55);
   padding: 30px 36px 26px;
   display: flex; flex-direction: column; align-items: center; gap: 14px;
   width: 100%; max-width: 480px; position: relative;
@@ -278,18 +272,16 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
 }
 .rbLogoIcon { font-size: 3.5rem; line-height: 1; filter: drop-shadow(0 4px 0 rgba(0,0,0,0.7)); }
 .rbLogoTitle {
-  font-family: 'Press Start 2P', monospace;
-  font-size: clamp(1.1rem, 2.6vw, 1.9rem);
-  color: #ffd700;
-  text-shadow: 3px 3px 0 #000, -1px -1px 0 #000,
-               0 0 20px rgba(255,200,50,.5), 0 6px 0 #7a5a00;
-  letter-spacing: 3px; text-align: center; line-height: 1.3;
+  font-family: 'Cinzel Decorative', 'Press Start 2P', serif;
+  font-size: clamp(1.2rem, 2.8vw, 2.1rem);
+  color: #1a6bb5;
+  text-shadow: 1px 1px 0 rgba(0,0,0,.15), 0 2px 8px rgba(26,107,181,.3);
+  letter-spacing: 2px; text-align: center; line-height: 1.3;
 }
 .rbLogoSub {
-  font-family: 'Nunito', Arial, sans-serif;
-  font-size: clamp(0.9rem, 1.6vw, 1.1rem); font-weight: 800;
-  color: #c8b89a; letter-spacing: 1.5px; text-align: center;
-  text-shadow: 1px 1px 0 #000;
+  font-family: 'Cinzel', 'Nunito', serif;
+  font-size: clamp(0.85rem, 1.5vw, 1.05rem); font-weight: 600;
+  color: #4a6fa5; letter-spacing: 2px; text-align: center;
 }
 
 /* ── Section title (for sub-screens) ── */
@@ -303,47 +295,47 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
 
 /* ── Inputs ── */
 .gpInput {
-  width: 100%; padding: 12px 16px; border-radius: 3px;
-  border: 2px solid #b8860b; background: #1a1510; color: #c8b89a;
-  font-size: 1rem; font-family: 'Nunito', Arial, sans-serif;
-  font-weight: 700; outline: none; direction: rtl;
+  width: 100%; padding: 12px 16px; border-radius: 8px;
+  border: 2px solid #8ab4d4; background: #ffffff; color: #1a3a5c;
+  font-size: 1rem; font-family: 'Heebo', 'Nunito', sans-serif;
+  font-weight: 500; outline: none; direction: rtl;
   transition: border .15s, box-shadow .15s;
-  box-shadow: inset 0 2px 6px rgba(0,0,0,0.5);
+  box-shadow: inset 0 1px 4px rgba(0,80,160,0.08);
 }
 .gpInput:focus {
-  border-color: #ffd700;
-  box-shadow: 0 0 0 2px rgba(255,215,0,0.2), inset 0 2px 6px rgba(0,0,0,0.5);
+  border-color: #1a6bb5;
+  box-shadow: 0 0 0 3px rgba(26,107,181,0.18), inset 0 1px 4px rgba(0,80,160,0.08);
 }
-.gpInput::placeholder { color: #6a5a3a; font-weight: 600; }
+.gpInput::placeholder { color: #8aabcc; font-weight: 400; }
 
 /* ── Buttons ── */
 .gpBtn {
-  width: 100%; padding: 14px 18px; border-radius: 3px;
-  font-family: 'Press Start 2P', monospace;
-  font-size: clamp(0.58rem, 1.1vw, 0.78rem);
-  color: #1a0d00; letter-spacing: 1.5px; text-transform: uppercase;
-  cursor: pointer; border: none; transition: all .1s;
-  background: linear-gradient(to bottom, #ffe888, #d4a012, #b8860b);
-  box-shadow: 0 5px 0 #7a5a00, 0 7px 14px rgba(0,0,0,0.6),
-              inset 0 1px 0 rgba(255,255,255,.2);
+  width: 100%; padding: 14px 18px; border-radius: 8px;
+  font-family: 'Cinzel', 'Heebo', serif;
+  font-size: clamp(0.75rem, 1.3vw, 0.95rem);
+  color: #ffffff; letter-spacing: 1.5px;
+  cursor: pointer; border: none; transition: all .15s;
+  background: linear-gradient(135deg, #1a6bb5, #0d4f8b);
+  box-shadow: 0 4px 0 #083a6b, 0 6px 16px rgba(0,80,180,0.35),
+              inset 0 1px 0 rgba(255,255,255,.15);
   line-height: 1.6;
 }
 .gpBtn:hover:not(:disabled) {
-  background: linear-gradient(to bottom, #fff0a0, #e8b820, #c9950a);
-  transform: translateY(-2px); box-shadow: 0 7px 0 #7a5a00, 0 10px 18px rgba(0,0,0,0.6);
+  background: linear-gradient(135deg, #2280d4, #1a6bb5);
+  transform: translateY(-2px); box-shadow: 0 6px 0 #083a6b, 0 10px 20px rgba(0,80,180,0.4);
 }
-.gpBtn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 #7a5a00; }
-.gpBtn:disabled { background: linear-gradient(to bottom,#3a3a3a,#222); color:#555; cursor:not-allowed; box-shadow:0 4px 0 #111; }
-.gpBtn.primary { background: linear-gradient(to bottom, #ffe888, #d4a012, #b8860b); }
+.gpBtn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 #083a6b; }
+.gpBtn:disabled { background: linear-gradient(to bottom,#aaa,#888); color:#ddd; cursor:not-allowed; box-shadow:0 3px 0 #666; }
+.gpBtn.primary { background: linear-gradient(135deg, #1a6bb5, #0d4f8b); }
 .gpBtn.secondary {
-  background: linear-gradient(to bottom, #5a5040, #353025);
-  color: #c8b89a; box-shadow: 0 5px 0 #1a1508, 0 7px 12px rgba(0,0,0,.5);
+  background: linear-gradient(135deg, #8a9bae, #6b7a8d);
+  color: #fff; box-shadow: 0 4px 0 #4f5e6e, 0 6px 14px rgba(0,0,0,.25);
 }
 .gpBtn.secondary:hover:not(:disabled) {
-  background: linear-gradient(to bottom, #706050, #454035);
-  transform: translateY(-2px); box-shadow: 0 7px 0 #1a1508;
+  background: linear-gradient(135deg, #a0b0c0, #8a9bae);
+  transform: translateY(-2px); box-shadow: 0 6px 0 #4f5e6e;
 }
-.gpBtn.secondary:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 #1a1508; }
+.gpBtn.secondary:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 #4f5e6e; }
 .gpBtn.danger {
   background: linear-gradient(to bottom, #dd3333, #880000);
   color: #fff; box-shadow: 0 5px 0 #440000, 0 7px 12px rgba(0,0,0,.5);
@@ -570,14 +562,14 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
 #gameModeHUD {
   position: fixed; top: 50px; left: 50%; transform: translateX(-50%);
   z-index: 12; display: flex; gap: 14px; align-items: center;
-  background: rgba(10,8,4,.85); border: 2px solid #b8860b; border-radius: 6px;
-  padding: 6px 16px; font-family: 'Press Start 2P', monospace;
-  box-shadow: 0 4px 16px rgba(0,0,0,.5);
+  background: rgba(245,240,232,.92); border: 2px solid #1a6bb5; border-radius: 10px;
+  padding: 6px 16px; font-family: 'Cinzel', 'Press Start 2P', serif;
+  box-shadow: 0 4px 20px rgba(0,80,180,.25), 0 2px 8px rgba(0,0,0,.3);
 }
 #gmStageBar {
   display: flex; align-items: center; gap: 6px;
-  color: #ffd700; font-size: .6rem;
-  border-right: 1px solid #5a4a20; padding-right: 12px;
+  color: #1a6bb5; font-size: .6rem;
+  border-right: 1px solid #8ab4d4; padding-right: 12px;
 }
 #gmPowerBar, #gmBelieversBar {
   display: flex; align-items: center; gap: 5px;
@@ -610,12 +602,14 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
   display: none; flex-direction: column; align-items: center;
   justify-content: flex-start;
   overflow: hidden;
-  /* Stone-brick wall background */
-  background-color: #2a2520;
+  /* Cyclades sky + sea background */
+  background-color: #0077b6;
   background-image:
-    repeating-linear-gradient(0deg,   transparent 0px,transparent 30px,rgba(0,0,0,.50) 30px,rgba(0,0,0,.50) 33px),
-    repeating-linear-gradient(90deg,  transparent 0px,transparent 47px,rgba(0,0,0,.50) 47px,rgba(0,0,0,.50) 50px),
-    repeating-linear-gradient(145deg, rgba(255,255,255,.015) 0px,rgba(255,255,255,.015) 2px,transparent 2px,transparent 10px);
+    radial-gradient(ellipse 60% 30% at 50% 100%, rgba(0,180,216,.5) 0%, transparent 70%),
+    radial-gradient(ellipse 30% 20% at 20% 80%, rgba(255,0,110,.12) 0%, transparent 60%),
+    radial-gradient(ellipse 30% 20% at 80% 80%, rgba(255,0,110,.12) 0%, transparent 60%),
+    linear-gradient(to bottom, #03045e 0%, #0077b6 40%, #00b4d8 70%, #48cae4 100%),
+    repeating-linear-gradient(180deg, transparent 0px, transparent 12px, rgba(255,255,255,.03) 12px, rgba(255,255,255,.03) 13px);
   font-family: 'Press Start 2P', 'Courier New', monospace;
 }
 /* Header ─────────────────────────────── */
@@ -1069,6 +1063,65 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
   transform: translateY(-2px);
   box-shadow: 0 6px 0 #5a3a00, 0 0 20px rgba(255,215,0,.5);
 }
+
+/* ═══ STAGE ANNOUNCEMENT SCREEN ═════════════════════════════════════════════ */
+#stageAnnounce {
+  position: fixed; inset: 0; z-index: 45;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.65);
+  animation: stageAnnFadeIn .4s ease-out;
+}
+@keyframes stageAnnFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+#stageAnnounceScroll {
+  background: linear-gradient(160deg, #f5f0e8 0%, #e8dfc8 40%, #f5f0e8 100%);
+  border: 3px solid #1a6bb5;
+  border-radius: 16px;
+  box-shadow: 0 0 0 6px rgba(26,107,181,.2), 0 20px 60px rgba(0,0,0,.6);
+  padding: 48px 64px;
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  animation: stageScrollUnfurl .7s cubic-bezier(0.22,1,0.36,1);
+  max-width: 520px; text-align: center;
+}
+@keyframes stageScrollUnfurl {
+  from { transform: scaleY(0.05) scaleX(0.8); opacity: 0; }
+  to   { transform: scaleY(1) scaleX(1); opacity: 1; }
+}
+#stageAnnounceIcon { font-size: 4rem; filter: drop-shadow(0 4px 8px rgba(0,0,0,.3)); }
+#stageAnnounceTitle {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(1.4rem, 3vw, 2.2rem);
+  color: #1a6bb5;
+  text-shadow: 1px 1px 0 rgba(0,0,0,.1);
+  letter-spacing: 2px;
+}
+#stageAnnounceSub {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(0.9rem, 1.8vw, 1.2rem);
+  color: #4a6fa5; letter-spacing: 1px;
+}
+
+/* ═══ CYCLADES GOD CARDS UPDATE ════════════════════════════════════════════ */
+.gogCardName {
+  font-family: 'Cinzel', serif !important;
+  font-size: .75rem !important;
+  letter-spacing: 1.5px;
+}
+.gogHeader {
+  font-family: 'Cinzel Decorative', serif !important;
+}
+
+/* ═══ CYCLADES WAVE BAR ═══════════════════════════════════════════════════════ */
+.gmBarFill {
+  height: 100%; background: linear-gradient(to right, #0096c7, #1a6bb5) !important;
+  transition: width .3s; border-radius: 2px;
+}
+.gmBarLabel { color: #1a6bb5 !important; }
+.gmBarVal   { color: #1a3a5c !important; }
+#gmWaveInfo { color: #c9184a !important; border-left-color: #8ab4d4 !important; }
+#gmVillagerCount { color: #1a6bb5 !important; border-left-color: #8ab4d4 !important; }
 </style>
 </head>
 <body>
@@ -1330,6 +1383,15 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
   <div id="godPowerCdText"></div>
 </div>
 
+
+<!-- ── STAGE ANNOUNCEMENT ──────────────────────────────── -->
+<div id="stageAnnounce">
+  <div id="stageAnnounceScroll">
+    <div id="stageAnnounceIcon"></div>
+    <div id="stageAnnounceTitle"></div>
+    <div id="stageAnnounceSub"></div>
+  </div>
+</div>
 <!-- ── VICTORY SCREEN ────────────────────────────────── -->
 <div id="victoryScreen">
   <div class="endScreenBox">
@@ -1622,7 +1684,7 @@ const BD = {
   wood:    { n:'עץ',     e:'🌲', t:0xb07030, s:0x9c6028, b:0xb07030 },
   leaves:  { n:'עלים',   e:'🍃', t:0x4caf50, s:0x388e3c, b:0x2e7d32 },
   sand:    { n:'חול',    e:'🏜️', t:0xFFD54F, s:0xF9A825, b:0xE65100 },
-  water:   { n:'מים',    e:'💧', t:0x1E88E5, s:0x1565C0, b:0x0D47A1, op:0.65 },
+  water:   { n:'מים',    e:'💧', t:0x00B4D8, s:0x0096C7, b:0x023E8A, op:0.62 },  // Aegean turquoise
   gold:    { n:'זהב',    e:'⭐', t:0xFFD700, s:0xFFA000, b:0xFF6F00 },
   diamond: { n:'יהלום',  e:'💎', t:0x00E5FF, s:0x00BCD4, b:0x0097A7 },
   lava:    { n:'לבה',    e:'🔥', t:0xFF5722, s:0xBF360C, b:0x7F0000, em:0x280000 },
@@ -1635,10 +1697,24 @@ const BD = {
   door_wood:  { n:'דלת עץ',   e:'🚪', t:0xA0522D, s:0x8B4513, b:0x6B3410 },
   door_iron:  { n:'דלת ברזל', e:'🔩', t:0xB0BEC5, s:0x78909C, b:0x546E7A },
   window_glass:{ n:'חלון',    e:'🪟', t:0xB3E5FC, s:0x81D4FA, b:0x4FC3F7, op:0.5 },
+  // ── Cyclades blocks ──────────────────────────────────────
+  whitewash:   { n:'טיח לבן',    e:'🤍', t:0xF5F0E8, s:0xDDD8CC, b:0xC8C2B5 },
+  blue_dome:   { n:'כיפה כחולה', e:'💙', t:0x1A6BB5, s:0x0D4F8B, b:0x083A6B },
+  cobble_aegean:{ n:'אבן אגאית', e:'🪨', t:0x8A9BAE, s:0x6B7A8D, b:0x4F5E6E },
+  terracotta:  { n:'חרס',        e:'🟤', t:0xC4714A, s:0xA85A35, b:0x8B4420 },
+  sea_shallow: { n:'ים רדוד',    e:'🩵', t:0x48CAE4, s:0x00B4D8, b:0x0096C7, op:0.58 },
+  sea_deep:    { n:'ים עמוק',    e:'🔵', t:0x023E8A, s:0x03045E, b:0x020030, op:0.80 },
+  bougainvillea:{ n:'בוגנוויליה',e:'🌸', t:0xFF006E, s:0xC9184A, b:0x85002B },
+  marble:      { n:'שיש',        e:'⬜', t:0xE8E0D5, s:0xCFC4B5, b:0xB5A898 },
+  volcanic:    { n:'בזלת',       e:'⚫', t:0x3D3535, s:0x2A2222, b:0x1A1212 },
+  blue_door:   { n:'דלת כחולה',  e:'🚪', t:0x1A6BB5, s:0x0D4F8B, b:0x083A6B },
+  blue_window: { n:'חלון כחול',  e:'🪟', t:0x48CAE4, s:0x00B4D8, b:0x0096C7, op:0.55 },
 };
 
 const PALETTE = ['grass','dirt','stone','wood','leaves','sand','water',
-                 'gold','diamond','lava','snow','brick','glass','cloud','rainbow','TNT'];
+                 'gold','diamond','lava','snow','brick','glass','cloud','rainbow','TNT',
+                 'whitewash','blue_dome','cobble_aegean','terracotta','marble','volcanic',
+                 'bougainvillea','sea_shallow','sea_deep','blue_door','blue_window'];
 
 // Shared geometry
 const BGEOM      = new THREE.BoxGeometry(1,1,1);
@@ -5405,22 +5481,39 @@ function updateWaterFlow() {
 let tick = 0;
 function animateBlocks() {
   tick++;
-  // Water UV scroll runs every frame for smooth flow
-  const waterIM = imeshByID['water'];
-  if (waterIM && Array.isArray(waterIM.material)) {
-    const wMap = waterIM.material[2].map;
-    if (wMap) {
-      wMap.offset.x = (tick * 0.0008) % 1;
-      wMap.offset.y = (tick * 0.0004) % 1;
+  // Aegean water: dual-layer UV scroll for organic wave effect
+  ['water','sea_shallow','sea_deep'].forEach(wid => {
+    const wIM = imeshByID[wid];
+    if (wIM && Array.isArray(wIM.material)) {
+      const wMap = wIM.material[2].map;
+      if (wMap) {
+        wMap.offset.x = (tick * 0.0010) % 1;
+        wMap.offset.y = (tick * 0.0005) % 1;
+      }
+      // Second layer shimmer via side faces
+      const sMap = wIM.material[0]?.map;
+      if (sMap) {
+        sMap.offset.x = (tick * -0.0006) % 1;
+        sMap.offset.y = (tick *  0.0003) % 1;
+      }
     }
-  }
+  });
   if (tick % 20 !== 0) return; // color tint + lava update every 20 frames
   if (animBlocks.size === 0) return;
 
+  // Aegean turquoise shimmer — oscillates between turquoise and deep blue
+  const waterIM = imeshByID['water'];
   if (waterIM && Array.isArray(waterIM.material)) {
-    const t = tick * 0.04;
-    const c = 0x1565C0 + Math.floor(Math.sin(t) * 0x050A0F);
-    waterIM.material[2].color.setHex(c); // face 2 = top
+    const t = tick * 0.025;
+    // Turquoise base: 0x00B4D8, shimmer toward 0x0096C7
+    const r = 0x00, g = Math.floor(0xB4 + Math.sin(t) * 0x0E), b = Math.floor(0xD8 - Math.sin(t*0.7) * 0x10);
+    waterIM.material[2].color.setRGB(r/255, g/255, b/255);
+  }
+  const shallowIM = imeshByID['sea_shallow'];
+  if (shallowIM && Array.isArray(shallowIM.material)) {
+    const t = tick * 0.02;
+    const g = Math.floor(0xCA + Math.sin(t) * 0x0A), b = Math.floor(0xE4 - Math.sin(t*0.8) * 0x0C);
+    shallowIM.material[2].color.setRGB(0x48/255, g/255, b/255);
   }
   const lavaIM = imeshByID['lava'];
   if (lavaIM && Array.isArray(lavaIM.material)) {
@@ -6823,268 +6916,493 @@ function genGameWorld(sz) {
   _clearWorld();
   worldSZ = sz;
   const mid = Math.floor(sz / 2);
-  const SEA = 5;
 
-  // Helper: distance from point
+  // ── Noise helpers ──────────────────────────────────────────
+  function noise(x, z, freq, amp) {
+    return Math.sin(x * freq + 0.3) * Math.cos(z * freq * 0.9 + 0.7) * amp
+         + Math.sin(x * freq * 1.7 + 1.1) * Math.cos(z * freq * 1.3 + 0.4) * amp * 0.5;
+  }
   function dist(x, z, cx, cz) { return Math.sqrt((x-cx)**2 + (z-cz)**2); }
 
-  // ── Define landscape zones (relative to center) ──
-  // Village at center, surrounded by varied terrain
-  const villageR   = 12;   // village radius
-  const riverX     = mid + 18; // river runs north-south at this X
-  const lakeCenter = { x: mid - 20, z: mid + 15 };
-  const lakeR      = 10;
-  const mtCenter   = { x: mid + 22, z: mid - 18 };
-  const mtR        = 14;
-  const forestCenter = { x: mid - 22, z: mid - 20 };
-  const forestR    = 12;
-  const wheatCenter = { x: mid + 10, z: mid + 20 };
-  const wheatR     = 10;
-  const desertCenter = { x: mid - 22, z: mid + 30 };
-  const desertR    = 12;
+  // ── Island definitions (Cyclades archipelago) ──────────────
+  // Main island: village + harbor on south coast
+  const mainIsland   = { cx: mid,      cz: mid,      r: 22, hillR: 10, hillH: 10 };
+  // Secondary island: church + windmill
+  const islandB      = { cx: mid+28,   cz: mid-18,   r: 12, hillR: 6,  hillH: 8  };
+  // Small rocky islet
+  const islandC      = { cx: mid-26,   cz: mid+20,   r: 8,  hillR: 4,  hillH: 6  };
+  // Tiny reef
+  const islandD      = { cx: mid+18,   cz: mid+26,   r: 5,  hillR: 2,  hillH: 3  };
+  const islands = [mainIsland, islandB, islandC, islandD];
+
+  // Village is on the south slope of main island
+  const villageCX = mid;
+  const villageCZ = mid + 8;
+
+  // Sea level = y 4. Shallow sea = y 3-4. Deep sea = y 1-2.
+  const SEA_LEVEL = 4;
 
   for (let x = 0; x < sz; x++) {
     for (let z = 0; z < sz; z++) {
-      const dVillage = dist(x, z, mid, mid);
-      const dLake    = dist(x, z, lakeCenter.x, lakeCenter.z);
-      const dMt      = dist(x, z, mtCenter.x, mtCenter.z);
-      const dForest  = dist(x, z, forestCenter.x, forestCenter.z);
-      const dWheat   = dist(x, z, wheatCenter.x, wheatCenter.z);
-      const dDesert  = dist(x, z, desertCenter.x, desertCenter.z);
-      const dRiver   = Math.abs(x - riverX);
-      // River meander
-      const riverMeander = Math.sin(z * 0.15) * 3 + Math.sin(z * 0.07) * 2;
-      const dRiverActual = Math.abs(x - (riverX + riverMeander));
 
-      let top = 7; // base height
+      // Find closest island influence
+      let maxInfluence = 0;
+      let bestIsland = null;
+      islands.forEach(isl => {
+        const d = dist(x, z, isl.cx, isl.cz);
+        const influence = Math.max(0, 1 - d / isl.r);
+        if (influence > maxInfluence) { maxInfluence = influence; bestIsland = isl; }
+      });
+
+      const onLand = maxInfluence > 0.08;
+
+      if (!onLand) {
+        // ── Open sea ──
+        const dMain = dist(x, z, mainIsland.cx, mainIsland.cz);
+        const noiseSea = noise(x, z, 0.18, 0.8);
+        if (dMain < mainIsland.r + 6 + noiseSea) {
+          // Shallow coastal water
+          const depth = Math.max(1, Math.round(3 + noiseSea));
+          for (let y = 1; y <= depth; y++) setBlock(x, y, z, 'sea_shallow');
+          setBlock(x, 0, z, 'sand');
+        } else {
+          // Deep open sea
+          const depth = Math.max(1, Math.round(2 + noise(x, z, 0.12, 0.5)));
+          for (let y = 1; y <= depth; y++) setBlock(x, y, z, 'sea_deep');
+          setBlock(x, 0, z, 'volcanic');
+        }
+        continue;
+      }
+
+      // ── On an island ──
+      const isl = bestIsland;
+      const dIsl = dist(x, z, isl.cx, isl.cz);
+      const edgeDist = isl.r - dIsl; // how far from edge (positive = interior)
+      const n = noise(x, z, 0.22, 1.5);
+
+      // Height calculation: rises toward center
+      const hillFalloff = Math.max(0, 1 - dist(x, z, isl.cx, isl.cz - 3) / isl.hillR);
+      const hillHeight  = hillFalloff * hillFalloff * isl.hillH;
+      let top = Math.round(SEA_LEVEL + 1 + hillHeight + n * 0.8);
+      top = Math.max(SEA_LEVEL + 1, top);
+
       let surface = 'grass';
-      let sub = 'dirt';
-      let isWater = false;
-      let isRiver = false;
+      let sub     = 'dirt';
+      let isCoast = false;
 
-      // ── Mountains (snowy peaks) ──
-      if (dMt < mtR) {
-        const falloff = 1 - dMt / mtR;
-        const peak = falloff * falloff * 18 + 7;
-        const noise = Math.sin(x*0.3)*Math.cos(z*0.25)*2 + Math.sin(x*0.7+z*0.5)*1;
-        top = Math.round(peak + noise);
-        if (top > 18) { surface = 'snow'; sub = 'stone'; }
-        else if (top > 12) { surface = 'stone'; sub = 'stone'; }
-        else { surface = 'grass'; sub = 'dirt'; }
-      }
-      // ── Lake ──
-      else if (dLake < lakeR) {
-        const edge = lakeR - dLake;
-        if (edge > 2) {
-          top = 4; isWater = true;
-        } else {
-          top = 5 + Math.round(edge);
-          surface = 'sand'; sub = 'sand';
-        }
-      }
-      // ── River channel ──
-      else if (dRiverActual < 3) {
-        if (dRiverActual < 2) {
-          top = 4; isRiver = true;
-        } else {
-          top = 6; surface = 'sand'; sub = 'sand';
-        }
-      }
-      // ── Desert ──
-      else if (dDesert < desertR) {
-        const noise = Math.sin(x*0.2)*Math.cos(z*0.18)*1.5;
-        top = Math.round(7 + noise);
+      // Coast: sandy beach 1-2 blocks from water edge
+      if (edgeDist < 3.5 + n * 0.5) {
+        top = SEA_LEVEL + 1;
         surface = 'sand'; sub = 'sand';
-      }
-      // ── Forest ──
-      else if (dForest < forestR) {
-        const noise = Math.sin(x*0.15)*Math.cos(z*0.12)*2;
-        top = Math.round(8 + noise);
-        surface = 'grass'; sub = 'dirt';
-      }
-      // ── Wheat fields ──
-      else if (dWheat < wheatR) {
-        top = 7;
-        surface = 'grass'; sub = 'dirt';
-      }
-      // ── Village area (flat) ──
-      else if (dVillage < villageR + 5) {
-        top = 7;
-        if (dVillage < villageR) {
-          // Village paths (cross pattern)
-          const relX = x - mid, relZ = z - mid;
-          if ((Math.abs(relX) < 2 || Math.abs(relZ) < 2) && dVillage > 3) {
-            surface = 'stone'; sub = 'dirt';
-          }
+        isCoast = true;
+        // Shallow water fringe
+        if (edgeDist < 1.5) {
+          for (let y = 1; y <= SEA_LEVEL; y++) setBlock(x, y, z, 'sea_shallow');
+          setBlock(x, 0, z, 'sand');
+          continue;
         }
       }
-      // ── General rolling terrain ──
-      else {
-        const noise = Math.sin(x*0.06)*Math.cos(z*0.055)*3 + Math.sin(x*0.12+1)*Math.cos(z*0.11)*1.5;
-        top = Math.round(7 + noise);
+
+      // Rocky volcanic peaks
+      if (top > SEA_LEVEL + 7) {
+        surface = 'volcanic'; sub = 'volcanic';
+      } else if (top > SEA_LEVEL + 5) {
+        surface = 'cobble_aegean'; sub = 'stone';
       }
 
-      // Place blocks
-      setBlock(x, top, z, surface);
-      setBlock(x, top-1, z, sub);
-      setBlock(x, top-2, z, sub);
-      for (let y = top - 3; y >= 0; y--) setBlock(x, y, z, 'stone');
-
-      // Water fill for lake and river
-      if (isWater || isRiver) {
-        for (let wl = top + 1; wl <= SEA; wl++) setBlock(x, wl, z, 'water');
+      // Fill column
+      for (let y = 0; y < top; y++) {
+        if (y === 0) setBlock(x, y, z, 'volcanic');
+        else if (y < top - 1) setBlock(x, y, z, sub);
+        else setBlock(x, y, z, surface);
       }
 
-      // ── Trees in forest (only if far enough from village so leaves don't overhang) ──
-      if (dForest < forestR - 2 && dVillage > villageR + 6 && Math.random() < 0.1 && top > 5) {
-        const th = 4 + Math.floor(Math.random() * 3);
-        for (let ty = top+1; ty <= top+th; ty++) setBlock(x, ty, z, 'wood');
-        for (let dx=-2; dx<=2; dx++)
-          for (let dz=-2; dz<=2; dz++) {
-            // Don't place leaves over village area
-            const lx = x+dx, lz = z+dz;
-            const dLV = dist(lx, lz, mid, mid);
-            if (dLV < villageR + 3) continue;
-            for (let dy=top+Math.ceil(th*0.5); dy<=top+th+2; dy++)
-              if (dx*dx+dz*dz <= 5 && !hasBlock(lx, dy, lz))
-                setBlock(lx, dy, lz, 'leaves');
-          }
-      }
-
-      // ── Wheat crops ──
-      if (dWheat < wheatR - 2 && top === 7 && Math.random() < 0.7) {
-        // Use gold blocks as wheat (yellow)
-        if ((x + z) % 2 === 0) setBlock(x, top+1, z, 'gold');
-      }
-
-      // ── Scattered trees on plains ──
-      if (dVillage > villageR + 7 && dForest > forestR && dLake > lakeR &&
-          dMt > mtR && dDesert > desertR && dWheat > wheatR && dRiverActual > 4 &&
-          Math.random() < 0.015 && top > 5) {
-        const th = 3 + Math.floor(Math.random() * 2);
-        for (let ty = top+1; ty <= top+th; ty++) setBlock(x, ty, z, 'wood');
-        for (let dx=-2; dx<=2; dx++)
-          for (let dz=-2; dz<=2; dz++) {
-            const lx = x+dx, lz = z+dz;
-            const dLV = dist(lx, lz, mid, mid);
-            if (dLV < villageR + 3) continue;
-            for (let dy=top+Math.ceil(th*0.5); dy<=top+th+1; dy++)
-              if (dx*dx+dz*dz <= 4 && !hasBlock(lx, dy, lz))
-                setBlock(lx, dy, lz, 'leaves');
-          }
-      }
-    }
-  }
-
-  // ── Clear any stray leaves/wood above village airspace ──
-  for (let x = mid - villageR - 3; x <= mid + villageR + 3; x++) {
-    for (let z = mid - villageR - 3; z <= mid + villageR + 3; z++) {
-      const dV = dist(x, z, mid, mid);
-      if (dV < villageR + 3) {
-        // Remove leaves above village height (keep buildings below y=15)
-        for (let y = 15; y <= 25; y++) {
-          const k = wk(x, y, z);
-          const block = world.get(k);
-          if (block === 'leaves' || block === 'wood') {
-            setBlock(x, y, z, null);
-          }
+      // Scattered olive trees on main island interior
+      if (isl === mainIsland && !isCoast && top > SEA_LEVEL + 2 && top < SEA_LEVEL + 7) {
+        const dVillage = dist(x, z, villageCX, villageCZ);
+        if (dVillage > 14 && Math.random() < 0.025) {
+          const th = 2 + Math.floor(Math.random() * 2);
+          for (let ty = top; ty <= top + th; ty++) setBlock(x, ty, z, 'wood');
+          // Olive canopy: small, dark
+          for (let dx = -1; dx <= 1; dx++)
+            for (let dz2 = -1; dz2 <= 1; dz2++)
+              for (let dy = top + th - 1; dy <= top + th + 1; dy++)
+                if (!hasBlock(x+dx, dy, z+dz2))
+                  setBlock(x+dx, dy, z+dz2, 'leaves');
+        }
+        // Bougainvillea patches near village
+        if (dVillage > 8 && dVillage < 18 && Math.random() < 0.012) {
+          setBlock(x, top, z, 'bougainvillea');
         }
       }
     }
   }
 
-  // ── Build village structures ──
-  buildGameVillage(mid, 7, mid);
-  _initVillageData(mid, mid);
+  // ── Build village + structures ──
+  buildCycladesVillage(villageCX, SEA_LEVEL + 1, villageCZ);
+  _initVillageData(villageCX, villageCZ);
+
+  // ── Church on hill of main island ──
+  buildCycladesChurch(mid - 8, SEA_LEVEL + 6, mid - 10);
+
+  // ── Windmill on secondary island ──
+  buildCycladesWindmill(islandB.cx - 2, SEA_LEVEL + 5, islandB.cz - 2);
+
+  // ── Harbor on south coast of main island ──
+  buildCycladesHarbor(villageCX + 4, SEA_LEVEL + 1, villageCZ + 14);
 }
 
-// ── Village builder ──────────────────────────────────────────
-function buildGameVillage(cx, baseY, cz) {
+// ── Cyclades Village Builder ─────────────────────────────────
+function buildCycladesVillage(cx, baseY, cz) {
   const by = baseY;
 
-  // ── Village well at center ──
+  // ── Central plateia (square) with cobblestone ──
+  for (let dx = -4; dx <= 4; dx++)
+    for (let dz = -4; dz <= 4; dz++)
+      setBlock(cx+dx, by, cz+dz, 'cobble_aegean');
+
+  // ── Village well / fountain at center ──
   for (let dx = -1; dx <= 1; dx++)
     for (let dz = -1; dz <= 1; dz++) {
-      setBlock(cx+dx, by+1, cz+dz, 'stone');
-      if (dx === 0 && dz === 0) {
-        setBlock(cx, by+1, cz, 'water');
-      } else {
-        setBlock(cx+dx, by+2, cz+dz, 'stone');
-      }
+      setBlock(cx+dx, by+1, cz+dz, 'marble');
+      if (Math.abs(dx) === 1 || Math.abs(dz) === 1)
+        setBlock(cx+dx, by+2, cz+dz, 'marble');
     }
-  // Well posts
-  setBlock(cx-1, by+3, cz-1, 'wood'); setBlock(cx+1, by+3, cz-1, 'wood');
-  setBlock(cx-1, by+3, cz+1, 'wood'); setBlock(cx+1, by+3, cz+1, 'wood');
-  for (let dx = -1; dx <= 1; dx++)
-    for (let dz = -1; dz <= 1; dz++)
-      setBlock(cx+dx, by+4, cz+dz, 'wood');
+  setBlock(cx, by+1, cz, 'sea_shallow'); // water in fountain
+  // Fountain rim posts
+  [[cx-1,cz-1],[cx+1,cz-1],[cx-1,cz+1],[cx+1,cz+1]].forEach(([fx,fz]) => {
+    setBlock(fx, by+3, fz, 'marble');
+  });
+  // Cross beam
+  for (let dx = -1; dx <= 1; dx++) setBlock(cx+dx, by+4, cz, 'marble');
+  for (let dz = -1; dz <= 1; dz++) setBlock(cx, by+4, cz+dz, 'marble');
 
-  // ── Houses around the center ──
-  const housePositions = [
-    { x: cx-7, z: cz-7 }, { x: cx+5, z: cz-7 },
-    { x: cx-7, z: cz+5 }, { x: cx+5, z: cz+5 },
-    { x: cx-8, z: cz-1 }, { x: cx+6, z: cz-1 },
-    { x: cx-2, z: cz-9 }, { x: cx-2, z: cz+7 },
-  ];
-  housePositions.forEach(h => buildVillageHouse(h.x, by, h.z));
-
-  // ── Market stalls ──
-  for (let i = 0; i < 3; i++) {
-    const sx = cx + 3, sz = cz - 4 + i * 4;
-    // Table
-    setBlock(sx, by+1, sz, 'wood');
-    setBlock(sx+1, by+1, sz, 'wood');
-    // Awning
-    for (let dx = 0; dx <= 1; dx++)
-      for (let dz = -1; dz <= 1; dz++)
-        setBlock(sx+dx, by+3, sz+dz, 'brick');
-    // Posts
-    setBlock(sx, by+2, sz-1, 'wood'); setBlock(sx+1, by+2, sz+1, 'wood');
+  // ── Narrow alleyways radiating from plateia ──
+  // North alley
+  for (let dz = -5; dz >= -14; dz--) {
+    setBlock(cx, by, cz+dz, 'cobble_aegean');
+    setBlock(cx+1, by, cz+dz, 'cobble_aegean');
+  }
+  // East alley
+  for (let dx = 5; dx <= 14; dx++) {
+    setBlock(cx+dx, by, cz, 'cobble_aegean');
+    setBlock(cx+dx, by, cz+1, 'cobble_aegean');
+  }
+  // West alley with steps (terrain rises)
+  for (let dx = -5; dx >= -14; dx--) {
+    const stepY = by + (Math.abs(dx) > 10 ? 1 : 0);
+    setBlock(cx+dx, stepY, cz, 'cobble_aegean');
+    setBlock(cx+dx, stepY, cz+1, 'cobble_aegean');
+    if (Math.abs(dx) === 10) { // step block
+      setBlock(cx+dx, stepY, cz, 'cobble_aegean');
+      setBlock(cx+dx, stepY, cz+1, 'cobble_aegean');
+    }
   }
 
-  // ── Torches / lanterns around village ──
-  const torchSpots = [
-    {x:cx-3,z:cz-3},{x:cx+3,z:cz-3},{x:cx-3,z:cz+3},{x:cx+3,z:cz+3},
-    {x:cx,z:cz-6},{x:cx,z:cz+6},{x:cx-6,z:cz},{x:cx+6,z:cz},
+  // ── Houses around the plateia ──
+  const housePositions = [
+    { x: cx-9,  z: cz-9,  tier: 0 },
+    { x: cx+4,  z: cz-9,  tier: 0 },
+    { x: cx-9,  z: cz+4,  tier: 0 },
+    { x: cx+4,  z: cz+4,  tier: 0 },
+    { x: cx-10, z: cz-2,  tier: 0 },
+    { x: cx+6,  z: cz-2,  tier: 0 },
+    { x: cx-2,  z: cz-11, tier: 1 },
+    { x: cx-2,  z: cz+7,  tier: 0 },
+    { x: cx-14, z: cz-8,  tier: 1 }, // upper tier
+    { x: cx+8,  z: cz-8,  tier: 1 }, // upper tier
   ];
-  torchSpots.forEach(t => {
-    setBlock(t.x, by+1, t.z, 'wood');
-    setBlock(t.x, by+2, t.z, 'gold');
+  housePositions.forEach(h => buildCycladesHouse(h.x, by + h.tier, h.z));
+
+  // ── Market stalls with blue awnings ──
+  for (let i = 0; i < 3; i++) {
+    const sx = cx + 4, sz = cz - 5 + i * 5;
+    setBlock(sx, by+1, sz, 'marble');
+    setBlock(sx+1, by+1, sz, 'marble');
+    setBlock(sx+2, by+1, sz, 'marble');
+    // Blue awning
+    for (let dx = 0; dx <= 2; dx++)
+      for (let dz = -1; dz <= 1; dz++)
+        setBlock(sx+dx, by+3, sz+dz, 'blue_dome');
+    // Posts
+    setBlock(sx, by+2, sz-1, 'whitewash');
+    setBlock(sx+2, by+2, sz+1, 'whitewash');
+  }
+
+  // ── Lanterns along alleys ──
+  const lanternSpots = [
+    {x:cx-4,z:cz-4},{x:cx+4,z:cz-4},{x:cx-4,z:cz+4},{x:cx+4,z:cz+4},
+    {x:cx,z:cz-7},{x:cx,z:cz+7},{x:cx-7,z:cz},{x:cx+7,z:cz},
+    {x:cx-10,z:cz-10},{x:cx+8,z:cz-10},
+  ];
+  lanternSpots.forEach(t => {
+    setBlock(t.x, by+1, t.z, 'whitewash');
+    setBlock(t.x, by+2, t.z, 'whitewash');
+    setBlock(t.x, by+3, t.z, 'gold');
+  });
+
+  // ── Bougainvillea patches near houses ──
+  housePositions.forEach(h => {
+    if (Math.random() < 0.6) {
+      setBlock(h.x + 5, by + h.tier + 1, h.z + 2, 'bougainvillea');
+      setBlock(h.x + 5, by + h.tier + 2, h.z + 2, 'bougainvillea');
+    }
   });
 }
 
-function buildVillageHouse(hx, by, hz) {
+// ── Cyclades House (whitewashed, flat roof, blue windows) ────
+function buildCycladesHouse(hx, by, hz) {
   const W = 5, D = 5, H = 4;
-  // Floor
+  // Floor: cobblestone
   for (let dx = 0; dx < W; dx++)
     for (let dz = 0; dz < D; dz++)
-      setBlock(hx+dx, by, hz+dz, 'wood');
-  // Walls
+      setBlock(hx+dx, by, hz+dz, 'cobble_aegean');
+
+  // Walls: whitewash
   for (let y = 1; y <= H; y++) {
     for (let dx = 0; dx < W; dx++) {
-      setBlock(hx+dx, by+y, hz, 'brick');
-      setBlock(hx+dx, by+y, hz+D-1, 'brick');
+      setBlock(hx+dx, by+y, hz, 'whitewash');
+      setBlock(hx+dx, by+y, hz+D-1, 'whitewash');
     }
-    for (let dz = 0; dz < D; dz++) {
-      setBlock(hx, by+y, hz+dz, 'brick');
-      setBlock(hx+W-1, by+y, hz+dz, 'brick');
+    for (let dz = 1; dz < D-1; dz++) {
+      setBlock(hx, by+y, hz+dz, 'whitewash');
+      setBlock(hx+W-1, by+y, hz+dz, 'whitewash');
     }
   }
-  // Door (remove wall blocks)
-  setBlock(hx+2, by+1, hz, null);
-  setBlock(hx+2, by+2, hz, null);
-  // Windows
-  setBlock(hx+1, by+2, hz, 'glass');
-  setBlock(hx+3, by+2, hz, 'glass');
-  setBlock(hx, by+2, hz+2, 'glass');
-  setBlock(hx+W-1, by+2, hz+2, 'glass');
-  // Roof (pyramid)
-  for (let r = 0; r <= 2; r++) {
-    for (let dx = r; dx < W-r; dx++)
-      for (let dz = r; dz < D-r; dz++)
-        setBlock(hx+dx, by+H+1+r, hz+dz, 'wood');
+
+  // Blue door (front center)
+  setBlock(hx+2, by+1, hz, 'blue_door');
+  setBlock(hx+2, by+2, hz, 'blue_door');
+
+  // Blue windows
+  setBlock(hx+1, by+2, hz, 'blue_window');
+  setBlock(hx+3, by+2, hz, 'blue_window');
+  setBlock(hx, by+2, hz+2, 'blue_window');
+  setBlock(hx+W-1, by+2, hz+2, 'blue_window');
+
+  // Flat roof: whitewash with blue_dome border
+  for (let dx = 0; dx < W; dx++)
+    for (let dz = 0; dz < D; dz++) {
+      const isEdge = dx===0||dx===W-1||dz===0||dz===D-1;
+      setBlock(hx+dx, by+H+1, hz+dz, isEdge ? 'blue_dome' : 'whitewash');
+    }
+
+  // Small chimney
+  setBlock(hx+1, by+H+2, hz+1, 'whitewash');
+  setBlock(hx+1, by+H+3, hz+1, 'whitewash');
+
+  // Terrace railing (low wall on roof)
+  for (let dx = 0; dx < W; dx++) {
+    setBlock(hx+dx, by+H+2, hz, 'whitewash');
+    setBlock(hx+dx, by+H+2, hz+D-1, 'whitewash');
+  }
+  for (let dz = 1; dz < D-1; dz++) {
+    setBlock(hx, by+H+2, hz+dz, 'whitewash');
+    setBlock(hx+W-1, by+H+2, hz+dz, 'whitewash');
   }
 }
+
+// ── Cyclades Church (white body + blue dome + cross) ─────────
+function buildCycladesChurch(cx, by, cz) {
+  const W = 6, D = 8, H = 5;
+
+  // Foundation: marble steps
+  for (let dx = -1; dx <= W; dx++)
+    for (let dz = -1; dz <= D; dz++)
+      setBlock(cx+dx, by-1, cz+dz, 'marble');
+
+  // Walls: whitewash
+  for (let y = 0; y < H; y++) {
+    for (let dx = 0; dx < W; dx++) {
+      setBlock(cx+dx, by+y, cz, 'whitewash');
+      setBlock(cx+dx, by+y, cz+D-1, 'whitewash');
+    }
+    for (let dz = 1; dz < D-1; dz++) {
+      setBlock(cx, by+y, cz+dz, 'whitewash');
+      setBlock(cx+W-1, by+y, cz+dz, 'whitewash');
+    }
+  }
+
+  // Arched entrance: remove door blocks, add blue arch
+  setBlock(cx+2, by, cz, null);
+  setBlock(cx+3, by, cz, null);
+  setBlock(cx+2, by+1, cz, null);
+  setBlock(cx+3, by+1, cz, null);
+  setBlock(cx+2, by+2, cz, 'blue_dome'); // arch top
+  setBlock(cx+3, by+2, cz, 'blue_dome');
+
+  // Windows: blue arched
+  setBlock(cx+1, by+2, cz, 'blue_window');
+  setBlock(cx+4, by+2, cz, 'blue_window');
+  setBlock(cx, by+2, cz+3, 'blue_window');
+  setBlock(cx+W-1, by+2, cz+3, 'blue_window');
+  setBlock(cx, by+2, cz+5, 'blue_window');
+  setBlock(cx+W-1, by+2, cz+5, 'blue_window');
+
+  // Flat roof: whitewash
+  for (let dx = 0; dx < W; dx++)
+    for (let dz = 0; dz < D; dz++)
+      setBlock(cx+dx, by+H, cz+dz, 'whitewash');
+
+  // Blue dome (hemisphere shape using layers)
+  const domeBase = by + H + 1;
+  const domeCX = cx + Math.floor(W/2) - 1, domeCZ = cz + Math.floor(D/2) - 1;
+  // Layer 0: 3x3 base
+  for (let dx = -1; dx <= 1; dx++)
+    for (let dz = -1; dz <= 1; dz++)
+      setBlock(domeCX+dx, domeBase, domeCZ+dz, 'blue_dome');
+  // Layer 1: 2x2
+  for (let dx = 0; dx <= 1; dx++)
+    for (let dz = 0; dz <= 1; dz++)
+      setBlock(domeCX+dx, domeBase+1, domeCZ+dz, 'blue_dome');
+  // Layer 2: single top
+  setBlock(domeCX, domeBase+2, domeCZ, 'blue_dome');
+  setBlock(domeCX+1, domeBase+2, domeCZ, 'blue_dome');
+  setBlock(domeCX, domeBase+2, domeCZ+1, 'blue_dome');
+  setBlock(domeCX+1, domeBase+2, domeCZ+1, 'blue_dome');
+  // Apex
+  setBlock(domeCX, domeBase+3, domeCZ, 'blue_dome');
+
+  // White cross on top
+  setBlock(domeCX, domeBase+4, domeCZ, 'whitewash');
+  setBlock(domeCX, domeBase+5, domeCZ, 'whitewash');
+  setBlock(domeCX-1, domeBase+5, domeCZ, 'whitewash');
+  setBlock(domeCX+1, domeBase+5, domeCZ, 'whitewash');
+
+  // Bell tower on the side
+  const btX = cx + W, btZ = cz + 1;
+  for (let y = 0; y < H + 3; y++) {
+    setBlock(btX, by+y, btZ, 'whitewash');
+    setBlock(btX+1, by+y, btZ, 'whitewash');
+    setBlock(btX, by+y, btZ+1, 'whitewash');
+    setBlock(btX+1, by+y, btZ+1, 'whitewash');
+  }
+  // Bell opening
+  setBlock(btX, by+H+1, btZ, null);
+  setBlock(btX+1, by+H+1, btZ, null);
+  // Bell tower roof: blue dome cap
+  setBlock(btX, by+H+3, btZ, 'blue_dome');
+  setBlock(btX+1, by+H+3, btZ, 'blue_dome');
+  setBlock(btX, by+H+3, btZ+1, 'blue_dome');
+  setBlock(btX+1, by+H+3, btZ+1, 'blue_dome');
+  setBlock(btX, by+H+4, btZ, 'blue_dome');
+  // Bell tower cross
+  setBlock(btX, by+H+5, btZ, 'whitewash');
+  setBlock(btX-1, by+H+5, btZ, 'whitewash');
+  setBlock(btX+1, by+H+5, btZ, 'whitewash');
+}
+
+// ── Cyclades Windmill ────────────────────────────────────────
+function buildCycladesWindmill(cx, by, cz) {
+  const H = 9;
+  // Cylindrical tower: whitewash, 3x3 footprint tapering to 2x2 at top
+  for (let y = 0; y < H; y++) {
+    const r = y < 4 ? 1 : 0; // wider base
+    for (let dx = -r; dx <= 1+r; dx++)
+      for (let dz = -r; dz <= 1+r; dz++) {
+        const isEdge = dx===-r||dx===1+r||dz===-r||dz===1+r;
+        if (isEdge) setBlock(cx+dx, by+y, cz+dz, 'whitewash');
+      }
+  }
+  // Conical cap: terracotta
+  for (let dx = 0; dx <= 1; dx++)
+    for (let dz = 0; dz <= 1; dz++)
+      setBlock(cx+dx, by+H, cz+dz, 'terracotta');
+  setBlock(cx, by+H+1, cz, 'terracotta');
+
+  // Door
+  setBlock(cx, by+1, cz-1, 'blue_door');
+  setBlock(cx, by+2, cz-1, 'blue_door');
+
+  // Windows
+  setBlock(cx+1, by+4, cz-1, 'blue_window');
+  setBlock(cx-1, by+6, cz+1, 'blue_window');
+
+  // Sail arms (4 directions, stored for animation)
+  // Horizontal arm (X axis)
+  for (let i = -4; i <= 4; i++) {
+    if (i !== 0) setBlock(cx + i, by + H - 1, cz, 'wood');
+  }
+  // Vertical arm (Y axis)
+  for (let i = -4; i <= 4; i++) {
+    if (i !== 0) setBlock(cx, by + H - 1 + i, cz, 'wood');
+  }
+  // Sail fabric (leaves = green sail cloth)
+  for (let i = 1; i <= 3; i++) {
+    setBlock(cx + i, by + H - 1 + 1, cz, 'cloud'); // white sail
+    setBlock(cx + i, by + H - 1 - 1, cz, 'cloud');
+    setBlock(cx - i, by + H - 1 + 1, cz, 'cloud');
+    setBlock(cx - i, by + H - 1 - 1, cz, 'cloud');
+  }
+}
+
+// ── Cyclades Harbor ──────────────────────────────────────────
+function buildCycladesHarbor(cx, by, cz) {
+  // Stone pier extending into sea
+  for (let dz = 0; dz <= 10; dz++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      setBlock(cx+dx, by, cz+dz, 'cobble_aegean');
+      if (dz === 0 || dz === 10) setBlock(cx+dx, by+1, cz+dz, 'cobble_aegean'); // end walls
+    }
+  }
+  // Pier side walls
+  for (let dz = 1; dz <= 9; dz++) {
+    setBlock(cx-2, by+1, cz+dz, 'cobble_aegean');
+    setBlock(cx+2, by+1, cz+dz, 'cobble_aegean');
+  }
+
+  // Mooring posts
+  [[cx-2,cz+2],[cx+2,cz+2],[cx-2,cz+7],[cx+2,cz+7]].forEach(([px,pz]) => {
+    setBlock(px, by+1, pz, 'wood');
+    setBlock(px, by+2, pz, 'wood');
+  });
+
+  // Fishing nets (diamond/glass blocks as water surface markers)
+  for (let dz = 3; dz <= 6; dz++) {
+    setBlock(cx-3, by, cz+dz, 'glass');
+    setBlock(cx+3, by, cz+dz, 'glass');
+  }
+
+  // Harbor lanterns
+  [[cx-2,cz],[cx+2,cz],[cx-2,cz+10],[cx+2,cz+10]].forEach(([lx,lz]) => {
+    setBlock(lx, by+1, lz, 'whitewash');
+    setBlock(lx, by+2, lz, 'whitewash');
+    setBlock(lx, by+3, lz, 'gold');
+  });
+
+  // Small fishing boat (left side)
+  const bx = cx - 5, bz = cz + 4;
+  setBlock(bx, by, bz, 'wood');
+  setBlock(bx+1, by, bz, 'wood');
+  setBlock(bx+2, by, bz, 'wood');
+  setBlock(bx, by+1, bz, 'wood');
+  setBlock(bx+2, by+1, bz, 'wood');
+  setBlock(bx+1, by+2, bz, 'wood'); // mast base
+  setBlock(bx+1, by+3, bz, 'wood'); // mast
+  setBlock(bx+1, by+4, bz, 'wood'); // mast top
+  setBlock(bx, by+3, bz, 'cloud');  // sail
+  setBlock(bx+2, by+3, bz, 'cloud');
+
+  // Second boat (right side)
+  const bx2 = cx + 4, bz2 = cz + 5;
+  setBlock(bx2, by, bz2, 'wood');
+  setBlock(bx2+1, by, bz2, 'wood');
+  setBlock(bx2, by+1, bz2, 'wood');
+  setBlock(bx2+1, by+1, bz2, 'wood');
+  setBlock(bx2, by+2, bz2, 'blue_dome'); // blue hull accent
+  setBlock(bx2+1, by+2, bz2, 'blue_dome');
+}
+
+// ── Village builder (legacy wrapper) ────────────────────────
+function buildGameVillage(cx, baseY, cz) {
+  buildCycladesVillage(cx, baseY, cz);
+}
+
+// ── Cyclades house (legacy wrapper) ─────────────────────────
+function buildVillageHouse(hx, by, hz) {
+  buildCycladesHouse(hx, by, hz);
+}
+
 
 // ── Villager system ──────────────────────────────────────────
 const villagers = [];
@@ -7156,8 +7474,26 @@ function _villagerBlocked(wx, wz) {
 function spawnVillager(x, y, z) {
   const group = new THREE.Group();
   const skinColor = VILLAGER_COLORS[Math.floor(Math.random() * VILLAGER_COLORS.length)];
-  const clothColors = [0x8B4513, 0x228B22, 0x4169E1, 0x8B0000, 0x2F4F4F, 0x9932CC];
-  const clothColor = clothColors[Math.floor(Math.random() * clothColors.length)];
+
+  // ── Cyclades villager types ──
+  const typeRoll = Math.random();
+  let role, clothColor, hatColor, accessory;
+  if (typeRoll < 0.4) {
+    role = 'fisherman';
+    clothColor = 0x1A6BB5; // blue shirt
+    hatColor   = 0x8A9BAE; // grey cap
+    accessory  = 'rod';
+  } else if (typeRoll < 0.7) {
+    role = 'monk';
+    clothColor = 0x2A2A2A; // black robe
+    hatColor   = 0x1A1A1A;
+    accessory  = 'cross';
+  } else {
+    role = 'merchant';
+    clothColor = 0xC4714A; // terracotta robe
+    hatColor   = 0xF5F0E8; // white hat
+    accessory  = 'basket';
+  }
 
   // Body
   const bodyMat = new THREE.MeshLambertMaterial({ color: clothColor });
@@ -7171,6 +7507,28 @@ function spawnVillager(x, y, z) {
   const head = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.35), headMat);
   head.position.y = 1.2;
   group.add(head);
+
+  // Hat (type-specific)
+  const hatMat = new THREE.MeshLambertMaterial({ color: hatColor });
+  if (role === 'fisherman') {
+    // Flat cap
+    const hat = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.1, 0.38), hatMat);
+    hat.position.y = 1.42;
+    group.add(hat);
+  } else if (role === 'monk') {
+    // Tall hood
+    const hood = new THREE.Mesh(new THREE.BoxGeometry(0.37, 0.28, 0.37), hatMat);
+    hood.position.y = 1.48;
+    group.add(hood);
+  } else {
+    // Wide-brim merchant hat
+    const brim = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.06, 0.48), hatMat);
+    brim.position.y = 1.40;
+    group.add(brim);
+    const crown = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.18, 0.30), hatMat);
+    crown.position.y = 1.52;
+    group.add(crown);
+  }
 
   // Eyes
   const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
@@ -7191,7 +7549,8 @@ function spawnVillager(x, y, z) {
   group.add(armR);
 
   // Legs
-  const legMat = new THREE.MeshLambertMaterial({ color: 0x3C280D });
+  const legColor = role === 'monk' ? 0x1A1A1A : 0x3C280D;
+  const legMat = new THREE.MeshLambertMaterial({ color: legColor });
   const legL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.6, 0.2), legMat);
   legL.position.set(-0.12, 0.15, 0);
   group.add(legL);
@@ -7199,26 +7558,56 @@ function spawnVillager(x, y, z) {
   legR.position.x = 0.12;
   group.add(legR);
 
+  // Accessory
+  if (accessory === 'rod') {
+    // Fishing rod: thin stick in right hand
+    const rod = new THREE.Mesh(
+      new THREE.BoxGeometry(0.04, 0.8, 0.04),
+      new THREE.MeshLambertMaterial({ color: 0x8B6914 })
+    );
+    rod.position.set(0.42, 0.8, 0.1);
+    rod.rotation.z = -0.3;
+    group.add(rod);
+  } else if (accessory === 'cross') {
+    // Cross pendant
+    const crossV = new THREE.Mesh(
+      new THREE.BoxGeometry(0.04, 0.18, 0.04),
+      new THREE.MeshBasicMaterial({ color: 0xE8E0D5 })
+    );
+    crossV.position.set(0, 0.72, 0.18);
+    group.add(crossV);
+    const crossH = new THREE.Mesh(
+      new THREE.BoxGeometry(0.12, 0.04, 0.04),
+      new THREE.MeshBasicMaterial({ color: 0xE8E0D5 })
+    );
+    crossH.position.set(0, 0.78, 0.18);
+    group.add(crossH);
+  } else if (accessory === 'basket') {
+    // Basket on arm
+    const basket = new THREE.Mesh(
+      new THREE.BoxGeometry(0.22, 0.18, 0.22),
+      new THREE.MeshLambertMaterial({ color: 0xD4A017 })
+    );
+    basket.position.set(-0.38, 0.55, 0.1);
+    group.add(basket);
+  }
+
   // Exclamation mark for when in danger (hidden by default)
   const excl = new THREE.Mesh(
     new THREE.BoxGeometry(0.08, 0.2, 0.08),
     new THREE.MeshBasicMaterial({ color: 0xff0000 })
   );
-  excl.position.set(0, 1.6, 0);
+  excl.position.set(0, 1.75, 0);
   excl.visible = false;
   excl.name = 'exclMark';
   group.add(excl);
 
   group.position.set(x + 0.5, y, z + 0.5);
-  // Villagers have many sub-meshes (body, head, eyes, arms, legs, excl marker);
-  // receive-only keeps shadow pass cheap in game mode.
   enableShadows(group, { cast: false });
   scene.add(group);
 
   // Assign random home house
   const houseIdx = Math.floor(Math.random() * 8);
-  const roles = ['farmer', 'trader', 'guard', 'worker'];
-  const role = roles[Math.floor(Math.random() * roles.length)];
 
   const v = {
     group, baseY: y,
@@ -7757,6 +8146,7 @@ function updateGameMode(dt) {
         playTone(523, 0.4, 'sine');
         setTimeout(() => playTone(659, 0.4, 'sine'), 200);
         setTimeout(() => playTone(784, 0.5, 'sine'), 400);
+        _showStageAnnouncement(gmState.stage);
       }
     } else {
       showInfo(`✅ גל ${gmState.wave} הוכנע! הגל הבא מתקרב...`, '#44ff44', 3000);
@@ -7844,6 +8234,26 @@ function _showGameOverScreen() {
     ]);
   }
   el.style.display = 'flex';
+}
+
+function _showStageAnnouncement(stageIdx) {
+  const el = document.getElementById('stageAnnounce');
+  if (!el) return;
+  const stageData = GM_STAGES[stageIdx];
+  if (!stageData) return;
+  const icons = ['🌊', '⚡', '🔥', '☄️', '💀'];
+  const colors = ['#1a6bb5', '#7b2d8b', '#c9184a', '#e76f51', '#03045e'];
+  const icon  = document.getElementById('stageAnnounceIcon');
+  const title = document.getElementById('stageAnnounceTitle');
+  const sub   = document.getElementById('stageAnnounceSub');
+  if (icon)  icon.textContent  = icons[stageIdx] || '⚡';
+  if (title) {
+    title.textContent = `שלב ${stageIdx + 1} — ${stageData.name}`;
+    title.style.color = colors[stageIdx] || '#1a6bb5';
+  }
+  if (sub)   sub.textContent   = `${stageData.waves.length} גלים מתקרבים`;
+  el.style.display = 'flex';
+  setTimeout(() => { el.style.display = 'none'; }, 3500);
 }
 
 function _restartGameMode() {
