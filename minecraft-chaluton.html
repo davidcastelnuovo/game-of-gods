@@ -1099,7 +1099,9 @@ const scene  = new THREE.Scene();
 scene.background = new THREE.Color(0x87CEEB);
 let RENDER_DIST = 20;  // near detail distance (F key to cycle: 12/20/30/40)
 let FAR_DIST    = RENDER_DIST * 4; // far LOD distance — extended for dramatic views
-scene.fog = new THREE.Fog(0x87CEEB, RENDER_DIST * 0.85, FAR_DIST);
+// Fog kept but pushed far off by default → clean horizon.
+// Still available for underwater tint / apollo / hades / poseidon god effects.
+scene.fog = new THREE.Fog(0x87CEEB, 9000, 10000);
 
 const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.05, 400);
 scene.add(camera); // נדרש כדי שאובייקטים שמחוברים למצלמה (fpHands, נשק) יצטיירו
@@ -1245,7 +1247,6 @@ function updateSky(dt) {
     } else {
       fogC = new THREE.Color(0x0d1b3a); // night
     }
-    scene.fog.color.lerp(fogC, 0.04);
     scene.background.lerp(fogC, 0.04);
   }
 
@@ -1698,33 +1699,116 @@ function mats(id) {
 
 // ── WORLD ─────────────────────────────────────────────
 const SZ = 26;
-const world      = new Map();  // "x|y|z" → Mesh
+// world: "x|y|z" → { id, x, y, z, instanceId }
+// Blocks are drawn via one InstancedMesh per id — ~16 draw calls instead of thousands.
+const world      = new Map();
 const animBlocks = new Set();  // subset of world keys: only water + lava (for fast animation)
+
+// ── INSTANCED BLOCK RENDERING ─────────────────────────
+// One InstancedMesh per block id. Grows on demand, never shrinks (count is
+// managed explicitly and freed slots are reclaimed via a swap-with-last trick).
+const INITIAL_CAPACITY = 2048;
+const imeshByID = Object.create(null);   // id → InstancedMesh
+const _tmpMat4  = new THREE.Matrix4();
+const _hiddenM4 = new THREE.Matrix4().makeScale(0, 0, 0); // for momentarily freed slots
+
+function _makeIMesh(id, capacity) {
+  const im = new THREE.InstancedMesh(BGEOM, mats(id), capacity);
+  im.count = 0;
+  im.frustumCulled = false; // whole-world imeshes — rely on GPU frustum per-instance via shader
+  im.userData = {
+    id,
+    capacity,
+    slotKey: new Array(capacity),   // instanceId → world-map key (for swap-remove)
+  };
+  im.name = 'iblocks_' + id;
+  im.renderOrder = 0;
+  scene.add(im);
+  return im;
+}
+
+function _growIMesh(im) {
+  const oldCap = im.userData.capacity;
+  const newCap = Math.max(oldCap * 2, oldCap + 512);
+  const fresh  = new THREE.InstancedMesh(BGEOM, im.material, newCap);
+  fresh.count  = im.count;
+  fresh.frustumCulled = false;
+  fresh.name   = im.name;
+  fresh.renderOrder = im.renderOrder;
+  // Copy matrices
+  for (let i = 0; i < im.count; i++) {
+    im.getMatrixAt(i, _tmpMat4);
+    fresh.setMatrixAt(i, _tmpMat4);
+  }
+  fresh.instanceMatrix.needsUpdate = true;
+  fresh.userData = {
+    id:       im.userData.id,
+    capacity: newCap,
+    slotKey:  im.userData.slotKey.slice(),
+  };
+  fresh.userData.slotKey.length = newCap;
+  scene.remove(im);
+  im.dispose?.();
+  imeshByID[im.userData.id] = fresh;
+  scene.add(fresh);
+  return fresh;
+}
+
+function _getOrCreateIMesh(id) {
+  return imeshByID[id] || (imeshByID[id] = _makeIMesh(id, INITIAL_CAPACITY));
+}
 
 function wk(x,y,z) { return `${x|0}|${y|0}|${z|0}`; }
 
+// Remove an entry from the world (no imesh add). Swap-with-last to keep count dense.
+function _removeWorldEntry(k) {
+  const ex = world.get(k);
+  if (!ex) return;
+  let im = imeshByID[ex.id];
+  if (im) {
+    const lastIdx = im.count - 1;
+    if (ex.instanceId !== lastIdx) {
+      // Move last instance into the hole
+      im.getMatrixAt(lastIdx, _tmpMat4);
+      im.setMatrixAt(ex.instanceId, _tmpMat4);
+      const lastKey = im.userData.slotKey[lastIdx];
+      im.userData.slotKey[ex.instanceId] = lastKey;
+      const lastInfo = world.get(lastKey);
+      if (lastInfo) lastInfo.instanceId = ex.instanceId;
+    }
+    im.userData.slotKey[lastIdx] = undefined;
+    im.count = lastIdx;
+    im.instanceMatrix.needsUpdate = true;
+  }
+  world.delete(k);
+  animBlocks.delete(k);
+}
+
 function setBlock(x,y,z,id) {
   x=x|0; y=y|0; z=z|0;
-  const k = wk(x,y,z), ex = world.get(k);
-  if (ex) { scene.remove(ex); world.delete(k); animBlocks.delete(k); }
+  const k = wk(x,y,z);
+  if (world.has(k)) _removeWorldEntry(k);
   if (!id) return;
-  const m = new THREE.Mesh(BGEOM, mats(id));
-  m.position.set(x+.5, y+.5, z+.5);
-  m.userData = { id, x, y, z };
-  scene.add(m);
-  world.set(k, m);
+  let im = _getOrCreateIMesh(id);
+  if (im.count >= im.userData.capacity) im = _growIMesh(im);
+  const instanceId = im.count++;
+  _tmpMat4.makeTranslation(x + 0.5, y + 0.5, z + 0.5);
+  im.setMatrixAt(instanceId, _tmpMat4);
+  im.instanceMatrix.needsUpdate = true;
+  im.userData.slotKey[instanceId] = k;
+  world.set(k, { id, x, y, z, instanceId });
   if (id === 'water' || id === 'lava') animBlocks.add(k);
 }
 
 function hasBlock(x,y,z) {
-  const m = world.get(wk(x,y,z));
-  if (m && m.userData.id !== 'water') return true; // מוצק בלבד — מים לא חוסמים תנועה
+  const info = world.get(wk(x,y,z));
+  if (info && info.id !== 'water') return true; // מוצק בלבד — מים לא חוסמים תנועה
   const im = interactWorld.get(wk(x,y,z));
   return im ? !im.userData.open : false;  // סגור=חסום, פתוח=לא חסום
 }
 // בדוק אם הבלוק במיקום זה הוא מים (נוזל עביר)
 function isWaterAt(x, y, z) {
-  return world.get(wk(x|0, y|0, z|0))?.userData.id === 'water';
+  return world.get(wk(x|0, y|0, z|0))?.id === 'water';
 }
 
 // ── INTERACTIVE BLOCKS (דלתות + חלונות) ───────────────
@@ -2314,8 +2398,9 @@ window.addEventListener('keydown', e => {
     const next = dists[(dists.indexOf(RENDER_DIST) + 1) % dists.length];
     RENDER_DIST = next;
     FAR_DIST    = RENDER_DIST * 4;
-    scene.fog.near = RENDER_DIST * 0.85;
-    scene.fog.far  = FAR_DIST;
+    // Fog kept invisible — horizon is clean regardless of render distance
+    scene.fog.near = 9000;
+    scene.fog.far  = 10000;
     cullTick = 0; lodTick = 0; // force immediate re-cull + LOD rebuild
     showInfo(`🌄 מרחק תצוגה: ${RENDER_DIST} (LOD עד ${FAR_DIST})`, '#87CEEB', 2000);
   }
@@ -2421,15 +2506,29 @@ function updateRayCast() {
   const creatureMeshes = [];
   creatures.forEach(c => c.group.traverse(o => { if (o.isMesh) creatureMeshes.push(o); }));
 
-  // recursive=true כדי לפגוע בלוחות ילד בתוך pivot Object3D של דלתות
+  // recursive=true כדי לפגוע בלוחות ילד בתוך pivot Object3D של דלתות.
+  // Targets = all block InstancedMeshes + interactive roots + creatures.
   const hits = ray.intersectObjects(
-    [...world.values(), ...new Set(interactWorld.values()), ...creatureMeshes], true
+    [...Object.values(imeshByID), ...new Set(interactWorld.values()), ...creatureMeshes], true
   );
 
   // Accept closest hit within reach — creature or block
   let validHit = null;
   let validCreatureHit = null;
   for (const h of hits) {
+    // Normalize InstancedMesh block hits into a mesh-like wrapper with userData{x,y,z,id}.
+    // Downstream code reads h.object.userData.{x,y,z,id}/isDoorPanel, and h.face.normal — both work with this.
+    if (h.object.isInstancedMesh && h.instanceId != null) {
+      const im   = h.object;
+      const key  = im.userData.slotKey[h.instanceId];
+      const info = key && world.get(key);
+      if (!info) continue;
+      h.object = {
+        isMesh: true,
+        userData: { x: info.x, y: info.y, z: info.z, id: info.id },
+      };
+    }
+
     const cr = h.object.userData.creatureRef;
     if (cr) {
       // Creature hit — check range
@@ -3340,9 +3439,10 @@ const GOD_DEFS = [
     power:'ראיית לילה | R: שנה ערפל',
     speedMult:1.0, flyMult:1.3,
     keyR: () => {
-      const isClear = scene.fog.far > FAR_DIST + 5;
-      scene.fog.near = isClear ? RENDER_DIST * 0.85 : 60;
-      scene.fog.far  = isClear ? FAR_DIST           : 120;
+      // Toggle between clear horizon (default) and dense fog for Hades flavor
+      const isClear = scene.fog.far > 500;
+      scene.fog.near = isClear ? 60   : 9000;
+      scene.fog.far  = isClear ? 120  : 10000;
       showInfo(isClear ? '💀 ערפל צפוף!' : '💀 ראיית לילה!','#78909C',1500);
     }},
 ];
@@ -3907,19 +4007,15 @@ function expandWorld(oldSZ, newSZ) {
 
 // ── DISTANCE CULLING ──────────────────────────────────
 // Always cull blocks beyond RENDER_DIST (horizontal XZ plane) every 6 frames.
-// Visibility-toggling (not scene.remove) keeps it cheap.
-// The linear fog (near/far) hides the hard cut-off edge.
+// With InstancedMesh + invisible fog, per-instance distance culling is no
+// longer beneficial (draw-call count is constant and tiny). We still cull
+// interactive meshes (doors/windows) since those are regular Object3D's.
 let cullTick = 0;
 function cullDistantBlocks() {
   if (++cullTick % 6 !== 0) return; // ≈10 updates/sec at 60 fps
   const px = player.pos.x, pz = player.pos.z;
-  const cullFar = RENDER_DIST + 3;   // cull slightly beyond fog's hard edge
+  const cullFar = RENDER_DIST + 3;
   const dSq = cullFar * cullFar;
-  world.forEach(mesh => {
-    const dx = mesh.position.x - px;
-    const dz = mesh.position.z - pz;
-    mesh.visible = (dx*dx + dz*dz) <= dSq;
-  });
   new Set(interactWorld.values()).forEach(obj => {
     const dx = obj.position.x - px;
     const dz = obj.position.z - pz;
@@ -4042,26 +4138,28 @@ function updateWaterFlow() {
 }
 
 // ── ANIMATED WATER/LAVA ───────────────────────────────
+// With InstancedMesh, all water blocks share one material (and all lava
+// blocks share one material), so we animate the material directly instead
+// of iterating every block. Per-block position variation is sacrificed but
+// the rippling effect remains and it's far cheaper.
 let tick = 0;
 function animateBlocks() {
   tick++;
   if (tick % 20 !== 0) return; // update every 20 frames
-  // Only iterate water+lava blocks (animBlocks) — not the entire world Map
-  animBlocks.forEach(key => {
-    const mesh = world.get(key);
-    if (!mesh) return; // stale key guard
-    const id = mesh.userData.id;
-    if (id === 'water') {
-      const t = (tick * .04);
-      const c = 0x1565C0 + Math.floor(Math.sin(t + mesh.position.x*.3) * 0x050A0F);
-      if (Array.isArray(mesh.material)) mesh.material[2].color.setHex(c);
-    }
-    if (id === 'lava') {
-      const t = (tick * .03);
-      const r = 0xFF, g = Math.floor(50 + Math.sin(t + mesh.position.x*.4)*40);
-      if (Array.isArray(mesh.material)) mesh.material[2].color.setRGB(r/255, g/255, 0);
-    }
-  });
+  if (animBlocks.size === 0) return;
+
+  const waterIM = imeshByID['water'];
+  if (waterIM && Array.isArray(waterIM.material)) {
+    const t = tick * 0.04;
+    const c = 0x1565C0 + Math.floor(Math.sin(t) * 0x050A0F);
+    waterIM.material[2].color.setHex(c); // face 2 = top
+  }
+  const lavaIM = imeshByID['lava'];
+  if (lavaIM && Array.isArray(lavaIM.material)) {
+    const t = tick * 0.03;
+    const g = Math.floor(50 + Math.sin(t) * 40);
+    lavaIM.material[2].color.setRGB(1, g / 255, 0);
+  }
 }
 
 // ── GHOST EDGE MESHES — seamless toroidal wrap ────────
@@ -4091,17 +4189,18 @@ function updateGhostEdges(px, pz) {
 
   if (offsets.length === 0) return;
 
-  world.forEach(mesh => {
-    if (!mesh.visible) return;
-    const bx = mesh.position.x - 0.5;
-    const bz = mesh.position.z - 0.5;
+  // Iterate the world info map; materials come from the appropriate InstancedMesh.
+  world.forEach(info => {
+    const bx = info.x, bz = info.z;
     for (const [ox, oz] of offsets) {
       // Only copy blocks from the edge strip relevant to this offset
       const inX = ox !== 0 ? (ox > 0 ? bx > sz - T : bx < T) : true;
       const inZ = oz !== 0 ? (oz > 0 ? bz > sz - T : bz < T) : true;
       if (!inX || !inZ) continue;
-      const ghost = new THREE.Mesh(BGEOM, mesh.material); // shared geo+mat = free
-      ghost.position.set(mesh.position.x + ox, mesh.position.y, mesh.position.z + oz);
+      const im = imeshByID[info.id];
+      if (!im) continue;
+      const ghost = new THREE.Mesh(BGEOM, im.material); // shared geo+mat = ~free
+      ghost.position.set(info.x + 0.5 + ox, info.y + 0.5, info.z + 0.5 + oz);
       scene.add(ghost);
       ghostMeshes.push(ghost);
     }
@@ -4210,8 +4309,9 @@ function _exitUnderwater() {
   if (sunSphere) sunSphere.visible = true;
   if (moonSphere) moonSphere.visible = true;
   gameClouds.forEach(c => { c.visible = true; });
-  scene.fog.near = RENDER_DIST * 0.85;
-  scene.fog.far  = FAR_DIST;
+  // Restore invisible default horizon (no fog)
+  scene.fog.near = 9000;
+  scene.fog.far  = 10000;
   _despawnUnderwaterLife();
 }
 
@@ -5008,8 +5108,9 @@ function wsBroadcastMove() {
 // ── World load / save ──────────────────────────────────
 function serializeWorld() {
   const blocks = [];
-  world.forEach(mesh => {
-    blocks.push({ x: mesh.userData.x, y: mesh.userData.y, z: mesh.userData.z, id: mesh.userData.id });
+  // world values are now plain info objects {id,x,y,z,instanceId}
+  world.forEach(info => {
+    blocks.push({ x: info.x, y: info.y, z: info.z, id: info.id });
   });
   // שמור דלתות וחלונות (interactWorld) — רק ה-anchor של כל דלת, עם כיוון
   const savedAnchors = new Set();
@@ -5031,7 +5132,15 @@ function loadWorldBlocks(blocks) {
 }
 
 function _clearWorld() {
-  world.forEach(mesh => scene.remove(mesh));
+  // Reset every InstancedMesh: drop count to 0 and clear slot-to-key registry.
+  // We keep the imeshes themselves so capacity doesn't have to re-grow from scratch.
+  for (const id in imeshByID) {
+    const im = imeshByID[id];
+    im.count = 0;
+    im.userData.slotKey.length = 0;
+    im.userData.slotKey.length = im.userData.capacity;
+    im.instanceMatrix.needsUpdate = true;
+  }
   world.clear();
   animBlocks.clear(); // keep in sync with world Map
   creatures.forEach(c => scene.remove(c.group));
@@ -5246,7 +5355,8 @@ function applyGodPassive() {
   ray.far = 6;
   const ambient = scene.children.find(c => c.isAmbientLight);
   if (ambient) ambient.intensity = 0.9;
-  scene.fog.near = RENDER_DIST * 0.85; scene.fog.far = FAR_DIST;
+  // Default: fog pushed far off (invisible horizon)
+  scene.fog.near = 9000; scene.fog.far = 10000;
   renderer.domElement.style.filter = '';
 
   if (!selectedGod) { updateGodBadge(); return; }
@@ -5254,9 +5364,8 @@ function applyGodPassive() {
   // Apollo / Artemis — extended ray
   if (selectedGod.rayMult) ray.far = 6 * selectedGod.rayMult;
 
-  // Hades — night vision: clear fog so player can see beyond the LOD zone
+  // Hades — ambient boost only (fog stays invisible; night vision is the default anyway)
   if (selectedGod.id === 'hades') {
-    scene.fog.near = 60; scene.fog.far = 120;
     if (ambient) ambient.intensity = 2.2;
   }
 
@@ -5309,8 +5418,15 @@ async function exitGame() {
   if (locked) { try { document.exitPointerLock(); } catch {} }
   gameStarted = false;
   overlay.style.display = 'none';
-  // Clear Three.js scene objects
-  world.forEach(mesh => scene.remove(mesh)); world.clear();
+  // Clear Three.js scene objects — reuses the same zeroing as _clearWorld
+  for (const id in imeshByID) {
+    const im = imeshByID[id];
+    im.count = 0;
+    im.userData.slotKey.length = 0;
+    im.userData.slotKey.length = im.userData.capacity;
+    im.instanceMatrix.needsUpdate = true;
+  }
+  world.clear(); animBlocks.clear();
   creatures.forEach(c => scene.remove(c.group)); creatures.length = 0;
   remotePlayers.forEach(rp => scene.remove(rp.group)); remotePlayers.clear();
   // Hide in-game HUD
@@ -5329,7 +5445,7 @@ async function exitGame() {
   camera.fov = 75; camera.updateProjectionMatrix();
   renderer.domElement.style.filter = '';
   ray.far = 6;
-  scene.fog.near = RENDER_DIST * 0.85; scene.fog.far = FAR_DIST;
+  // (fog removed — nothing to reset here)
   const ambient = scene.children.find(c => c.isAmbientLight);
   if (ambient) ambient.intensity = 0.9;
   // Clean up local player body + first-person hands and reset camera mode
