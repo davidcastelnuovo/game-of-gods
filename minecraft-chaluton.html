@@ -812,30 +812,30 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
 }
 #underwaterOverlay .uw-tint {
   position: absolute; inset: 0;
-  background: rgba(0, 55, 150, 0.40);
+  background: rgba(40, 130, 210, 0.22);
   animation: uwtint 3.5s ease-in-out infinite;
 }
 @keyframes uwtint {
-  0%, 100% { background: rgba(0, 55, 150, 0.40); }
-  50%       { background: rgba(0, 80, 175, 0.46); }
+  0%, 100% { background: rgba(40, 130, 210, 0.22); }
+  50%      { background: rgba(55, 150, 225, 0.26); }
 }
 #underwaterOverlay .uw-rays {
   position: absolute; inset: 0;
   background:
-    radial-gradient(ellipse 38% 22% at 28% 18%, rgba(140,220,255,0.22) 0%, transparent 65%),
-    radial-gradient(ellipse 28% 18% at 72% 12%, rgba(110,200,255,0.17) 0%, transparent 65%),
-    radial-gradient(ellipse 22% 14% at 50% 25%, rgba(160,235,255,0.14) 0%, transparent 60%);
+    radial-gradient(ellipse 42% 28% at 28% 16%, rgba(190,240,255,0.30) 0%, transparent 65%),
+    radial-gradient(ellipse 32% 22% at 72% 12%, rgba(160,225,255,0.24) 0%, transparent 65%),
+    radial-gradient(ellipse 24% 18% at 50% 25%, rgba(200,250,255,0.20) 0%, transparent 60%);
   animation: uwrays 5s ease-in-out infinite alternate;
 }
 @keyframes uwrays {
-  0%   { transform: scaleX(1)    translateY(0%);   opacity: 0.6; }
-  40%  { transform: scaleX(1.06) translateY(-2%);  opacity: 1.0; }
-  70%  { transform: scaleX(0.95) translateY(1%);   opacity: 0.7; }
-  100% { transform: scaleX(1.03) translateY(-1%);  opacity: 0.9; }
+  0%   { transform: scaleX(1)    translateY(0%);   opacity: 0.75; }
+  40%  { transform: scaleX(1.06) translateY(-2%);  opacity: 1.0;  }
+  70%  { transform: scaleX(0.95) translateY(1%);   opacity: 0.85; }
+  100% { transform: scaleX(1.03) translateY(-1%);  opacity: 0.95; }
 }
 #underwaterOverlay .uw-vignette {
   position: absolute; inset: 0;
-  background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 15, 70, 0.55) 100%);
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(10, 50, 110, 0.35) 100%);
 }
 </style>
 </head>
@@ -1120,30 +1120,11 @@ const gameClouds = [];
 let _skyTime = 0;
 
 function setupSky() {
-  // ── Sky dome — gradient sphere (inverted) ──
-  const skyGeo = new THREE.SphereGeometry(350, 32, 16);
-  const skyCvs = document.createElement('canvas');
-  skyCvs.width = 2; skyCvs.height = 128;
-  const skyCtx = skyCvs.getContext('2d');
-  const skyGrad = skyCtx.createLinearGradient(0, 0, 0, 128);
-  skyGrad.addColorStop(0,    '#0b3566');
-  skyGrad.addColorStop(0.28, '#1a65b8');
-  skyGrad.addColorStop(0.58, '#4a9fd4');
-  skyGrad.addColorStop(0.80, '#87ceeb');
-  skyGrad.addColorStop(0.92, '#c0e4f5');
-  skyGrad.addColorStop(1,    '#d8eef8');
-  skyCtx.fillStyle = skyGrad;
-  skyCtx.fillRect(0, 0, 2, 128);
-  const skyTex = new THREE.CanvasTexture(skyCvs);
-  skyTex.magFilter = THREE.LinearFilter;
-  skyTex.minFilter = THREE.LinearFilter;
-  skyDome = new THREE.Mesh(
-    skyGeo,
-    new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, fog: false, depthWrite: false })
-  );
-  skyDome.renderOrder = -2;
-  skyDome.name = 'skyDome';
-  scene.add(skyDome);
+  // Sky dome removed — the gradient horizon was an ugly hard line against the
+  // terrain. The flat scene.background color is used instead (updated dynamically
+  // in updateSky for day / sunset / night transitions). skyDome stays null so all
+  // the existing `if (skyDome)` guards in enter/exit underwater etc. just skip.
+  skyDome = null;
 
   // ── Sun sphere ──
   const sunGeo = new THREE.SphereGeometry(3.8, 20, 14);
@@ -1296,6 +1277,10 @@ const PALETTE = ['grass','dirt','stone','wood','leaves','sand','water',
 // Shared geometry
 const BGEOM      = new THREE.BoxGeometry(1,1,1);
 const WIN_GEOM    = new THREE.BoxGeometry(1,1,0.1); // חלון דק בציר Z
+// Water is a bit shorter so the surface sits below the top of the cube — gives
+// it a liquid-pool look instead of a solid ice block.
+const WATER_GEOM  = new THREE.BoxGeometry(1, 0.88, 1);
+WATER_GEOM.translate(0, -0.06, 0); // bottom stays at y=0, top sits at ~y=0.88
 
 // Material cache
 const MC = {};
@@ -1456,6 +1441,8 @@ function getPixelMats(id) {
     m6 = [m, m, m, m, m, m];
 
   } else if (id === 'water') {
+    // Liquid water — low opacity, no depth write (avoids stacking artifacts
+    // between adjacent water blocks and lets terrain behind show through clearly).
     const m = makePixelMat((ctx, sz) => {
       const pal = ['#0d5fa0','#1565C0','#1a78d8','#1E88E5','#2196F3','#42A5F5','#64B5F6','#0d47a1'];
       for (let y = 0; y < sz; y++) for (let x = 0; x < sz; x++) {
@@ -1464,10 +1451,19 @@ function getPixelMats(id) {
         const idx  = Math.min(Math.floor((n * 0.35 + wave * 0.65) * pal.length), pal.length - 1);
         ctx.fillStyle = pal[idx];
         ctx.fillRect(x, y, 1, 1);
-        // White wave glint on top row
-        if (y === 0 && n > 0.7) { ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fillRect(x, y, 1, 1); }
+        // White wave glint scattered for a sparkle look
+        if (n > 0.82) { ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fillRect(x, y, 1, 1); }
       }
-    }, { transparent: true, opacity: 0.72 });
+    }, {
+      transparent: true,
+      opacity:     0.55,
+      depthWrite:  false,
+      side:        THREE.DoubleSide,
+    });
+    // Tag the texture so we can animate UV scroll in animateBlocks()
+    m.map.wrapS = THREE.RepeatWrapping;
+    m.map.wrapT = THREE.RepeatWrapping;
+    m.userData = { waterScroll: true };
     m6 = [m, m, m, m, m, m];
 
   } else if (id === 'gold') {
@@ -1713,7 +1709,8 @@ const _tmpMat4  = new THREE.Matrix4();
 const _hiddenM4 = new THREE.Matrix4().makeScale(0, 0, 0); // for momentarily freed slots
 
 function _makeIMesh(id, capacity) {
-  const im = new THREE.InstancedMesh(BGEOM, mats(id), capacity);
+  const geom = (id === 'water') ? WATER_GEOM : BGEOM;
+  const im = new THREE.InstancedMesh(geom, mats(id), capacity);
   im.count = 0;
   im.frustumCulled = false; // whole-world imeshes — rely on GPU frustum per-instance via shader
   im.userData = {
@@ -1722,7 +1719,8 @@ function _makeIMesh(id, capacity) {
     slotKey: new Array(capacity),   // instanceId → world-map key (for swap-remove)
   };
   im.name = 'iblocks_' + id;
-  im.renderOrder = 0;
+  // Transparent water renders AFTER opaque terrain so blend looks right.
+  im.renderOrder = (id === 'water') ? 1 : 0;
   scene.add(im);
   return im;
 }
@@ -1730,7 +1728,7 @@ function _makeIMesh(id, capacity) {
 function _growIMesh(im) {
   const oldCap = im.userData.capacity;
   const newCap = Math.max(oldCap * 2, oldCap + 512);
-  const fresh  = new THREE.InstancedMesh(BGEOM, im.material, newCap);
+  const fresh  = new THREE.InstancedMesh(im.geometry, im.material, newCap);
   fresh.count  = im.count;
   fresh.frustumCulled = false;
   fresh.name   = im.name;
@@ -4145,10 +4143,18 @@ function updateWaterFlow() {
 let tick = 0;
 function animateBlocks() {
   tick++;
-  if (tick % 20 !== 0) return; // update every 20 frames
+  // Water UV scroll runs every frame for smooth flow
+  const waterIM = imeshByID['water'];
+  if (waterIM && Array.isArray(waterIM.material)) {
+    const wMap = waterIM.material[2].map;
+    if (wMap) {
+      wMap.offset.x = (tick * 0.0008) % 1;
+      wMap.offset.y = (tick * 0.0004) % 1;
+    }
+  }
+  if (tick % 20 !== 0) return; // color tint + lava update every 20 frames
   if (animBlocks.size === 0) return;
 
-  const waterIM = imeshByID['water'];
   if (waterIM && Array.isArray(waterIM.material)) {
     const t = tick * 0.04;
     const c = 0x1565C0 + Math.floor(Math.sin(t) * 0x050A0F);
@@ -4209,8 +4215,48 @@ function updateGhostEdges(px, pz) {
 
 // ── אפקט מתחת למים ────────────────────────────────────
 let _wasUnderwater = false;
+let _wasInWater    = false;     // player feet/waist in water — drives splash trigger
 let _uwFish = [];       // יצורי מים שנוצרו אוטומטית
 let _uwCorals = [];     // מבני אלמוגים זמניים
+
+// ── SPLASH EFFECT ─────────────────────────────────────
+// Spawns a ring of small blue cubes that shoot upward from the impact point
+// and fall back down. Particles reuse the deathParticles pipeline so they're
+// automatically updated and removed by updateDeathParticles().
+function spawnWaterSplash(x, y, z, intensity) {
+  intensity = intensity || 1;
+  const count = 10 + Math.floor(intensity * 8);
+  const palette = [0x64B5F6, 0x42A5F5, 0x90CAF9, 0xBBDEFB, 0xFFFFFF];
+  for (let i = 0; i < count; i++) {
+    const sz = 0.08 + Math.random() * 0.12;
+    const color = palette[Math.floor(Math.random() * palette.length)];
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(sz, sz, sz),
+      new THREE.MeshLambertMaterial({
+        color, transparent: true, opacity: 0.9,
+      })
+    );
+    // Spawn in a small ring around the splash point
+    const ang = (i / count) * Math.PI * 2 + Math.random() * 0.3;
+    const rad = 0.25 + Math.random() * 0.35;
+    mesh.position.set(
+      x + Math.cos(ang) * rad,
+      y + 0.05 + Math.random() * 0.15,
+      z + Math.sin(ang) * rad
+    );
+    // Mostly upward with outward spread; scaled by intensity
+    const vel = new THREE.Vector3(
+      Math.cos(ang) * (1.2 + Math.random() * 1.6) * intensity,
+      2.5 + Math.random() * 2.5 * intensity,
+      Math.sin(ang) * (1.2 + Math.random() * 1.6) * intensity
+    );
+    scene.add(mesh);
+    deathParticles.push({ mesh, vel, life: 0.9 });
+  }
+  // Splash sound — quick broadband burst
+  playTone(180 + Math.random() * 60, 0.08, 'triangle');
+  playTone(420 + Math.random() * 80, 0.10, 'sine');
+}
 
 function _buildCoral() {
   const g = new THREE.Group();
@@ -4290,14 +4336,16 @@ function _despawnUnderwaterLife() {
 
 function _enterUnderwater() {
   document.getElementById('underwaterOverlay').style.display = 'block';
-  if (scene.background) scene.background.setHex(0x00254A);
-  scene.fog.color.setHex(0x00254A);
+  // Brighter, clearer blue so the player still sees the world around them
+  if (scene.background) scene.background.setHex(0x1a6aa8);
+  scene.fog.color.setHex(0x1a6aa8);
   if (skyDome) skyDome.visible = false;
   if (sunSphere) sunSphere.visible = false;
   if (moonSphere) moonSphere.visible = false;
   gameClouds.forEach(c => { c.visible = false; });
-  scene.fog.near = 2;
-  scene.fog.far  = 16;
+  // Looser fog → much more visibility underwater
+  scene.fog.near = 6;
+  scene.fog.far  = 40;
   _spawnUnderwaterLife();
 }
 
@@ -4344,6 +4392,14 @@ function animate(t) {
       _wasUnderwater = _headUW;
       if (_headUW) _enterUnderwater(); else _exitUnderwater();
     }
+    // ── Splash trigger: player's feet/waist transition from dry → wet ──
+    const _nowInWater = playerInWater();
+    if (_nowInWater && !_wasInWater) {
+      // Impact intensity from the downward velocity (capped)
+      const impact = Math.min(1.5, 0.6 + Math.max(0, -player.vel.y) * 0.25);
+      spawnWaterSplash(player.pos.x, player.pos.y + 0.05, player.pos.z, impact);
+    }
+    _wasInWater = _nowInWater;
   }
   renderer.render(scene, camera);
 }
@@ -5446,6 +5502,8 @@ async function exitGame() {
   renderer.domElement.style.filter = '';
   ray.far = 6;
   // (fog removed — nothing to reset here)
+  _wasUnderwater = false; _wasInWater = false;
+  document.getElementById('underwaterOverlay').style.display = 'none';
   const ambient = scene.children.find(c => c.isAmbientLight);
   if (ambient) ambient.intensity = 0.9;
   // Clean up local player body + first-person hands and reset camera mode
