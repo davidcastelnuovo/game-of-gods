@@ -2264,11 +2264,12 @@ function setBlock(x,y,z,id) {
   if (id === 'water' || id === 'lava') animBlocks.add(k);
 }
 
+// Passable block IDs — defined once at module level to avoid GC pressure in hot path
+const _PASSABLE_IDS = new Set(['water','sea_shallow','sea_deep','lava','bougainvillea']);
+
 function hasBlock(x,y,z) {
   const info = world.get(wk(x,y,z));
-  // Non-solid blocks (passable): liquids and decorative plants
-  const PASSABLE_IDS = new Set(['water','sea_shallow','sea_deep','lava','bougainvillea']);
-  if (info && !PASSABLE_IDS.has(info.id)) return true; // מוצק בלבד — נוזלים/צמחייה לא חוסמים תנועה
+  if (info && !_PASSABLE_IDS.has(info.id)) return true; // מוצק בלבד — נוזלים/צמחייה לא חוסמים תנועה
   const im = interactWorld.get(wk(x,y,z));
   return im ? !im.userData.open : false;  // סגור=חסום, פתוח=לא חסום
 }
@@ -7069,21 +7070,21 @@ function buildCycladesVillage(cx, baseY, cz) {
     for (let dz = -4; dz <= 4; dz++)
       setBlock(cx+dx, by, cz+dz, 'cobble_aegean');
 
-  // ── Village well / fountain at center ──
+  // ── Village fountain at center (rim only — walkable around) ──
+  // Basin floor
   for (let dx = -1; dx <= 1; dx++)
-    for (let dz = -1; dz <= 1; dz++) {
-      setBlock(cx+dx, by+1, cz+dz, 'marble');
-      if (Math.abs(dx) === 1 || Math.abs(dz) === 1)
-        setBlock(cx+dx, by+2, cz+dz, 'marble');
-    }
-  setBlock(cx, by+1, cz, 'sea_shallow'); // water in fountain
-  // Fountain rim posts
+    for (let dz = -1; dz <= 1; dz++)
+      setBlock(cx+dx, by, cz+dz, 'marble');
+  // Water inside
+  setBlock(cx, by+1, cz, 'sea_shallow');
+  // Only the 4 corner posts rise up (not the full perimeter wall)
   [[cx-1,cz-1],[cx+1,cz-1],[cx-1,cz+1],[cx+1,cz+1]].forEach(([fx,fz]) => {
-    setBlock(fx, by+3, fz, 'marble');
+    setBlock(fx, by+1, fz, 'marble');
+    setBlock(fx, by+2, fz, 'marble');
   });
-  // Cross beam
-  for (let dx = -1; dx <= 1; dx++) setBlock(cx+dx, by+4, cz, 'marble');
-  for (let dz = -1; dz <= 1; dz++) setBlock(cx, by+4, cz+dz, 'marble');
+  // Cross beam at top
+  for (let dx = -1; dx <= 1; dx++) setBlock(cx+dx, by+3, cz, 'marble');
+  for (let dz = -1; dz <= 1; dz++) setBlock(cx, by+3, cz+dz, 'marble');
 
   // ── Narrow alleyways radiating from plateia ──
   // North alley
@@ -7137,11 +7138,11 @@ function buildCycladesVillage(cx, baseY, cz) {
     setBlock(sx+2, by+2, sz+1, 'whitewash');
   }
 
-  // ── Lanterns along alleys ──
+  // ── Lanterns along alleys (offset +1 from alley center so they don’t block movement) ──
   const lanternSpots = [
-    {x:cx-4,z:cz-4},{x:cx+4,z:cz-4},{x:cx-4,z:cz+4},{x:cx+4,z:cz+4},
-    {x:cx,z:cz-7},{x:cx,z:cz+7},{x:cx-7,z:cz},{x:cx+7,z:cz},
-    {x:cx-10,z:cz-10},{x:cx+8,z:cz-10},
+    {x:cx-5,z:cz-4},{x:cx+5,z:cz-4},{x:cx-5,z:cz+4},{x:cx+5,z:cz+4},
+    {x:cx+1,z:cz-8},{x:cx+1,z:cz+8},{x:cx-8,z:cz+1},{x:cx+8,z:cz+1},
+    {x:cx-11,z:cz-9},{x:cx+9,z:cz-9},
   ];
   lanternSpots.forEach(t => {
     setBlock(t.x, by+1, t.z, 'whitewash');
@@ -7149,11 +7150,11 @@ function buildCycladesVillage(cx, baseY, cz) {
     setBlock(t.x, by+3, t.z, 'gold');
   });
 
-  // ── Bougainvillea patches near houses ──
+  // ── Bougainvillea on house walls (y+2 and y+3, above player head) ──
   housePositions.forEach(h => {
     if (Math.random() < 0.6) {
-      setBlock(h.x + 5, by + h.tier + 1, h.z + 2, 'bougainvillea');
       setBlock(h.x + 5, by + h.tier + 2, h.z + 2, 'bougainvillea');
+      setBlock(h.x + 5, by + h.tier + 3, h.z + 2, 'bougainvillea');
     }
   });
 }
@@ -8784,28 +8785,35 @@ async function enterGame(worldData, inviteCode) {
   function topBlockAt(sx, sz) {
     for (let y = 40; y >= 1; y--) {
       const info = world.get(`${sx}|${y}|${sz}`);
-      if (info && info.id !== 'water') return y;
+      if (info && !_PASSABLE_IDS.has(info.id)) return y; // solid block only
     }
     return -1;
   }
-  let spawnX = mid, spawnZ = mid, spawnY = -1;
-  outer:
-  for (let radius = 0; radius < worldSZ / 2; radius++) {
-    for (let dx = -radius; dx <= radius; dx++) {
-      for (let dz = -radius; dz <= radius; dz++) {
-        if (Math.max(Math.abs(dx), Math.abs(dz)) !== radius && radius > 0) continue;
-        const sx = mid + dx, sz = mid + dz;
-        if (sx < 0 || sz < 0 || sx >= worldSZ || sz >= worldSZ) continue;
-        const ty = topBlockAt(sx, sz);
-        if (ty > SEA_LEVEL) {
-          spawnX = sx; spawnZ = sz; spawnY = ty + 1;
-          break outer;
+  // Prefer spawning on the plateia cobblestone, offset from fountain center
+  const villageCZ = mid + 8;
+  let spawnX = mid + 3, spawnZ = villageCZ + 3, spawnY = -1;
+  // Find top solid block at preferred spawn
+  spawnY = topBlockAt(spawnX, spawnZ);
+  if (spawnY < SEA_LEVEL) {
+    // Fallback: spiral search for solid land
+    outer:
+    for (let radius = 0; radius < worldSZ / 2; radius++) {
+      for (let dx = -radius; dx <= radius; dx++) {
+        for (let dz = -radius; dz <= radius; dz++) {
+          if (Math.max(Math.abs(dx), Math.abs(dz)) !== radius && radius > 0) continue;
+          const sx = mid + dx, sz = mid + dz;
+          if (sx < 0 || sz < 0 || sx >= worldSZ || sz >= worldSZ) continue;
+          const ty = topBlockAt(sx, sz);
+          if (ty > SEA_LEVEL) {
+            spawnX = sx; spawnZ = sz; spawnY = ty;
+            break outer;
+          }
         }
       }
     }
   }
   if (spawnY < 0) spawnY = SEA_LEVEL + 2; // fallback — spawn above sea
-  player.pos.set(spawnX + 0.5, spawnY, spawnZ + 0.5);
+  player.pos.set(spawnX + 0.5, spawnY + 1, spawnZ + 0.5);
 
   // Camera
   camera.position.set(player.pos.x, player.pos.y + EYE, player.pos.z);
