@@ -1129,16 +1129,25 @@ body { overflow:hidden; background:#87CEEB; font-family:'Courier New',monospace;
 <div id="loginScreen" class="gamePanel">
   <div class="gogTorch gogTorchL"></div>
   <div class="gogTorch gogTorchR"></div>
-  <div class="rbCard">
+  <div class="rbCard" style="gap:20px;padding:40px 32px">
     <div class="rbLogo">
       <span class="rbLogoIcon">⚡</span>
       <span class="rbLogoTitle">משחקי האלים</span>
-      <span class="rbLogoSub">Game of GODS • Multiplayer</span>
+      <span class="rbLogoSub">Game of GODS • איי הקיקלדס</span>
     </div>
-    <input id="loginUser" class="gpInput" placeholder="👤  שם משתמש" autocomplete="username" />
-    <input id="loginPass" class="gpInput" type="password" placeholder="🔒  סיסמה" autocomplete="current-password" />
-    <button id="loginBtn" class="gpBtn primary" style="margin-top:4px">▶ כניסה למשחק</button>
-    <button id="registerBtn" class="gpBtn secondary">+ הרשמה — משתמש חדש</button>
+    <div style="display:flex;flex-direction:column;gap:14px;width:100%">
+      <button id="enterCanvasBtn" class="gpBtn primary" style="font-size:1.1rem;padding:16px;display:flex;align-items:center;justify-content:center;gap:10px">
+        🎨 <span><strong>מוד קאנבה</strong><br><small style="font-weight:normal;font-size:.78rem">בנייה חופשית וטיול בעולם הקיקלדי</small></span>
+      </button>
+      <button id="enterGameBtn" class="gpBtn" style="font-size:1.1rem;padding:16px;background:linear-gradient(135deg,#1a3a6b,#0d2040);border:2px solid #1a6bb5;display:flex;align-items:center;justify-content:center;gap:10px">
+        ⚔️ <span><strong>מוד משחק</strong><br><small style="font-weight:normal;font-size:.78rem">בחר אל, הגן על הכפר, צבור מאמינים</small></span>
+      </button>
+    </div>
+    <!-- hidden inputs kept for backward compat with initAuth references -->
+    <input id="loginUser" style="display:none" />
+    <input id="loginPass" style="display:none" />
+    <button id="loginBtn" style="display:none"></button>
+    <button id="registerBtn" style="display:none"></button>
     <div id="loginErr" class="gpErr"></div>
   </div>
 </div>
@@ -8774,8 +8783,25 @@ async function enterGame(worldData, inviteCode) {
     const el = document.getElementById(id); if (el) el.style.display = 'none';
   });
 
-  // Load terrain (async for large worlds — shows progress bar)
-  await loadWorldBlocks(worldData.blocks);
+  // Load terrain: if blocks is empty (guest/local mode), generate Cyclades world client-side
+  if (!worldData.blocks || worldData.blocks.length === 0) {
+    // Show loading overlay
+    document.getElementById('overlay').style.display = 'flex';
+    document.getElementById('overlayMsg').textContent = 'יוצר איי הקיקלדס…';
+    const _lb = document.getElementById('loadBar');
+    const _lbf = document.getElementById('loadBarFill');
+    if (_lb) _lb.style.display = 'block';
+    if (_lbf) _lbf.style.width = '20%';
+    await new Promise(r => setTimeout(r, 60));
+    _clearWorld();
+    genGameWorld(worldSZ);
+    if (_lbf) _lbf.style.width = '90%';
+    await new Promise(r => setTimeout(r, 40));
+    if (_lb) _lb.style.display = 'none';
+  } else {
+    // Load terrain from server blocks (async for large worlds — shows progress bar)
+    await loadWorldBlocks(worldData.blocks);
+  }
 
   // Spawn player on the highest land column closest to the map center.
   // For Cyclades worlds the center is often ocean, so we spiral out until
@@ -9085,88 +9111,38 @@ async function showWorldSelect() {
   });
 }
 
+// ── Guest entry helpers ──────────────────────────────────────────
+function _makeGuestWorldData() {
+  return {
+    id: 'local_' + Date.now(),
+    name: 'איי הקיקלדס',
+    size: 64,
+    ownerId: 'guest',
+    inviteCode: '',
+    blocks: []
+  };
+}
+
+function _enterCanvasGuest() {
+  currentUser = { id: 'guest', username: 'אורח', token: null };
+  const worldData = _makeGuestWorldData();
+  currentGameMode = 'canvas';
+  document.getElementById('loginScreen').style.display = 'none';
+  enterGame(worldData, '');
+}
+
+function _enterGameGuest() {
+  currentUser = { id: 'guest', username: 'אורח', token: null };
+  const worldData = _makeGuestWorldData();
+  document.getElementById('loginScreen').style.display = 'none';
+  showGodSelect(worldData, '');
+}
+
 // ── Auth init ──────────────────────────────────────────
 function initAuth() {
-  // ── Login / Register buttons ──
-  document.getElementById('loginBtn').addEventListener('click', async () => {
-    document.getElementById('loginErr').textContent = '';
-    try {
-      const d = await api('POST', '/api/auth/login', {
-        username: document.getElementById('loginUser').value.trim(),
-        password: document.getElementById('loginPass').value,
-      });
-      currentUser = { ...d, id: d.userId }; // normalize: server returns userId, code uses .id
-      afterLogin();
-    } catch (e) { document.getElementById('loginErr').textContent = e.message; }
-  });
-
-  document.getElementById('registerBtn').addEventListener('click', async () => {
-    document.getElementById('loginErr').textContent = '';
-    try {
-      const d = await api('POST', '/api/auth/register', {
-        username: document.getElementById('loginUser').value.trim(),
-        password: document.getElementById('loginPass').value,
-      });
-      currentUser = { ...d, id: d.userId }; // normalize: server returns userId, code uses .id
-      afterLogin();
-    } catch (e) { document.getElementById('loginErr').textContent = e.message; }
-  });
-
-  // Allow Enter key
-  ['loginUser','loginPass'].forEach(id => {
-    document.getElementById(id).addEventListener('keydown', e => {
-      if (e.key === 'Enter') document.getElementById('loginBtn').click();
-    });
-  });
-
-  // ── Logout ──
-  document.getElementById('logoutBtn').addEventListener('click', async () => {
-    try { await api('POST', '/api/auth/logout'); } catch {}
-    currentUser = null;
-    document.getElementById('worldSelectScreen').style.display = 'none';
-    document.getElementById('loginScreen').style.display = 'flex';
-  });
-
-  // ── New world button ──
-  document.getElementById('newWorldBtn').addEventListener('click', () => {
-    document.getElementById('worldSelectScreen').style.display = 'none';
-    document.getElementById('createWorldScreen').style.display = 'flex';
-    document.getElementById('newWorldName').focus();
-  });
-
-  // ── Create world confirm ──
-  // Every new world is now a fixed-size Cyclades island archipelago.
-  document.getElementById('createWorldConfirm').addEventListener('click', async () => {
-    const name = document.getElementById('newWorldName').value.trim();
-    if (!name) { document.getElementById('createWorldErr').textContent = 'הזן שם לעולם'; return; }
-    document.getElementById('createWorldErr').textContent = '⏳ יוצר עולם…';
-    document.getElementById('createWorldConfirm').disabled = true;
-    try {
-      const worldData = await api('POST', '/api/worlds', { name, type: 'cyclades' });
-      document.getElementById('createWorldConfirm').disabled = false;
-      showGodSelect(worldData, '');
-    } catch (e) {
-      document.getElementById('createWorldErr').textContent = e.message;
-      document.getElementById('createWorldConfirm').disabled = false;
-    }
-  });
-
-  // ── Create world cancel ──
-  document.getElementById('createWorldCancel').addEventListener('click', showWorldSelect);
-
-  // ── Join by invite code ──
-  document.getElementById('joinInviteBtn').addEventListener('click', async () => {
-    const code = document.getElementById('inviteCodeInput').value.trim();
-    if (!code) return;
-    document.getElementById('worldSelectErr').textContent = 'מחפש עולם…';
-    try {
-      const { worldId } = await api('GET', `/api/worlds/invite/${encodeURIComponent(code)}`);
-      const worldData   = await api('GET', `/api/worlds/${worldId}?invite=${encodeURIComponent(code)}`);
-      showGodSelect(worldData, code);
-    } catch (e) {
-      document.getElementById('worldSelectErr').textContent = e.message;
-    }
-  });
+  // ── Splash: Canvas Mode & Game Mode buttons ──
+  document.getElementById('enterCanvasBtn').addEventListener('click', _enterCanvasGuest);
+  document.getElementById('enterGameBtn').addEventListener('click', _enterGameGuest);
 
   // ── God select screen buttons ──
   document.getElementById('godConfirmBtn').addEventListener('click', () => {
@@ -9175,12 +9151,12 @@ function initAuth() {
   });
   document.getElementById('godBackBtn').addEventListener('click', () => {
     document.getElementById('godSelectScreen').style.display = 'none';
-    showWorldSelect();
+    document.getElementById('loginScreen').style.display = 'flex';
   });
+
   // ── Weapon select screen buttons ──
   document.getElementById('weaponConfirmBtn').addEventListener('click', () => {
     if (!_pendingWorldData) return;
-    // Apply selected weapon to playerCostume
     if (selectedGogWeapon) {
       const _gogWeaponMap = {
         bolt:'staff', trident:'trident', axedual:'axe', huntbow:'bow',
@@ -9220,7 +9196,7 @@ function initAuth() {
   // ── Exit game button ──
   document.getElementById('exitGameBtn').addEventListener('click', exitGame);
 
-  // ── Save / Invite buttons in-game ──
+  // ── Save / Invite buttons (disabled for guest) ──
   document.getElementById('saveBtn').addEventListener('click', saveWorldNow);
   document.getElementById('inviteBtn').addEventListener('click', () => {
     if (!currentWorld) return;
