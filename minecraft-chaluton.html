@@ -5577,6 +5577,11 @@ document.addEventListener('keydown', e => {
     }
     e.preventDefault();
   }
+  // B key — toggle boat
+  if (e.code === 'KeyB' && locked && !e.repeat) {
+    if (typeof _enterBoat === 'function') _enterBoat();
+    e.preventDefault();
+  }
 });
 
 // World size buttons
@@ -5965,6 +5970,10 @@ function animate(t) {
     if (currentGameMode === 'game') _updateMiniMap();
     // Infinite world system (sea plane, compass, island streaming)
     if (typeof _updateInfiniteWorld === 'function') _updateInfiniteWorld(dt);
+    // Open-sea swimming physics (keep player afloat outside island grid)
+    if (typeof _applyOpenSeaPhysics === 'function') _applyOpenSeaPhysics();
+    // Boat update
+    if (typeof _updateBoat === 'function') _updateBoat();
     // Dionysus rainbow effect
     if (selectedGod?.id === 'dionysus' && dionysusActive) {
       renderer.domElement.style.filter = `hue-rotate(${(t/50)%360}deg) saturate(1.8)`;
@@ -7272,6 +7281,9 @@ async function genGameWorld(sz) {
 
   // ── Harbor on south coast of main island ──
   buildCycladesHarbor(villageCX + 4, SEA_LEVEL + 1, villageCZ + 14);
+
+  // ── Capture heightmap for world map display ──
+  _captureIslandHeightmap(sz);
 }
 
 // ── Cyclades Village Builder ─────────────────────────────────
@@ -8431,11 +8443,11 @@ function _fmtTime(ms) {
 // When the player leaves an island's block grid, they enter open sea.
 // The sea plane always follows the camera.
 
-const ISLAND_LOAD_DIST   = 120;  // blocks — start loading when within this distance
-const ISLAND_UNLOAD_DIST = 220;  // blocks — unload when farther than this
-const SEA_PLANE_SIZE     = 2000; // how wide the infinite sea plane is (world units)
-const HORIZON_FOG_NEAR   = 60;   // fog starts here
-const HORIZON_FOG_FAR    = 160;  // fog ends here (full opacity)
+const ISLAND_LOAD_DIST   = 180;  // blocks — start loading when within this distance (larger islands)
+const ISLAND_UNLOAD_DIST = 350;  // blocks — unload when farther than this
+const SEA_PLANE_SIZE     = 4000; // wider sea plane for 128×128 islands
+const HORIZON_FOG_NEAR   = 90;   // fog starts at 90 blocks
+const HORIZON_FOG_FAR    = 200;  // fog ends at 200 blocks (full opacity)
 
 // ── 20 Cycladic islands ───────────────────────────────────────────────────
 // vx/vz: virtual world position (centre of island, in block units)
@@ -8476,19 +8488,87 @@ let _visitedIslands   = new Set([0]); // island ids the player has visited
 // ── Infinite sea plane ────────────────────────────────────────────────────
 function _createInfiniteSeaPlane() {
   if (_infiniteSeaPlane) return;
-  const geo = new THREE.PlaneGeometry(SEA_PLANE_SIZE, SEA_PLANE_SIZE, 1, 1);
+
+  // High-resolution geometry for smooth waves
+  const geo = new THREE.PlaneGeometry(SEA_PLANE_SIZE, SEA_PLANE_SIZE, 256, 256);
   geo.rotateX(-Math.PI / 2);
-  const mat = new THREE.MeshLambertMaterial({
-    color: 0x00B4D8,
+
+  // Ocean ShaderMaterial — vertex waves + Fresnel + specular
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime:      { value: 0 },
+      uCamPos:    { value: new THREE.Vector3() },
+      uSunDir:    { value: new THREE.Vector3(0.5, 1.0, 0.3).normalize() },
+      uDeepColor: { value: new THREE.Color(0x023e8a) },
+      uShallowColor: { value: new THREE.Color(0x00b4d8) },
+      uFoamColor: { value: new THREE.Color(0xffffff) },
+    },
+    vertexShader: `
+      uniform float uTime;
+      varying vec3  vWorldPos;
+      varying float vWaveHeight;
+      void main() {
+        vec3 pos = position;
+        // Multi-octave waves
+        float w1 = sin(pos.x * 0.08 + uTime * 1.2) * 0.35;
+        float w2 = sin(pos.z * 0.11 + uTime * 0.9) * 0.25;
+        float w3 = sin((pos.x + pos.z) * 0.06 + uTime * 1.5) * 0.15;
+        float w4 = cos(pos.x * 0.15 - pos.z * 0.09 + uTime * 0.7) * 0.10;
+        pos.y += w1 + w2 + w3 + w4;
+        vWaveHeight = (w1 + w2 + w3 + w4 + 0.85) / 1.7; // 0..1
+        vWorldPos = (modelMatrix * vec4(pos, 1.0)).xyz;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform vec3  uCamPos;
+      uniform vec3  uSunDir;
+      uniform vec3  uDeepColor;
+      uniform vec3  uShallowColor;
+      uniform vec3  uFoamColor;
+      uniform float uTime;
+      varying vec3  vWorldPos;
+      varying float vWaveHeight;
+
+      void main() {
+        // View direction
+        vec3 viewDir = normalize(uCamPos - vWorldPos);
+
+        // Fresnel — shallow angle = more reflective / darker
+        float fresnel = pow(1.0 - max(dot(viewDir, vec3(0,1,0)), 0.0), 3.0);
+
+        // Base colour: blend deep/shallow by distance from camera
+        float dist = length(uCamPos.xz - vWorldPos.xz);
+        float depthFactor = clamp(dist / 80.0, 0.0, 1.0);
+        vec3 baseColor = mix(uShallowColor, uDeepColor, depthFactor + fresnel * 0.4);
+
+        // Specular highlight (sun)
+        vec3 normal = vec3(0,1,0); // approximate flat normal
+        vec3 halfVec = normalize(uSunDir + viewDir);
+        float spec = pow(max(dot(normal, halfVec), 0.0), 64.0) * 0.6;
+
+        // Foam on wave crests
+        float foam = smoothstep(0.78, 0.95, vWaveHeight) * 0.45;
+        vec3 color = mix(baseColor, uFoamColor, foam);
+        color += vec3(spec);
+
+        // Horizon fade (fog-like)
+        float horizonFade = clamp((dist - 60.0) / 140.0, 0.0, 1.0);
+        vec3 skyColor = vec3(0.53, 0.81, 0.98);
+        color = mix(color, skyColor, horizonFade * 0.7);
+
+        gl_FragColor = vec4(color, 0.92 - horizonFade * 0.3);
+      }
+    `,
     transparent: true,
-    opacity: 0.82,
+    side: THREE.FrontSide,
+    depthWrite: false,
   });
+
   _infiniteSeaPlane = new THREE.Mesh(geo, mat);
-  // Position at sea level (SEA_LEVEL=6 in block coords, each block = 1 unit)
-  // The sea plane sits at y=6.0 so it's flush with the water surface
-  _infiniteSeaPlane.position.y = (typeof SEA_LEVEL !== 'undefined' ? SEA_LEVEL : 6) + 0.05;
+  _infiniteSeaPlane.position.y = SEA_LEVEL + 0.05;
   _infiniteSeaPlane.receiveShadow = false;
-  _infiniteSeaPlane.renderOrder = -1; // render behind blocks
+  _infiniteSeaPlane.renderOrder = 1; // render after opaque terrain
   _infiniteSeaPlane.name = 'infiniteSeaPlane';
   scene.add(_infiniteSeaPlane);
 }
@@ -8498,11 +8578,17 @@ function _updateInfiniteSeaPlane() {
   // Follow player horizontally so it always covers the horizon
   _infiniteSeaPlane.position.x = camera.position.x;
   _infiniteSeaPlane.position.z = camera.position.z;
-  // Animate colour slightly
-  const t = performance.now() * 0.0003;
-  const g = Math.floor(0xB4 + Math.sin(t) * 8);
-  const b = Math.floor(0xD8 - Math.sin(t * 0.7) * 12);
-  _infiniteSeaPlane.material.color.setRGB(0, g / 255, b / 255);
+
+  // Update shader uniforms
+  const mat = _infiniteSeaPlane.material;
+  if (mat.uniforms) {
+    mat.uniforms.uTime.value    = performance.now() * 0.001;
+    mat.uniforms.uCamPos.value.copy(camera.position);
+    // Sync sun direction with day/night cycle if available
+    if (typeof sunSphere !== 'undefined' && sunSphere) {
+      mat.uniforms.uSunDir.value.copy(sunSphere.position).normalize();
+    }
+  }
 }
 
 // ── Horizon fog ──────────────────────────────────────────────────────────
@@ -8743,28 +8829,56 @@ function _drawWorldMap() {
   for (const isl of WORLD_ISLANDS) {
     const cx = toCanvasX(isl.vx);
     const cy = toCanvasZ(isl.vz);
-    const r = Math.max(6, isl.radius * 0.4);
+    const r = Math.max(8, isl.radius * 0.45);
 
-    // Island shape
-    const islandGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-    if (isl.visited) {
-      islandGrad.addColorStop(0, '#d4af37');
-      islandGrad.addColorStop(1, '#8B6914');
+    if (isl.heightmap) {
+      // Draw real island shape from heightmap
+      const RES = 32;
+      const cellW = (r * 2) / RES;
+      const cellH = (r * 2) / RES;
+      const offX = cx - r;
+      const offY = cy - r;
+      for (let ix = 0; ix < RES; ix++) {
+        for (let iz = 0; iz < RES; iz++) {
+          const idx = (iz * RES + ix) * 3;
+          const rr = isl.heightmap[idx];
+          const gg = isl.heightmap[idx + 1];
+          const bb = isl.heightmap[idx + 2];
+          // Only draw land pixels (not deep sea)
+          if (gg < 140 && bb > 120) continue; // skip deep sea
+          const alpha = isl.visited ? 1.0 : 0.55;
+          ctx.fillStyle = `rgba(${rr},${gg},${bb},${alpha})`;
+          ctx.fillRect(offX + ix * cellW, offY + iz * cellH, cellW + 0.5, cellH + 0.5);
+        }
+      }
+      // Shoreline ring
+      ctx.beginPath();
+      ctx.arc(cx, cy, r * 0.85, 0, Math.PI * 2);
+      ctx.strokeStyle = isl.visited ? 'rgba(212,175,55,0.6)' : 'rgba(150,180,200,0.3)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
     } else {
-      islandGrad.addColorStop(0, '#6b7280');
-      islandGrad.addColorStop(1, '#374151');
+      // Fallback: simple circle before heightmap is captured
+      const islandGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      if (isl.visited) {
+        islandGrad.addColorStop(0, '#d4af37');
+        islandGrad.addColorStop(1, '#8B6914');
+      } else {
+        islandGrad.addColorStop(0, '#4a7c59');
+        islandGrad.addColorStop(1, '#2d4a35');
+      }
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fillStyle = islandGrad;
+      ctx.fill();
     }
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fillStyle = islandGrad;
-    ctx.fill();
 
     // Glow for visited
     if (isl.visited) {
       ctx.shadowColor = '#d4af37';
-      ctx.shadowBlur = 10;
+      ctx.shadowBlur = 8;
       ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.arc(cx, cy, r + 2, 0, Math.PI * 2);
       ctx.strokeStyle = '#d4af37';
       ctx.lineWidth = 1.5;
       ctx.stroke();
@@ -8774,7 +8888,7 @@ function _drawWorldMap() {
     // Current island indicator
     if (isl.id === _currentIslandId) {
       ctx.beginPath();
-      ctx.arc(cx, cy, r + 4, 0, Math.PI * 2);
+      ctx.arc(cx, cy, r + 5, 0, Math.PI * 2);
       ctx.strokeStyle = '#00ff88';
       ctx.lineWidth = 2;
       ctx.setLineDash([4, 3]);
@@ -8786,12 +8900,12 @@ function _drawWorldMap() {
     ctx.fillStyle = isl.visited ? '#d4af37' : '#9ca3af';
     ctx.font = `${isl.id === _currentIslandId ? 'bold ' : ''}10px Cinzel, serif`;
     ctx.textAlign = 'center';
-    ctx.fillText(isl.nameHe, cx, cy + r + 13);
+    ctx.fillText(isl.nameHe, cx, cy + r + 14);
 
     // Island type icon
     const typeIcon = { village:'🏘', temple:'🏛', volcanic:'🌋', harbor:'⚓', ruins:'🏚', wild:'🌿' }[isl.type] || '🏝';
     ctx.font = '11px serif';
-    ctx.fillText(typeIcon, cx, cy + 4);
+    ctx.fillText(typeIcon, cx, cy - r - 4);
   }
 
   // Player position
@@ -8991,6 +9105,10 @@ function _updateInfiniteWorld(dt) {
     _tickIslandStreaming();
     _updateIslandMarkers();
   }
+  // Update beacons every 120 frames (~2 seconds)
+  if (_islandStreamTick % 120 === 0) {
+    if (typeof _updateIslandBeacons === 'function') _updateIslandBeacons();
+  }
 }
 
 
@@ -8998,6 +9116,201 @@ function _buildStatRows(rows) {
   return rows.map(([label, val]) =>
     `<div class="endStatRow"><span>${label}</span><span class="val">${val}</span></div>`
   ).join('');
+}
+
+
+// ── Island Heightmap ─────────────────────────────────────────────────────
+// Captures a 32×32 thumbnail of the current island for the world map.
+// Stored on the current island object in WORLD_ISLANDS.
+let _currentIslandHeightmap = null; // Float32Array 32×32
+
+function _captureIslandHeightmap(sz) {
+  const RES = 32;
+  const hm = new Uint8Array(RES * RES * 3); // RGB
+  const step = sz / RES;
+  for (let ix = 0; ix < RES; ix++) {
+    for (let iz = 0; iz < RES; iz++) {
+      const wx = Math.floor(ix * step);
+      const wz = Math.floor(iz * step);
+      // Find top block
+      let topY = 0, topId = null;
+      for (let y = 40; y >= 0; y--) {
+        const info = world.get(`${wx}|${y}|${wz}`);
+        if (info) { topY = y; topId = info.id; break; }
+      }
+      const i = (iz * RES + ix) * 3;
+      if (!topId || topY <= SEA_LEVEL) {
+        // Sea
+        const depth = Math.max(0, SEA_LEVEL - topY);
+        hm[i]   = 0;
+        hm[i+1] = Math.max(50, 180 - depth * 20);
+        hm[i+2] = Math.min(255, 160 + depth * 10);
+      } else if (topId === 'sand' || topId === 'cobble_aegean') {
+        // Beach / path
+        hm[i] = 210; hm[i+1] = 190; hm[i+2] = 130;
+      } else if (topId === 'whitewash' || topId === 'marble') {
+        // Buildings
+        hm[i] = 240; hm[i+1] = 240; hm[i+2] = 245;
+      } else if (topId === 'blue_dome') {
+        // Church dome
+        hm[i] = 30; hm[i+1] = 100; hm[i+2] = 200;
+      } else if (topId === 'lava') {
+        // Volcanic
+        hm[i] = 220; hm[i+1] = 60; hm[i+2] = 0;
+      } else if (topId === 'volcanic_rock') {
+        hm[i] = 60; hm[i+1] = 50; hm[i+2] = 50;
+      } else {
+        // Grass / terrain — shade by height
+        const shade = Math.min(255, 80 + topY * 8);
+        hm[i] = 40; hm[i+1] = shade; hm[i+2] = 40;
+      }
+    }
+  }
+  _currentIslandHeightmap = hm;
+  // Store on current island
+  const isl = WORLD_ISLANDS.find(i => i.id === _currentIslandId);
+  if (isl) isl.heightmap = hm;
+}
+
+// ── Island Beacons ───────────────────────────────────────────────────────
+// Vertical light columns visible from far away to help navigation.
+let _islandBeacons = []; // { mesh, vx, vz }
+
+function _createIslandBeacon(vx, vz) {
+  const geo = new THREE.CylinderGeometry(0.3, 0.3, 60, 6);
+  const mat = new THREE.MeshBasicMaterial({
+    color: 0xffd700,
+    transparent: true,
+    opacity: 0.35,
+    depthWrite: false,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(worldSZ / 2, SEA_LEVEL + 30, worldSZ / 2);
+  mesh.renderOrder = 2;
+  scene.add(mesh);
+  return { mesh, vx, vz };
+}
+
+function _updateIslandBeacons() {
+  // Only show beacons for islands within 600 virtual units that aren't the current island
+  for (const b of _islandBeacons) {
+    scene.remove(b.mesh);
+    b.mesh.geometry.dispose();
+  }
+  _islandBeacons = [];
+
+  for (const isl of WORLD_ISLANDS) {
+    if (isl.id === _currentIslandId) continue;
+    const dvx = isl.vx - _worldX;
+    const dvz = isl.vz - _worldZ;
+    const dist = Math.sqrt(dvx * dvx + dvz * dvz);
+    if (dist > 600) continue;
+
+    // Direction from current island to target island in block space
+    const angle = Math.atan2(dvz, dvx);
+    const beaconDist = Math.min(dist * 0.5, 80); // place beacon in direction of island
+    const bx = worldSZ / 2 + Math.cos(angle) * beaconDist;
+    const bz = worldSZ / 2 + Math.sin(angle) * beaconDist;
+
+    const geo = new THREE.CylinderGeometry(0.2, 0.2, 50, 6);
+    const mat = new THREE.MeshBasicMaterial({
+      color: isl.visited ? 0xffd700 : 0x88ccff,
+      transparent: true,
+      opacity: Math.max(0.15, 0.5 - dist / 1200),
+      depthWrite: false,
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(bx, SEA_LEVEL + 25, bz);
+    mesh.renderOrder = 2;
+    scene.add(mesh);
+    _islandBeacons.push({ mesh, vx: isl.vx, vz: isl.vz });
+  }
+}
+
+// ── Open-sea swimming ────────────────────────────────────────────────────
+// When the player is outside the island grid (in open sea), keep them
+// floating at sea level instead of falling through the sea plane.
+function _applyOpenSeaPhysics() {
+  const p = player.pos;
+  const inGrid = p.x >= 0 && p.x < worldSZ && p.z >= 0 && p.z < worldSZ;
+  if (inGrid) return; // normal physics handles it
+
+  // Player is in open sea — float at sea level
+  const targetY = SEA_LEVEL + 1.2;
+  if (p.y < targetY) {
+    p.y = targetY;
+    player.vel.y = Math.max(0, player.vel.y);
+    player.onGround = true;
+  }
+  // Slow horizontal movement (water resistance)
+  player.vel.x *= 0.85;
+  player.vel.z *= 0.85;
+}
+
+// ── Boat ─────────────────────────────────────────────────────────────────
+let _boat = null;
+let _inBoat = false;
+const BOAT_SPEED = 14;
+
+function _spawnBoat() {
+  if (_boat) { scene.remove(_boat); _boat = null; }
+  const group = new THREE.Group();
+  // Hull
+  const hullGeo = new THREE.BoxGeometry(2.4, 0.6, 1.2);
+  const hullMat = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+  const hull = new THREE.Mesh(hullGeo, hullMat);
+  hull.position.y = 0;
+  group.add(hull);
+  // Mast
+  const mastGeo = new THREE.CylinderGeometry(0.06, 0.06, 2.5, 6);
+  const mastMat = new THREE.MeshLambertMaterial({ color: 0x5C3317 });
+  const mast = new THREE.Mesh(mastGeo, mastMat);
+  mast.position.set(0, 1.25, 0);
+  group.add(mast);
+  // Sail
+  const sailGeo = new THREE.PlaneGeometry(1.2, 1.8);
+  const sailMat = new THREE.MeshLambertMaterial({ color: 0xF5F0E8, side: THREE.DoubleSide });
+  const sail = new THREE.Mesh(sailGeo, sailMat);
+  sail.position.set(0, 1.5, 0.3);
+  group.add(sail);
+
+  group.position.set(player.pos.x, SEA_LEVEL + 0.4, player.pos.z);
+  scene.add(group);
+  _boat = group;
+}
+
+function _enterBoat() {
+  if (_inBoat) { _exitBoat(); return; }
+  _spawnBoat();
+  _inBoat = true;
+  showInfo('⛵ בסירה — WASD לנהיגה, B ליציאה', '#00B4D8', 3000);
+}
+
+function _exitBoat() {
+  _inBoat = false;
+  if (_boat) { scene.remove(_boat); _boat = null; }
+  showInfo('🏊 יצאת מהסירה', '#87CEEB', 1500);
+}
+
+function _updateBoat() {
+  if (!_inBoat || !_boat) return;
+  // Boat follows player
+  _boat.position.x = player.pos.x;
+  _boat.position.z = player.pos.z;
+  _boat.position.y = SEA_LEVEL + 0.4;
+  // Rotate boat to face movement direction
+  const vx = player.vel.x, vz = player.vel.z;
+  if (vx * vx + vz * vz > 0.01) {
+    _boat.rotation.y = -Math.atan2(vz, vx) + Math.PI / 2;
+  }
+  // Gentle bob
+  _boat.position.y += Math.sin(performance.now() * 0.002) * 0.08;
+  // Boost speed in boat
+  player.vel.x *= 1.08;
+  player.vel.z *= 1.08;
+  // Keep player at sea level in boat
+  player.pos.y = SEA_LEVEL + 1.5;
+  player.vel.y = 0;
 }
 
 function _showVictoryScreen() {
@@ -9447,7 +9760,7 @@ function _updateAcidProjectiles(dt) {
 // ── Enter Game Mode ──────────────────────────────────────────
 async function enterGameMode() {
   // Create a virtual world data for game mode
-  const gmWorldSZ = 64;
+  const gmWorldSZ = 128; // Larger islands — 128×128 blocks
   const fakeWorldData = {
     id: 'game_mode_' + Date.now(),
     name: '⚔️ מוד המשחק — ' + (selectedGod?.name || 'אל'),
@@ -9900,7 +10213,7 @@ function _makeGuestWorldData() {
   return {
     id: 'local_' + Date.now(),
     name: 'איי הקיקלדס',
-    size: 64,
+    size: 128,
     ownerId: 'guest',
     inviteCode: '',
     blocks: []
