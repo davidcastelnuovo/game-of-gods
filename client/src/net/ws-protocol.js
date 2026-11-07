@@ -17,6 +17,9 @@ export const WS_MESSAGE = {
 /** Minimum interval between move broadcasts (10 Hz). */
 export const MOVE_BROADCAST_INTERVAL_MS = 100;
 
+/** Delay before reconnecting after an unexpected close (legacy connectWS). */
+export const WS_RECONNECT_DELAY_MS = 3000;
+
 /**
  * @param {{ protocol?: string, host?: string }} loc
  * @returns {string}
@@ -47,4 +50,16 @@ export function buildJoinMessage({ token, worldId, inviteCode = '' }) {
  */
 export function buildBlockSetMessage(x, y, z, id) {
   return { type: WS_MESSAGE.BLOCK_SET, x, y, z, id: id ?? null };
+}
+
+/**
+ * @param {{ pos: { x: number, y: number, z: number }, yaw: number, pitch: number }} snapshot
+ */
+export function buildMoveMessage(snapshot) {
+  return {
+    type: WS_MESSAGE.MOVE,
+    pos: snapshot.pos,
+    yaw: snapshot.yaw,
+    pitch: snapshot.pitch,
+  };
 }

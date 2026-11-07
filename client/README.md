@@ -13,7 +13,7 @@
 | `src/game/` | מצב משחק, יצורים, אלים |
 | `src/assets/` | ייבוא glTF/טקסטורות (עתידי) |
 
-**בפר בזה:** `world/block-definitions.js`, `net/api.js`, `net/ws-protocol.js`, `render/bootstrap.js`.
+**בפר בזה (slice 1–2):** `world/block-definitions.js`, `world/world-constants.js`, `world/world-keys.js`, `net/api.js`, `net/ws-protocol.js`, `net/ws-client.js`, `net/player-colors.js`, `render/bootstrap.js`.
 
 ## פיתוח
 
